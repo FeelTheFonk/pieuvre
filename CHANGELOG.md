@@ -54,6 +54,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **DashboardView bindings**: Receives real system data from Rust
 - **Data flow**: init.rs -> MainWindow -> DashboardView cards
 
+### Phase 2.2 Complete - Dynamic Audit
+
+- **8 services tracked**: DiagTrack, SysMain, WSearch, BITS, wuauserv, etc.
+- **ServiceStates struct**: Extracted from pieuvre_audit::full_audit()
+- **Real-time update**: Services status after audit completion
+
+### Phase 2.5 Complete - Dynamic Snapshots
+
+- **setup_snapshots()**: Loads 3 latest snapshots via pieuvre_persist::list_snapshots()
+- **SnapshotsView properties**: snap1/2/3-id, timestamp, description, changes
+- **Dynamic SnapshotRow**: Display real snapshot data with restore/delete actions
+
+### Phase 3 Complete - Worker Enhancement
+
+- **ProfileLoaded with profile_name**: Tracks loaded profile
+- **OptimizationsApplied with profile_name**: Tracks applied profile
+- **Tests**: 6/6 unit tests passing
+
 ## [0.5.0] - 2025-12-21 (SOTA P4)
 
 ### Added

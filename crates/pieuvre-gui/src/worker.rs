@@ -16,12 +16,30 @@ pub enum WorkerCommand {
     Shutdown,
 }
 
+/// Etats des services critiques
+#[derive(Debug, Default)]
+pub struct ServiceStates {
+    pub diagtrack: bool,
+    pub dmwappush: bool,
+    pub wersvc: bool,
+    pub sysmain: bool,
+    pub wsearch: bool,
+    pub bits: bool,
+    pub wuauserv: bool,
+    pub mapbroker: bool,
+}
+
 /// Messages de retour du worker
 #[derive(Debug)]
 pub enum WorkerResult {
-    AuditComplete { success: bool, message: String, services_count: usize },
-    OptimizationsApplied { success: bool, message: String },
-    ProfileLoaded { success: bool, message: String },
+    AuditComplete { 
+        success: bool, 
+        message: String, 
+        services_count: usize,
+        services: ServiceStates,
+    },
+    OptimizationsApplied { success: bool, message: String, profile_name: String },
+    ProfileLoaded { success: bool, message: String, profile_name: String },
     RollbackComplete { success: bool, message: String },
     SnapshotCreated { success: bool, id: String },
     Error { message: String },
@@ -84,10 +102,29 @@ fn worker_loop(rx: Receiver<WorkerCommand>, tx: Sender<WorkerResult>) {
                     Ok(report) => {
                         let services_count = report.services.len();
                         tracing::info!("Audit termine: {} services detectes", services_count);
+                        
+                        // Extraire etats des services critiques
+                        let mut services = ServiceStates::default();
+                        for svc in &report.services {
+                            let running = svc.status == pieuvre_common::ServiceStatus::Running;
+                            match svc.name.as_str() {
+                                "DiagTrack" => services.diagtrack = running,
+                                "dmwappushservice" => services.dmwappush = running,
+                                "WerSvc" => services.wersvc = running,
+                                "SysMain" => services.sysmain = running,
+                                "WSearch" => services.wsearch = running,
+                                "BITS" => services.bits = running,
+                                "wuauserv" => services.wuauserv = running,
+                                "MapsBroker" => services.mapbroker = running,
+                                _ => {}
+                            }
+                        }
+                        
                         let _ = tx.send(WorkerResult::AuditComplete {
                             success: true,
                             message: format!("Audit termine: {} services", services_count),
                             services_count,
+                            services,
                         });
                     }
                     Err(e) => {
@@ -106,6 +143,7 @@ fn worker_loop(rx: Receiver<WorkerCommand>, tx: Sender<WorkerResult>) {
                     let _ = tx.send(WorkerResult::OptimizationsApplied {
                         success: true,
                         message: "Dry run: aucune modification".into(),
+                        profile_name: "workstation".into(),
                     });
                 } else {
                     // Creation snapshot avant modification
@@ -119,6 +157,7 @@ fn worker_loop(rx: Receiver<WorkerCommand>, tx: Sender<WorkerResult>) {
                                     let _ = tx.send(WorkerResult::OptimizationsApplied {
                                         success: true,
                                         message: format!("Optimisations appliquees (snapshot: {})", &snapshot.id.to_string()[..8]),
+                                        profile_name: "workstation".into(),
                                     });
                                 }
                                 Err(e) => {
@@ -145,11 +184,13 @@ fn worker_loop(rx: Receiver<WorkerCommand>, tx: Sender<WorkerResult>) {
                     let _ = tx.send(WorkerResult::ProfileLoaded {
                         success: true,
                         message: format!("Profil {} charge", name),
+                        profile_name: name.clone(),
                     });
                 } else {
                     let _ = tx.send(WorkerResult::ProfileLoaded {
                         success: false,
                         message: format!("Profil {} introuvable", name),
+                        profile_name: name.clone(),
                     });
                 }
             }

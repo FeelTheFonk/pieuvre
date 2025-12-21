@@ -153,6 +153,27 @@ export component AuditView inherits Rectangle {
     callback run-audit;
     callback export-json;
     
+    // Hardware info
+    in property <string> cpu-name: "Unknown CPU";
+    in property <int> cpu-cores: 8;
+    in property <int> ram-gb: 16;
+    in property <string> gpu-name: "Unknown GPU";
+    in property <bool> is-laptop: false;
+    
+    // Service states (true = running)
+    in property <bool> svc-diagtrack: true;
+    in property <bool> svc-dmwappush: true;
+    in property <bool> svc-wersvc: true;
+    in property <bool> svc-sysmain: true;
+    in property <bool> svc-wsearch: true;
+    in property <bool> svc-bits: true;
+    in property <bool> svc-wuauserv: true;
+    in property <bool> svc-mapbroker: true;
+    
+    // Service count
+    in property <int> services-total: 8;
+    in property <int> services-running: 6;
+    
     background: Tokens.background-color;
     
     Flickable {
@@ -264,7 +285,7 @@ export component AuditView inherits Rectangle {
             // Services section
             AuditSection {
                 title: "Services";
-                count: 8;
+                count: root.services-total;
                 
                 VerticalLayout {
                     padding: Tokens.spacing-sm;
@@ -273,28 +294,56 @@ export component AuditView inherits Rectangle {
                     ServiceRow {
                         name: "DiagTrack";
                         display-name: "Connected User Experiences and Telemetry";
-                        status: "running";
+                        status: root.svc-diagtrack ? "running" : "stopped";
                         start-type: "Automatic";
                     }
                     
                     ServiceRow {
                         name: "dmwappushservice";
                         display-name: "Device Management WAP Push";
-                        status: "stopped";
+                        status: root.svc-dmwappush ? "running" : "stopped";
+                        start-type: "Manual";
+                    }
+                    
+                    ServiceRow {
+                        name: "WerSvc";
+                        display-name: "Windows Error Reporting";
+                        status: root.svc-wersvc ? "running" : "stopped";
                         start-type: "Manual";
                     }
                     
                     ServiceRow {
                         name: "SysMain";
                         display-name: "Superfetch";
-                        status: "running";
+                        status: root.svc-sysmain ? "running" : "stopped";
                         start-type: "Automatic";
                     }
                     
                     ServiceRow {
                         name: "WSearch";
                         display-name: "Windows Search";
-                        status: "running";
+                        status: root.svc-wsearch ? "running" : "stopped";
+                        start-type: "Automatic";
+                    }
+                    
+                    ServiceRow {
+                        name: "BITS";
+                        display-name: "Background Intelligent Transfer";
+                        status: root.svc-bits ? "running" : "stopped";
+                        start-type: "Manual";
+                    }
+                    
+                    ServiceRow {
+                        name: "wuauserv";
+                        display-name: "Windows Update";
+                        status: root.svc-wuauserv ? "running" : "stopped";
+                        start-type: "Manual";
+                    }
+                    
+                    ServiceRow {
+                        name: "MapsBroker";
+                        display-name: "Downloaded Maps Manager";
+                        status: root.svc-mapbroker ? "running" : "stopped";
                         start-type: "Automatic";
                     }
                 }

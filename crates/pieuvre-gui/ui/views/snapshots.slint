@@ -118,6 +118,25 @@ component SnapshotRow inherits Rectangle {
 
 export component SnapshotsView inherits Rectangle {
     in property <int> snapshot-count: 0;
+    
+    // Snapshot 1 (latest)
+    in property <string> snap1-id: "";
+    in property <string> snap1-timestamp: "";
+    in property <string> snap1-description: "";
+    in property <int> snap1-changes: 0;
+    
+    // Snapshot 2
+    in property <string> snap2-id: "";
+    in property <string> snap2-timestamp: "";
+    in property <string> snap2-description: "";
+    in property <int> snap2-changes: 0;
+    
+    // Snapshot 3
+    in property <string> snap3-id: "";
+    in property <string> snap3-timestamp: "";
+    in property <string> snap3-description: "";
+    in property <int> snap3-changes: 0;
+    
     callback create-snapshot;
     callback restore-latest;
     callback restore-snapshot(string);
@@ -204,28 +223,41 @@ export component SnapshotsView inherits Rectangle {
                 }
             }
             
-            // Example snapshots (placeholders)
+            // Dynamic snapshots list
             if snapshot-count > 0: VerticalLayout {
                 spacing: Tokens.spacing-sm;
                 
-                SnapshotRow {
-                    id: "7be4b13b-051a";
-                    timestamp: "2024-12-21 20:30";
-                    description: "Profil Gaming appliqué";
-                    changes-count: 15;
+                // Snapshot 1 (latest)
+                if root.snap1-id != "": SnapshotRow {
+                    id: root.snap1-id;
+                    timestamp: root.snap1-timestamp;
+                    description: root.snap1-description;
+                    changes-count: root.snap1-changes;
                     is-latest: true;
-                    restore => { restore-snapshot("7be4b13b-051a"); }
-                    delete => { delete-snapshot("7be4b13b-051a"); }
+                    restore => { restore-snapshot(root.snap1-id); }
+                    delete => { delete-snapshot(root.snap1-id); }
                 }
                 
-                SnapshotRow {
-                    id: "a1b2c3d4-e5f6";
-                    timestamp: "2024-12-20 18:45";
-                    description: "Télémétrie désactivée";
-                    changes-count: 8;
+                // Snapshot 2
+                if snapshot-count >= 2 && root.snap2-id != "": SnapshotRow {
+                    id: root.snap2-id;
+                    timestamp: root.snap2-timestamp;
+                    description: root.snap2-description;
+                    changes-count: root.snap2-changes;
                     is-latest: false;
-                    restore => { restore-snapshot("a1b2c3d4-e5f6"); }
-                    delete => { delete-snapshot("a1b2c3d4-e5f6"); }
+                    restore => { restore-snapshot(root.snap2-id); }
+                    delete => { delete-snapshot(root.snap2-id); }
+                }
+                
+                // Snapshot 3
+                if snapshot-count >= 3 && root.snap3-id != "": SnapshotRow {
+                    id: root.snap3-id;
+                    timestamp: root.snap3-timestamp;
+                    description: root.snap3-description;
+                    changes-count: root.snap3-changes;
+                    is-latest: false;
+                    restore => { restore-snapshot(root.snap3-id); }
+                    delete => { delete-snapshot(root.snap3-id); }
                 }
             }
         }

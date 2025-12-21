@@ -34,11 +34,54 @@ fn main() -> Result<()> {
 
     // Timer pour poll worker results
     setup_worker_poll(&app, worker);
+    
+    // Charger snapshots existants
+    setup_snapshots(&app);
 
     // Lancement event loop
     app.run()?;
 
     Ok(())
+}
+
+/// Charge et affiche les snapshots existants
+fn setup_snapshots(app: &MainWindow) {
+    match pieuvre_persist::list_snapshots() {
+        Ok(snapshots) => {
+            let count = snapshots.len().min(3);
+            app.set_snapshot_count(count as i32);
+            
+            if count >= 1 {
+                let s = &snapshots[0];
+                app.set_snap1_id(s.id.to_string()[..8].into());
+                app.set_snap1_timestamp(s.timestamp.format("%Y-%m-%d %H:%M").to_string().into());
+                app.set_snap1_description(s.description.clone().into());
+                app.set_snap1_changes(s.changes.len() as i32);
+            }
+            
+            if count >= 2 {
+                let s = &snapshots[1];
+                app.set_snap2_id(s.id.to_string()[..8].into());
+                app.set_snap2_timestamp(s.timestamp.format("%Y-%m-%d %H:%M").to_string().into());
+                app.set_snap2_description(s.description.clone().into());
+                app.set_snap2_changes(s.changes.len() as i32);
+            }
+            
+            if count >= 3 {
+                let s = &snapshots[2];
+                app.set_snap3_id(s.id.to_string()[..8].into());
+                app.set_snap3_timestamp(s.timestamp.format("%Y-%m-%d %H:%M").to_string().into());
+                app.set_snap3_description(s.description.clone().into());
+                app.set_snap3_changes(s.changes.len() as i32);
+            }
+            
+            tracing::info!("Snapshots charges: {}", count);
+        }
+        Err(e) => {
+            tracing::warn!("Impossible de charger snapshots: {}", e);
+            app.set_snapshot_count(0);
+        }
+    }
 }
 
 /// Configure les informations systeme au demarrage
@@ -169,21 +212,34 @@ fn setup_worker_poll(app: &MainWindow, worker: Arc<Mutex<WorkerHandle>>) {
 /// Traite les resultats du worker
 fn handle_worker_result(app: &MainWindow, result: WorkerResult) {
     match result {
-        WorkerResult::AuditComplete { success, message, services_count } => {
+        WorkerResult::AuditComplete { success, message, services_count, services } => {
             tracing::info!("Audit complete: {} ({} services)", message, services_count);
             app.set_is_auditing(false);
             app.set_audit_progress(1.0);
+            
+            // Mise a jour etats services
+            app.set_svc_diagtrack(services.diagtrack);
+            app.set_svc_dmwappush(services.dmwappush);
+            app.set_svc_wersvc(services.wersvc);
+            app.set_svc_sysmain(services.sysmain);
+            app.set_svc_wsearch(services.wsearch);
+            app.set_svc_bits(services.bits);
+            app.set_svc_wuauserv(services.wuauserv);
+            app.set_svc_mapbroker(services.mapbroker);
+            app.set_services_total(services_count as i32);
+            
             show_toast(app, &message, success);
         }
         
-        WorkerResult::OptimizationsApplied { success, message } => {
-            tracing::info!("Optimizations: {}", message);
+        WorkerResult::OptimizationsApplied { success, message, profile_name } => {
+            tracing::info!("Optimizations: {} (profile: {})", message, profile_name);
             app.set_is_applying(false);
             show_toast(app, &message, success);
         }
         
-        WorkerResult::ProfileLoaded { success, message } => {
-            tracing::info!("Profile: {}", message);
+        WorkerResult::ProfileLoaded { success, message, profile_name } => {
+            tracing::info!("Profile: {} (name: {})", message, profile_name);
+            // Note: AppState.active-profile est un global Slint, update via propriete si necessaire
             show_toast(app, &message, success);
         }
         

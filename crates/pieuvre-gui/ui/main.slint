@@ -41,6 +41,18 @@ export component MainWindow inherits Window {
     in-out property <string> sys-gpu-name: "Unknown GPU";
     in-out property <bool> sys-is-laptop: false;
     
+    // Service states (set from Rust after audit)
+    in-out property <bool> svc-diagtrack: true;
+    in-out property <bool> svc-dmwappush: true;
+    in-out property <bool> svc-wersvc: true;
+    in-out property <bool> svc-sysmain: true;
+    in-out property <bool> svc-wsearch: true;
+    in-out property <bool> svc-bits: true;
+    in-out property <bool> svc-wuauserv: true;
+    in-out property <bool> svc-mapbroker: true;
+    in-out property <int> services-total: 8;
+    in-out property <int> services-running: 6;
+    
     // Toast state
     in-out property <string> toast-message: "";
     in-out property <BadgeVariant> toast-variant: BadgeVariant.info;
@@ -55,7 +67,25 @@ export component MainWindow inherits Window {
     in-out property <bool> is-applying: false;
     
     // Snapshots state
-    in-out property <int> snapshot-count: 2;
+    in-out property <int> snapshot-count: 0;
+    
+    // Snapshot 1 (latest)
+    in-out property <string> snap1-id: "";
+    in-out property <string> snap1-timestamp: "";
+    in-out property <string> snap1-description: "";
+    in-out property <int> snap1-changes: 0;
+    
+    // Snapshot 2
+    in-out property <string> snap2-id: "";
+    in-out property <string> snap2-timestamp: "";
+    in-out property <string> snap2-description: "";
+    in-out property <int> snap2-changes: 0;
+    
+    // Snapshot 3
+    in-out property <string> snap3-id: "";
+    in-out property <string> snap3-timestamp: "";
+    in-out property <string> snap3-description: "";
+    in-out property <int> snap3-changes: 0;
     
     // Layout principal
     HorizontalLayout {
@@ -99,6 +129,21 @@ export component MainWindow inherits Window {
                 if AppState.current-view == "audit": AuditView {
                     is-auditing: is-auditing;
                     audit-progress: audit-progress;
+                    cpu-name: sys-cpu-name;
+                    cpu-cores: sys-cpu-cores;
+                    ram-gb: sys-ram-gb;
+                    gpu-name: sys-gpu-name;
+                    is-laptop: sys-is-laptop;
+                    svc-diagtrack: svc-diagtrack;
+                    svc-dmwappush: svc-dmwappush;
+                    svc-wersvc: svc-wersvc;
+                    svc-sysmain: svc-sysmain;
+                    svc-wsearch: svc-wsearch;
+                    svc-bits: svc-bits;
+                    svc-wuauserv: svc-wuauserv;
+                    svc-mapbroker: svc-mapbroker;
+                    services-total: services-total;
+                    services-running: services-running;
                     run-audit => { run-audit(); }
                 }
                 
@@ -114,6 +159,18 @@ export component MainWindow inherits Window {
                 
                 if AppState.current-view == "snapshots": SnapshotsView {
                     snapshot-count: snapshot-count;
+                    snap1-id: snap1-id;
+                    snap1-timestamp: snap1-timestamp;
+                    snap1-description: snap1-description;
+                    snap1-changes: snap1-changes;
+                    snap2-id: snap2-id;
+                    snap2-timestamp: snap2-timestamp;
+                    snap2-description: snap2-description;
+                    snap2-changes: snap2-changes;
+                    snap3-id: snap3-id;
+                    snap3-timestamp: snap3-timestamp;
+                    snap3-description: snap3-description;
+                    snap3-changes: snap3-changes;
                     create-snapshot => { create-snapshot(); }
                     restore-snapshot(id) => { restore-snapshot(id); }
                 }
