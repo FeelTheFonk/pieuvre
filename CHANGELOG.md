@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.0] - 2025-12-21 (SOTA P3)
+
+### Added
+
+- **Edge Management**: Disable sidebar, shopping, collections, auto-updates (edge.rs)
+- **Explorer Tweaks**: Show extensions, This PC, hide recent, no chat/task view (explorer.rs)
+- **Game Mode**: Disable Game Bar/DVR, Fullscreen Optimizations, HAGS control (game_mode.rs)
+
+### Changed
+
+- Section PERFORMANCE: 12 options (was 7)
+- 16 modules pieuvre-sync (was 13)
+- Total options interactive: 39 (was 32)
+
 ## [0.3.1] - 2025-12-21 (SOTA P2)
 
 ### Added

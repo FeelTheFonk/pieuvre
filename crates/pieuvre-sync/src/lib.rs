@@ -4,7 +4,10 @@
 
 pub mod appx;
 pub mod context_menu;
+pub mod edge;
+pub mod explorer;
 pub mod firewall;
+pub mod game_mode;
 pub mod hosts;
 pub mod msi;
 pub mod onedrive;

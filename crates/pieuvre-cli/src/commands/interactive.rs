@@ -181,6 +181,37 @@ pub fn run(profile: &str) -> Result<()> {
         default: false,
     });
     
+    // P3 SOTA
+    perf_options.push(OptItem {
+        id: "edge_disable",
+        label: "[SAFE] Desactiver features Edge (sidebar, DVR, shopping)",
+        default: true,
+    });
+    
+    perf_options.push(OptItem {
+        id: "explorer_tweaks",
+        label: "[SAFE] Explorer tweaks (extensions, This PC, no recent)",
+        default: true,
+    });
+    
+    perf_options.push(OptItem {
+        id: "game_bar",
+        label: "[SAFE] Desactiver Game Bar/DVR (alt+tab plus rapide)",
+        default: true,
+    });
+    
+    perf_options.push(OptItem {
+        id: "fullscreen_opt",
+        label: "[PERF] Desactiver Fullscreen Optimizations",
+        default: true,
+    });
+    
+    perf_options.push(OptItem {
+        id: "hags",
+        label: "[COND] Desactiver HAGS (meilleur pour anciens jeux)",
+        default: false,
+    });
+    
     let perf_labels: Vec<&str> = perf_options.iter().map(|o| o.label).collect();
     let perf_defaults: Vec<bool> = perf_options.iter().map(|o| o.default).collect();
     
@@ -639,6 +670,45 @@ pub fn run(profile: &str) -> Result<()> {
                 print!("[*] WSearch... ");
                 match pieuvre_sync::services::disable_service("WSearch") {
                     Ok(_) => { println!("OK"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "edge_disable" => {
+                print!("[*] Edge features... ");
+                match pieuvre_sync::edge::disable_edge() {
+                    Ok(_) => { 
+                        let _ = pieuvre_sync::edge::remove_edge_tasks();
+                        println!("OK (features + tasks)"); 
+                        success_count += 1; 
+                    }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "explorer_tweaks" => {
+                print!("[*] Explorer tweaks... ");
+                match pieuvre_sync::explorer::apply_explorer_tweaks() {
+                    Ok(_) => { println!("OK (8 tweaks)"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "game_bar" => {
+                print!("[*] Game Bar... ");
+                match pieuvre_sync::game_mode::disable_game_bar() {
+                    Ok(_) => { println!("OK (disabled)"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "fullscreen_opt" => {
+                print!("[*] Fullscreen Optimizations... ");
+                match pieuvre_sync::game_mode::disable_fullscreen_optimizations() {
+                    Ok(_) => { println!("OK (disabled)"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "hags" => {
+                print!("[*] HAGS... ");
+                match pieuvre_sync::game_mode::disable_hags() {
+                    Ok(_) => { println!("OK (disabled)"); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
                 }
             }
