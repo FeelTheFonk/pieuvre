@@ -2,6 +2,7 @@
 //!
 //! Module de synchronisation: application des optimisations.
 
+pub mod appx;
 pub mod firewall;
 pub mod msi;
 pub mod power;

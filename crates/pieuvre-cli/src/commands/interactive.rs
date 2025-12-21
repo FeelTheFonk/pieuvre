@@ -6,15 +6,9 @@
 use anyhow::Result;
 use dialoguer::{theme::ColorfulTheme, Confirm, MultiSelect};
 use pieuvre_audit::hardware::is_laptop;
-use pieuvre_sync::{timer, power, firewall, msi, registry};
+use pieuvre_sync::{appx, timer, power, firewall, msi, registry};
 use pieuvre_persist::snapshot;
 use pieuvre_common::ChangeRecord;
-
-/// IDs fixes pour identifier les options
-const OPT_DIAGTRACK: usize = 0;
-const OPT_DMWAPPUSH: usize = 1;
-const OPT_WERSVC: usize = 2;
-const OPT_FIREWALL: usize = 3;
 
 pub fn run(profile: &str) -> Result<()> {
     println!();
@@ -39,100 +33,146 @@ pub fn run(profile: &str) -> Result<()> {
     }
     
     // =========================================
-    // SECTION 1: TELEMETRIE
+    // SECTION 1: TELEMETRIE (9 services total)
     // =========================================
     println!("----------------------------------------------------------------");
-    println!("  1/3  TELEMETRIE");
+    println!("  1/5  TELEMETRIE - Services");
     println!("----------------------------------------------------------------");
     
-    let telemetry_items = vec![
-        "[SAFE] DiagTrack - Service telemetrie principale",
-        "[SAFE] dmwappushservice - Push WAP telemetrie",
-        "[SAFE] WerSvc - Windows Error Reporting",
-        "[SAFE] Firewall - Bloquer 42 domaines telemetrie",
-    ];
-    
-    let telemetry_selected = MultiSelect::with_theme(&ColorfulTheme::default())
-        .with_prompt("Telemetrie (Espace=cocher, Entree=valider)")
-        .items(&telemetry_items)
-        .defaults(&[true, true, true, true])
-        .interact()?;
-    
-    // =========================================
-    // SECTION 2: PERFORMANCE
-    // =========================================
-    println!();
-    println!("----------------------------------------------------------------");
-    println!("  2/3  PERFORMANCE");
-    println!("----------------------------------------------------------------");
-    
-    // Construction dynamique avec IDs explicites
     #[derive(Clone)]
-    struct PerfOption {
+    struct OptItem {
         id: &'static str,
-        label: String,
+        label: &'static str,
         default: bool,
     }
     
-    let mut perf_options: Vec<PerfOption> = Vec::new();
+    let telemetry_services = vec![
+        OptItem { id: "diagtrack", label: "[SAFE] DiagTrack - Telemetrie principale", default: true },
+        OptItem { id: "dmwappush", label: "[SAFE] dmwappushservice - Push WAP", default: true },
+        OptItem { id: "wersvc", label: "[SAFE] WerSvc - Windows Error Reporting", default: true },
+        OptItem { id: "wercplsupport", label: "[SAFE] wercplsupport - Error Reports support", default: true },
+        OptItem { id: "pcasvc", label: "[SAFE] PcaSvc - Program Compatibility", default: false },
+        OptItem { id: "wdisystem", label: "[SAFE] WdiSystemHost - Diagnostic Host", default: false },
+        OptItem { id: "wdiservice", label: "[SAFE] WdiServiceHost - Diagnostic Service", default: false },
+        OptItem { id: "lfsvc", label: "[COND] lfsvc - Geolocation", default: true },
+        OptItem { id: "mapsbroker", label: "[SAFE] MapsBroker - Maps download", default: true },
+        OptItem { id: "firewall", label: "[SAFE] Firewall - Bloquer 42 domaines telemetrie", default: true },
+    ];
+    
+    let telem_labels: Vec<&str> = telemetry_services.iter().map(|o| o.label).collect();
+    let telem_defaults: Vec<bool> = telemetry_services.iter().map(|o| o.default).collect();
+    
+    let telem_selected = MultiSelect::with_theme(&ColorfulTheme::default())
+        .with_prompt("Services telemetrie (Espace=cocher, Entree=valider)")
+        .items(&telem_labels)
+        .defaults(&telem_defaults)
+        .interact()?;
+    
+    // =========================================
+    // SECTION 2: PRIVACY - Registry tweaks
+    // =========================================
+    println!();
+    println!("----------------------------------------------------------------");
+    println!("  2/5  PRIVACY - Registre");
+    println!("----------------------------------------------------------------");
+    
+    let privacy_options = vec![
+        OptItem { id: "telemetry_level", label: "[SAFE] Telemetry Level 0 (Security only)", default: true },
+        OptItem { id: "advertising_id", label: "[SAFE] Desactiver Advertising ID", default: true },
+        OptItem { id: "location", label: "[SAFE] Desactiver Localisation", default: true },
+        OptItem { id: "activity_history", label: "[SAFE] Desactiver Historique activite", default: true },
+        OptItem { id: "cortana", label: "[SAFE] Desactiver Cortana", default: true },
+    ];
+    
+    let privacy_labels: Vec<&str> = privacy_options.iter().map(|o| o.label).collect();
+    let privacy_defaults: Vec<bool> = privacy_options.iter().map(|o| o.default).collect();
+    
+    let privacy_selected = MultiSelect::with_theme(&ColorfulTheme::default())
+        .with_prompt("Privacy registre (Espace=cocher, Entree=valider)")
+        .items(&privacy_labels)
+        .defaults(&privacy_defaults)
+        .interact()?;
+    
+    // =========================================
+    // SECTION 3: PERFORMANCE
+    // =========================================
+    println!();
+    println!("----------------------------------------------------------------");
+    println!("  3/5  PERFORMANCE");
+    println!("----------------------------------------------------------------");
+    
+    let mut perf_options: Vec<OptItem> = Vec::new();
     
     // Timer 0.5ms
     if laptop {
-        perf_options.push(PerfOption {
+        perf_options.push(OptItem {
             id: "timer",
-            label: "[WARN][LAPTOP] Timer 0.5ms - +25% conso batterie".to_string(),
+            label: "[WARN][LAPTOP] Timer 0.5ms - +25% conso batterie",
             default: false,
         });
     } else {
-        perf_options.push(PerfOption {
+        perf_options.push(OptItem {
             id: "timer",
-            label: "[SAFE] Timer 0.5ms - Latence reduite (gaming)".to_string(),
+            label: "[SAFE] Timer 0.5ms - Latence reduite (gaming)",
             default: true,
         });
     }
     
-    // Power Plan - TOUJOURS ajouter les deux options pour laptop
+    // Power Plan
     if laptop {
-        perf_options.push(PerfOption {
+        perf_options.push(OptItem {
             id: "power_ultimate",
-            label: "[WARN][LAPTOP] Ultimate Performance - Usure batterie".to_string(),
+            label: "[WARN][LAPTOP] Ultimate Performance - Usure batterie",
             default: false,
         });
-        perf_options.push(PerfOption {
+        perf_options.push(OptItem {
             id: "power_high",
-            label: "[SAFE] High Performance - Recommande laptop".to_string(),
+            label: "[SAFE] High Performance - Recommande laptop",
             default: true,
         });
     } else {
-        perf_options.push(PerfOption {
+        perf_options.push(OptItem {
             id: "power_ultimate",
-            label: "[SAFE] Ultimate Performance - Max performance desktop".to_string(),
+            label: "[SAFE] Ultimate Performance - Max performance desktop",
             default: true,
         });
     }
+    
+    // CPU Throttling
+    perf_options.push(OptItem {
+        id: "cpu_throttle",
+        label: "[PERF] Desactiver CPU Throttling",
+        default: true,
+    });
+    
+    // USB Selective Suspend
+    perf_options.push(OptItem {
+        id: "usb_suspend",
+        label: "[PERF] Desactiver USB Selective Suspend",
+        default: true,
+    });
     
     // MSI Mode
-    perf_options.push(PerfOption {
+    perf_options.push(OptItem {
         id: "msi",
-        label: "[SAFE] MSI Mode GPU/NVMe - -40% latence interrupts".to_string(),
+        label: "[SAFE] Activer MSI Mode GPU/NVMe",
         default: true,
     });
     
-    // SysMain
-    perf_options.push(PerfOption {
+    // Services performance
+    perf_options.push(OptItem {
         id: "sysmain",
-        label: "[SAFE] Desactiver SysMain - Recommande si SSD".to_string(),
+        label: "[SAFE] Desactiver SysMain (SSD recommande)",
         default: true,
     });
     
-    // WSearch
-    perf_options.push(PerfOption {
+    perf_options.push(OptItem {
         id: "wsearch",
-        label: "[COND] Desactiver WSearch - Recherche plus lente".to_string(),
+        label: "[COND] Desactiver WSearch - Recherche plus lente",
         default: false,
     });
     
-    let perf_labels: Vec<&str> = perf_options.iter().map(|o| o.label.as_str()).collect();
+    let perf_labels: Vec<&str> = perf_options.iter().map(|o| o.label).collect();
     let perf_defaults: Vec<bool> = perf_options.iter().map(|o| o.default).collect();
     
     let perf_selected = MultiSelect::with_theme(&ColorfulTheme::default())
@@ -142,21 +182,46 @@ pub fn run(profile: &str) -> Result<()> {
         .interact()?;
     
     // =========================================
-    // SECTION 3: SCHEDULER
+    // SECTION 4: SCHEDULER
     // =========================================
     println!();
     println!("----------------------------------------------------------------");
-    println!("  3/3  SCHEDULER");
+    println!("  4/5  SCHEDULER");
     println!("----------------------------------------------------------------");
     
-    let sched_items = vec![
-        "[SAFE] Win32PrioritySeparation 0x26 - Short quantum, foreground boost",
+    let sched_options = vec![
+        OptItem { id: "priority_sep", label: "[SAFE] Win32PrioritySeparation 0x26 - Short quantum, foreground boost", default: true },
     ];
+    
+    let sched_labels: Vec<&str> = sched_options.iter().map(|o| o.label).collect();
+    let sched_defaults: Vec<bool> = sched_options.iter().map(|o| o.default).collect();
     
     let sched_selected = MultiSelect::with_theme(&ColorfulTheme::default())
         .with_prompt("Scheduler (Espace=cocher, Entree=valider)")
-        .items(&sched_items)
-        .defaults(&[true])
+        .items(&sched_labels)
+        .defaults(&sched_defaults)
+        .interact()?;
+    
+    // =========================================
+    // SECTION 5: APPX BLOATWARE
+    // =========================================
+    println!();
+    println!("----------------------------------------------------------------");
+    println!("  5/5  APPX - Bloatware");
+    println!("----------------------------------------------------------------");
+    
+    let appx_options = vec![
+        OptItem { id: "bloatware", label: "[SAFE] Supprimer bloatware Microsoft (20+ apps)", default: false },
+        OptItem { id: "xbox", label: "[COND] Supprimer Xbox apps (attention Game Pass)", default: false },
+    ];
+    
+    let appx_labels: Vec<&str> = appx_options.iter().map(|o| o.label).collect();
+    let appx_defaults: Vec<bool> = appx_options.iter().map(|o| o.default).collect();
+    
+    let appx_selected = MultiSelect::with_theme(&ColorfulTheme::default())
+        .with_prompt("AppX Bloatware (Espace=cocher, Entree=valider)")
+        .items(&appx_labels)
+        .defaults(&appx_defaults)
         .interact()?;
     
     // =========================================
@@ -169,11 +234,20 @@ pub fn run(profile: &str) -> Result<()> {
     
     let mut total = 0;
     
-    if !telemetry_selected.is_empty() {
+    if !telem_selected.is_empty() {
         println!();
         println!("  TELEMETRIE:");
-        for idx in &telemetry_selected {
-            println!("    [x] {}", telemetry_items[*idx]);
+        for idx in &telem_selected {
+            println!("    [x] {}", telemetry_services[*idx].label);
+            total += 1;
+        }
+    }
+    
+    if !privacy_selected.is_empty() {
+        println!();
+        println!("  PRIVACY:");
+        for idx in &privacy_selected {
+            println!("    [x] {}", privacy_options[*idx].label);
             total += 1;
         }
     }
@@ -191,7 +265,16 @@ pub fn run(profile: &str) -> Result<()> {
         println!();
         println!("  SCHEDULER:");
         for idx in &sched_selected {
-            println!("    [x] {}", sched_items[*idx]);
+            println!("    [x] {}", sched_options[*idx].label);
+            total += 1;
+        }
+    }
+    
+    if !appx_selected.is_empty() {
+        println!();
+        println!("  APPX:");
+        for idx in &appx_selected {
+            println!("    [x] {}", appx_options[*idx].label);
             total += 1;
         }
     }
@@ -241,31 +324,75 @@ pub fn run(profile: &str) -> Result<()> {
     let mut success_count = 0;
     let mut error_count = 0;
     
-    // TELEMETRIE - utiliser les IDs fixes
-    for idx in &telemetry_selected {
-        match *idx {
-            OPT_DIAGTRACK => {
+    // TELEMETRIE SERVICES
+    for idx in &telem_selected {
+        let opt = &telemetry_services[*idx];
+        
+        match opt.id {
+            "diagtrack" => {
                 print!("[*] DiagTrack... ");
                 match pieuvre_sync::services::disable_service("DiagTrack") {
                     Ok(_) => { println!("OK"); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
                 }
             }
-            OPT_DMWAPPUSH => {
+            "dmwappush" => {
                 print!("[*] dmwappushservice... ");
                 match pieuvre_sync::services::disable_service("dmwappushservice") {
                     Ok(_) => { println!("OK"); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
                 }
             }
-            OPT_WERSVC => {
+            "wersvc" => {
                 print!("[*] WerSvc... ");
                 match pieuvre_sync::services::disable_service("WerSvc") {
                     Ok(_) => { println!("OK"); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
                 }
             }
-            OPT_FIREWALL => {
+            "wercplsupport" => {
+                print!("[*] wercplsupport... ");
+                match pieuvre_sync::services::disable_service("wercplsupport") {
+                    Ok(_) => { println!("OK"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "pcasvc" => {
+                print!("[*] PcaSvc... ");
+                match pieuvre_sync::services::disable_service("PcaSvc") {
+                    Ok(_) => { println!("OK"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "wdisystem" => {
+                print!("[*] WdiSystemHost... ");
+                match pieuvre_sync::services::disable_service("WdiSystemHost") {
+                    Ok(_) => { println!("OK"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "wdiservice" => {
+                print!("[*] WdiServiceHost... ");
+                match pieuvre_sync::services::disable_service("WdiServiceHost") {
+                    Ok(_) => { println!("OK"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "lfsvc" => {
+                print!("[*] lfsvc... ");
+                match pieuvre_sync::services::disable_service("lfsvc") {
+                    Ok(_) => { println!("OK"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "mapsbroker" => {
+                print!("[*] MapsBroker... ");
+                match pieuvre_sync::services::disable_service("MapsBroker") {
+                    Ok(_) => { println!("OK"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "firewall" => {
                 print!("[*] Firewall rules... ");
                 match firewall::create_telemetry_block_rules() {
                     Ok(rules) => { println!("OK ({} regles)", rules.len()); success_count += 1; }
@@ -276,7 +403,51 @@ pub fn run(profile: &str) -> Result<()> {
         }
     }
     
-    // PERFORMANCE - utiliser les IDs explicites
+    // PRIVACY REGISTRY
+    for idx in &privacy_selected {
+        let opt = &privacy_options[*idx];
+        
+        match opt.id {
+            "telemetry_level" => {
+                print!("[*] Telemetry Level 0... ");
+                match registry::set_telemetry_level(0) {
+                    Ok(_) => { println!("OK"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "advertising_id" => {
+                print!("[*] Advertising ID... ");
+                match registry::disable_advertising_id() {
+                    Ok(_) => { println!("OK"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "location" => {
+                print!("[*] Location... ");
+                match registry::disable_location() {
+                    Ok(_) => { println!("OK"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "activity_history" => {
+                print!("[*] Activity History... ");
+                match registry::disable_activity_history() {
+                    Ok(_) => { println!("OK"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "cortana" => {
+                print!("[*] Cortana... ");
+                match registry::disable_cortana() {
+                    Ok(_) => { println!("OK"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            _ => {}
+        }
+    }
+    
+    // PERFORMANCE
     for idx in &perf_selected {
         let opt = &perf_options[*idx];
         
@@ -302,12 +473,36 @@ pub fn run(profile: &str) -> Result<()> {
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
                 }
             }
+            "cpu_throttle" => {
+                print!("[*] CPU Throttling disable... ");
+                match power::disable_cpu_throttling() {
+                    Ok(_) => { println!("OK"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "usb_suspend" => {
+                print!("[*] USB Selective Suspend disable... ");
+                match power::configure_power_settings(false, false, 100, 100) {
+                    Ok(_) => { println!("OK"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
             "msi" => {
-                print!("[*] MSI Mode detection... ");
+                print!("[*] MSI Mode... ");
                 match msi::list_msi_eligible_devices() {
-                    Ok(devices) => { 
-                        println!("OK ({} devices)", devices.len()); 
-                        success_count += 1; 
+                    Ok(devices) => {
+                        let mut enabled = 0;
+                        for dev in &devices {
+                            if !dev.msi_enabled {
+                                if msi::enable_msi(&dev.full_path).is_ok() {
+                                    enabled += 1;
+                                }
+                            } else {
+                                enabled += 1; // Déjà activé
+                            }
+                        }
+                        println!("OK ({}/{} devices)", enabled, devices.len());
+                        success_count += 1;
                     }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
                 }
@@ -332,12 +527,37 @@ pub fn run(profile: &str) -> Result<()> {
     
     // SCHEDULER
     for idx in &sched_selected {
-        if *idx == 0 {
+        let opt = &sched_options[*idx];
+        
+        if opt.id == "priority_sep" {
             print!("[*] Win32PrioritySeparation... ");
             match registry::set_priority_separation(0x26) {
                 Ok(_) => { println!("OK (0x26)"); success_count += 1; }
                 Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
             }
+        }
+    }
+    
+    // APPX
+    for idx in &appx_selected {
+        let opt = &appx_options[*idx];
+        
+        match opt.id {
+            "bloatware" => {
+                print!("[*] Removing bloatware... ");
+                match appx::remove_bloatware() {
+                    Ok(removed) => { println!("OK ({} removed)", removed.len()); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "xbox" => {
+                print!("[*] Removing Xbox apps... ");
+                match appx::remove_xbox_packages() {
+                    Ok(removed) => { println!("OK ({} removed)", removed.len()); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            _ => {}
         }
     }
     

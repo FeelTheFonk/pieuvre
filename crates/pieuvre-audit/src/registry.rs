@@ -48,7 +48,7 @@ pub fn get_telemetry_status() -> Result<TelemetryStatus> {
 }
 
 /// Lit une valeur DWORD du registre
-fn read_dword_value(subkey: &str, value_name: &str) -> Result<u32> {
+pub fn read_dword_value(subkey: &str, value_name: &str) -> Result<u32> {
     unsafe {
         let mut hkey = Default::default();
         let subkey_wide: Vec<u16> = subkey.encode_utf16().chain(std::iter::once(0)).collect();

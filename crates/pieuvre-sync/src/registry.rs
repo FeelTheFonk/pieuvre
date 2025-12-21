@@ -55,3 +55,80 @@ pub fn set_priority_separation(value: u32) -> Result<()> {
         value,
     )
 }
+
+// ============================================
+// PRIVACY TWEAKS
+// ============================================
+
+/// Configure le niveau de telemetrie (0=Security, 1=Basic, 2=Enhanced, 3=Full)
+pub fn set_telemetry_level(level: u32) -> Result<()> {
+    // Policy level
+    let _ = set_dword_value(
+        r"SOFTWARE\Policies\Microsoft\Windows\DataCollection",
+        "AllowTelemetry",
+        level,
+    );
+    // User level
+    set_dword_value(
+        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection",
+        "AllowTelemetry",
+        level,
+    )?;
+    tracing::info!("Telemetry level -> {}", level);
+    Ok(())
+}
+
+/// Desactive l'Advertising ID
+pub fn disable_advertising_id() -> Result<()> {
+    set_dword_value(
+        r"SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo",
+        "Enabled",
+        0,
+    )?;
+    tracing::info!("Advertising ID disabled");
+    Ok(())
+}
+
+/// Desactive la localisation
+pub fn disable_location() -> Result<()> {
+    // Valeur string mais on peut utiliser DWORD 0 pour desactiver
+    set_dword_value(
+        r"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location",
+        "Value",
+        0,
+    )?;
+    tracing::info!("Location disabled");
+    Ok(())
+}
+
+/// Desactive l'historique d'activite
+pub fn disable_activity_history() -> Result<()> {
+    set_dword_value(
+        r"SOFTWARE\Policies\Microsoft\Windows\System",
+        "EnableActivityFeed",
+        0,
+    )?;
+    set_dword_value(
+        r"SOFTWARE\Policies\Microsoft\Windows\System",
+        "PublishUserActivities",
+        0,
+    )?;
+    set_dword_value(
+        r"SOFTWARE\Policies\Microsoft\Windows\System",
+        "UploadUserActivities",
+        0,
+    )?;
+    tracing::info!("Activity history disabled");
+    Ok(())
+}
+
+/// Desactive Cortana
+pub fn disable_cortana() -> Result<()> {
+    set_dword_value(
+        r"SOFTWARE\Policies\Microsoft\Windows\Windows Search",
+        "AllowCortana",
+        0,
+    )?;
+    tracing::info!("Cortana disabled");
+    Ok(())
+}

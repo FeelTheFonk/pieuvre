@@ -85,8 +85,16 @@ pub fn run(profile: &str) -> Result<()> {
             if report.telemetry.diagtrack_enabled {
                 recommendations.push(("PERF", "Desactiver DiagTrack (service telemetrie)"));
             }
+            // CPU Hybrid: recommander seulement si scheduler pas encore optimise
+            // Note: verification via registry Win32PrioritySeparation
             if report.hardware.cpu.is_hybrid {
-                recommendations.push(("PERF", "Optimiser scheduler pour CPU hybrid (P-Core priority)"));
+                let priority_sep = pieuvre_audit::registry::read_dword_value(
+                    r"SYSTEM\CurrentControlSet\Control\PriorityControl",
+                    "Win32PrioritySeparation"
+                ).unwrap_or(0);
+                if priority_sep != 0x26 {
+                    recommendations.push(("PERF", "Optimiser scheduler pour CPU hybrid (P-Core priority)"));
+                }
             }
             // Timer: recommander seulement si pas deja optimise
             if !timer_optimized {
@@ -104,7 +112,10 @@ pub fn run(profile: &str) -> Result<()> {
                     recommendations.push(("PERF", "Power Plan -> Ultimate Performance"));
                 }
             }
-            recommendations.push(("PERF", "Activer MSI-Mode sur GPU"));
+            // MSI: recommander seulement si pas deja actif
+            if !pieuvre_sync::msi::is_msi_enabled_on_gpu() {
+                recommendations.push(("PERF", "Activer MSI-Mode sur GPU"));
+            }
         }
         "privacy" => {
             if report.telemetry.diagtrack_enabled {
