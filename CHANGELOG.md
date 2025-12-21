@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.1] - 2025-12-21 (SOTA P2)
+
+### Added
+
+- **Context Menu**: Classic menu + remove 7 clutter items (Paint3D, Photos, Clipchamp)
+- **Widgets**: Disable Win11 widgets board and service
+- **Windows Update Control**: Pause 35 days + disable driver auto-updates
+
+### Changed
+
+- Section Privacy: 9 options (was 5)
+- 13 modules pieuvre-sync (was 10)
+
 ## [0.3.0] - 2025-12-21 (SOTA)
 
 ### Added
@@ -17,11 +30,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **OneDrive Complete Removal**:
   - Process kill, uninstall, folder cleanup
   - Registry disable for Group Policy
+- **status.rs enrichi**: +Services, MMCSS, MSI, Hosts sections
 
 ### Changed
 
 - Section Telemetrie: 13 options (was 10)
 - Firewall: 47 domaines (was 30)
+- README: Sources SOTA completes (6 repos + 4 docs + 3 crates)
+
+### Fixed
+
+- Emojis supprimes (sync.rs, status.rs, analyze.rs, lib.rs)
 
 ## [0.2.3] - 2025-12-21
 

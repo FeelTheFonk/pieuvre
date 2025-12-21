@@ -7,38 +7,46 @@ use pieuvre_persist::snapshot;
 use pieuvre_common::ChangeRecord;
 
 pub fn run(profile: &str, dry_run: bool) -> Result<()> {
-    println!("\n╔══════════════════════════════════════════════════════════════════╗");
-    println!("║              🐙 PIEUVRE - Synchronisation                        ║");
-    println!("╚══════════════════════════════════════════════════════════════════╝\n");
+    println!();
+    println!("================================================================");
+    println!("                 PIEUVRE - Synchronisation");
+    println!("================================================================");
+    println!();
     
-    println!("📋 Profil: {}", profile.to_uppercase());
-    println!("🔧 Mode:   {}\n", if dry_run { "SIMULATION (aucune modification)" } else { "APPLICATION RÉELLE" });
+    println!("  Profil: {}", profile.to_uppercase());
+    println!("  Mode:   {}", if dry_run { "SIMULATION (aucune modification)" } else { "APPLICATION REELLE" });
+    println!();
     
     if !dry_run {
-        // Créer un snapshot avant les modifications
-        println!("💾 Création snapshot de sauvegarde...");
+        // Creer un snapshot avant les modifications
+        println!("[*] Creation snapshot de sauvegarde...");
         let changes = Vec::<ChangeRecord>::new(); // TODO: collecter les changements
         match snapshot::create(&format!("Avant profil {}", profile), changes) {
-            Ok(snap) => println!("   ✓ Snapshot: {}\n", snap.id),
-            Err(e) => println!("   ⚠ Snapshot: {}\n", e),
+            Ok(snap) => println!("    Snapshot: {}", snap.id),
+            Err(e) => println!("    Snapshot erreur: {}", e),
         }
+        println!();
     }
     
-    println!("═══════════════════════════════════════════════════════════════════");
+    println!("----------------------------------------------------------------");
     println!("                      MODIFICATIONS");
-    println!("═══════════════════════════════════════════════════════════════════");
+    println!("----------------------------------------------------------------");
     
     pieuvre_sync::apply_profile(profile, dry_run)?;
     
-    println!("\n═══════════════════════════════════════════════════════════════════");
+    println!();
+    println!("----------------------------------------------------------------");
     
     if dry_run {
-        println!("\n✓ Simulation terminée. Pour appliquer réellement:");
-        println!("  pieuvre sync --profile {}", profile);
+        println!();
+        println!("[OK] Simulation terminee. Pour appliquer reellement:");
+        println!("     pieuvre sync --profile {}", profile);
     } else {
-        println!("\n✓ Profil {} appliqué avec succès!", profile.to_uppercase());
-        println!("\n📝 Note: Un snapshot a été créé. Pour annuler:");
-        println!("   pieuvre rollback --last");
+        println!();
+        println!("[OK] Profil {} applique avec succes!", profile.to_uppercase());
+        println!();
+        println!("Note: Un snapshot a ete cree. Pour annuler:");
+        println!("      pieuvre rollback --last");
     }
     
     println!();

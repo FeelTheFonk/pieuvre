@@ -86,6 +86,11 @@ pub fn run(profile: &str) -> Result<()> {
         OptItem { id: "location", label: "[SAFE] Desactiver Localisation", default: true },
         OptItem { id: "activity_history", label: "[SAFE] Desactiver Historique activite", default: true },
         OptItem { id: "cortana", label: "[SAFE] Desactiver Cortana", default: true },
+        // P2 SOTA
+        OptItem { id: "context_menu", label: "[SAFE] Classic context menu + nettoyer clutter", default: true },
+        OptItem { id: "widgets", label: "[SAFE] Desactiver Widgets Win11", default: true },
+        OptItem { id: "pause_updates", label: "[COND] Pause Windows Updates 35 jours", default: false },
+        OptItem { id: "driver_updates", label: "[COND] Desactiver maj drivers auto", default: false },
     ];
     
     let privacy_labels: Vec<&str> = privacy_options.iter().map(|o| o.label).collect();
@@ -528,6 +533,34 @@ pub fn run(profile: &str) -> Result<()> {
                 print!("[*] Cortana... ");
                 match registry::disable_cortana() {
                     Ok(_) => { println!("OK"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "context_menu" => {
+                print!("[*] Context Menu... ");
+                match pieuvre_sync::context_menu::remove_context_menu_clutter() {
+                    Ok(n) => { println!("OK ({} items removed, classic)", n); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "widgets" => {
+                print!("[*] Widgets... ");
+                match pieuvre_sync::widgets::disable_widgets() {
+                    Ok(_) => { println!("OK (disabled)"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "pause_updates" => {
+                print!("[*] Windows Updates... ");
+                match pieuvre_sync::windows_update::pause_updates() {
+                    Ok(_) => { println!("OK (paused 35 days)"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "driver_updates" => {
+                print!("[*] Driver Updates... ");
+                match pieuvre_sync::windows_update::disable_driver_updates() {
+                    Ok(_) => { println!("OK (disabled)"); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
                 }
             }

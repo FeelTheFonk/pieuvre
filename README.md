@@ -55,16 +55,22 @@ Unlike batch scripts or registry tweaks, Pieuvre:
 - AppX package inventory
 - Network configuration auditing
 
-### Sync Engine
+### Sync Engine (13 modules)
 - Service state management (disable/manual/automatic)
 - Timer resolution control (0.5ms minimum)
 - Power plan configuration (Ultimate Performance)
-- Windows Firewall rule injection (30 domains, 17 IP ranges)
+- Windows Firewall rule injection (47 domains, 17 IP ranges)
 - MSI Mode detection for GPU/NVMe
 - Registry atomic writes
 - **MMCSS Gaming**: SystemResponsiveness 10%, NetworkThrottling OFF
 - **Games Priority**: GPU Priority 8, Task Priority 6
 - **Startup/Shutdown optimization**: 0ms delay, 2s timeout
+- **Scheduled Tasks**: Disable 25 telemetry tasks
+- **Hosts File**: Block 50+ domains via native DNS
+- **OneDrive**: Complete removal with rollback
+- **Context Menu**: Classic menu + clutter removal
+- **Widgets**: Disable Win11 widget board
+- **Windows Update**: Pause 35 days + driver control
 
 ### Persistence Engine
 - Snapshot creation before any modification
@@ -76,6 +82,8 @@ Unlike batch scripts or registry tweaks, Pieuvre:
 - Terminal-based selection interface
 - Category-based optimization grouping
 - Pre-selection based on hardware type
+- **13 telemetry options** (services + hosts + tasks + onedrive)
+- **9 privacy options** (registry + context menu + widgets + updates)
 - **10 bloatware categories** (Bing, Media, Copilot, etc.)
 - Real-time application feedback
 
@@ -414,6 +422,24 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
-- [Windows Internals](https://docs.microsoft.com/en-us/sysinternals/) for system documentation
-- [Hagezi DNS Blocklist](https://github.com/hagezi/dns-blocklists) for telemetry domains
-- Rust community for excellent Windows crate ecosystem
+### SOTA References
+
+- [ChrisTitusTech/winutil](https://github.com/ChrisTitusTech/winutil) - Windows utility inspiration
+- [Farag2/Sophia-Script](https://github.com/farag2/Sophia-Script-for-Windows) - 150+ tweaks reference
+- [Raphire/Win11Debloat](https://github.com/Raphire/Win11Debloat) - Bloatware removal patterns
+- [undergroundwires/privacy.sexy](https://github.com/undergroundwires/privacy.sexy) - Telemetry domains list
+- [O&O ShutUp10++](https://www.oo-software.com/en/shutup10) - Privacy toggles reference
+- [Hagezi DNS Blocklists](https://github.com/hagezi/dns-blocklists) - DNS blocking domains
+
+### Technical Documentation
+
+- [Windows Internals (Sysinternals)](https://docs.microsoft.com/en-us/sysinternals/)
+- [Bruce Dawson - Timer Resolution](https://randomascii.wordpress.com/2020/10/04/windows-timer-resolution-the-great-rule-change/)
+- [Microsoft Docs - Service Control Manager](https://docs.microsoft.com/en-us/windows/win32/services/service-control-manager)
+- [Microsoft Docs - Registry Functions](https://docs.microsoft.com/en-us/windows/win32/sysinfo/registry-functions)
+
+### Rust Ecosystem
+
+- [windows-rs](https://github.com/microsoft/windows-rs) - Windows API bindings
+- [clap](https://github.com/clap-rs/clap) - CLI framework
+- [dialoguer](https://github.com/mitsuhiko/dialoguer) - Interactive prompts

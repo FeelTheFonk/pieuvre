@@ -37,7 +37,7 @@ pub fn run(profile: &str) -> Result<()> {
         report.hardware.cpu.logical_cores, 
         report.hardware.cpu.physical_cores);
     if report.hardware.cpu.is_hybrid {
-        println!("  Hybrid:     ✓ {} P-Cores + {} E-Cores", 
+        println!("  Hybrid:     [OK] {} P-Cores + {} E-Cores", 
             report.hardware.cpu.p_cores.len(),
             report.hardware.cpu.e_cores.len());
     }
@@ -48,7 +48,7 @@ pub fn run(profile: &str) -> Result<()> {
     println!("\n═══════════════════════════════════════════════════════════════════");
     println!("                       TÉLÉMÉTRIE");
     println!("═══════════════════════════════════════════════════════════════════");
-    let diag_status = if report.telemetry.diagtrack_enabled { "❌ ACTIF" } else { "✓ Désactivé" };
+    let diag_status = if report.telemetry.diagtrack_enabled { "[ACTIF]" } else { "[OFF]" };
     println!("  DiagTrack:  {}", diag_status);
     println!("  Niveau:     {} ({})", 
         report.telemetry.data_collection_level,
@@ -58,7 +58,7 @@ pub fn run(profile: &str) -> Result<()> {
             2 => "Enhanced",
             _ => "Full",
         });
-    let adv_status = if report.telemetry.advertising_id_enabled { "❌ Actif" } else { "✓ Désactivé" };
+    let adv_status = if report.telemetry.advertising_id_enabled { "[ACTIF]" } else { "[OFF]" };
     println!("  Advertising ID: {}", adv_status);
     
     println!("\n═══════════════════════════════════════════════════════════════════");
@@ -143,7 +143,7 @@ pub fn run(profile: &str) -> Result<()> {
     }
     
     if recommendations.is_empty() {
-        println!("  ✓ Système déjà optimisé pour le profil {}", profile);
+        println!("  [OK] Systeme deja optimise pour le profil {}", profile);
     } else {
         for (cat, rec) in &recommendations {
             println!("  [{:^8}] {}", cat, rec);

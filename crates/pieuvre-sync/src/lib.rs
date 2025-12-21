@@ -3,6 +3,7 @@
 //! Module de synchronisation: application des optimisations.
 
 pub mod appx;
+pub mod context_menu;
 pub mod firewall;
 pub mod hosts;
 pub mod msi;
@@ -12,6 +13,8 @@ pub mod registry;
 pub mod scheduled_tasks;
 pub mod services;
 pub mod timer;
+pub mod widgets;
+pub mod windows_update;
 
 use pieuvre_common::Result;
 use std::path::Path;
@@ -74,7 +77,7 @@ fn apply_gaming_profile() -> Result<()> {
         }
     }
     
-    tracing::info!("Profil Gaming appliqué ✓");
+    tracing::info!("Profil Gaming applique");
     Ok(())
 }
 
@@ -98,7 +101,7 @@ fn apply_privacy_profile() -> Result<()> {
         Err(e) => tracing::warn!("Firewall: {}", e),
     }
     
-    tracing::info!("Profil Privacy appliqué ✓");
+    tracing::info!("Profil Privacy applique");
     Ok(())
 }
 
@@ -119,7 +122,7 @@ fn apply_workstation_profile() -> Result<()> {
         }
     }
     
-    tracing::info!("Profil Workstation appliqué ✓");
+    tracing::info!("Profil Workstation applique");
     Ok(())
 }
 
