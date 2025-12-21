@@ -4,7 +4,6 @@
 
 use pieuvre_common::{PieuvreError, Result};
 use std::fs;
-use std::path::Path;
 
 const HOSTS_PATH: &str = r"C:\Windows\System32\drivers\etc\hosts";
 const PIEUVRE_MARKER_START: &str = "# === PIEUVRE TELEMETRY BLOCK START ===";

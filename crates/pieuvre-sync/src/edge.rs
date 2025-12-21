@@ -4,7 +4,6 @@
 
 use pieuvre_common::Result;
 use std::process::Command;
-use std::env;
 
 /// Disable Microsoft Edge features without full removal
 pub fn disable_edge() -> Result<()> {

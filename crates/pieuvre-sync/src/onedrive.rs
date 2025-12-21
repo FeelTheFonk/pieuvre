@@ -2,7 +2,7 @@
 //!
 //! Uninstall and disable OneDrive completely.
 
-use pieuvre_common::{PieuvreError, Result};
+use pieuvre_common::Result;
 use std::process::Command;
 use std::env;
 use std::path::PathBuf;

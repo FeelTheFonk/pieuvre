@@ -4,11 +4,6 @@
 
 use pieuvre_common::Result;
 use std::process::Command;
-use windows::Win32::System::Registry::{
-    RegOpenKeyExW, RegSetValueExW, RegCloseKey, RegEnumKeyExW,
-    HKEY_LOCAL_MACHINE, KEY_SET_VALUE, KEY_READ, REG_DWORD,
-};
-use windows::core::PCWSTR;
 
 /// Disable Nagle's Algorithm for all network adapters
 /// Reduces latency for online gaming by sending TCP packets immediately
@@ -28,7 +23,7 @@ pub fn disable_nagle_algorithm() -> Result<u32> {
     for line in stdout.lines() {
         if line.contains("HKEY_LOCAL_MACHINE") && line.contains("Interfaces\\{") {
             // Extract interface GUID
-            if let Some(guid_start) = line.find('{') {
+            if let Some(_guid_start) = line.find('{') {
                 let key_path = &line[line.find("SYSTEM").unwrap_or(0)..];
                 
                 // Set TcpNoDelay
