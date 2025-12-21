@@ -1,0 +1,33 @@
+# Configuration par défaut Pieuvre
+
+[general]
+# Niveau de log: trace, debug, info, warn, error
+log_level = "info"
+# Répertoire des snapshots
+snapshot_dir = "C:\\ProgramData\\Pieuvre\\snapshots"
+# Mode dry-run par défaut
+dry_run = false
+
+[profile]
+# Profil par défaut
+default = "workstation"
+# Profils disponibles
+available = ["gaming", "privacy", "workstation"]
+
+[audit]
+# Activer l'audit des services
+services = true
+# Activer l'audit hardware
+hardware = true
+# Activer l'audit Appx
+appx = true
+# Activer l'audit réseau
+network = true
+
+[snapshot]
+# Créer snapshot automatiquement avant modifications
+auto_create = true
+# Nombre max de snapshots à conserver
+max_count = 10
+# Compression des snapshots
+compress = false
