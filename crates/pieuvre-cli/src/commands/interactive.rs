@@ -91,6 +91,9 @@ pub fn run(profile: &str) -> Result<()> {
         OptItem { id: "widgets", label: "[SAFE] Desactiver Widgets Win11", default: true },
         OptItem { id: "pause_updates", label: "[COND] Pause Windows Updates 35 jours", default: false },
         OptItem { id: "driver_updates", label: "[COND] Desactiver maj drivers auto", default: false },
+        // P4 SOTA
+        OptItem { id: "recall", label: "[SAFE] Bloquer Windows Recall (24H2 AI)", default: true },
+        OptItem { id: "group_policy_telem", label: "[SAFE] Group Policy Telemetry (enterprise)", default: true },
     ];
     
     let privacy_labels: Vec<&str> = privacy_options.iter().map(|o| o.label).collect();
@@ -210,6 +213,19 @@ pub fn run(profile: &str) -> Result<()> {
         id: "hags",
         label: "[COND] Desactiver HAGS (meilleur pour anciens jeux)",
         default: false,
+    });
+    
+    // P4 SOTA
+    perf_options.push(OptItem {
+        id: "nagle",
+        label: "[PERF] Desactiver Nagle Algorithm (latence reseau)",
+        default: true,
+    });
+    
+    perf_options.push(OptItem {
+        id: "power_throttle",
+        label: "[PERF] Desactiver CPU Power Throttling",
+        default: true,
     });
     
     let perf_labels: Vec<&str> = perf_options.iter().map(|o| o.label).collect();
@@ -595,6 +611,20 @@ pub fn run(profile: &str) -> Result<()> {
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
                 }
             }
+            "recall" => {
+                print!("[*] Windows Recall... ");
+                match pieuvre_sync::registry::disable_recall() {
+                    Ok(_) => { println!("OK (blocked)"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "group_policy_telem" => {
+                print!("[*] Group Policy Telemetry... ");
+                match pieuvre_sync::registry::set_group_policy_telemetry(0) {
+                    Ok(_) => { println!("OK (Security level)"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
             _ => {}
         }
     }
@@ -708,6 +738,20 @@ pub fn run(profile: &str) -> Result<()> {
             "hags" => {
                 print!("[*] HAGS... ");
                 match pieuvre_sync::game_mode::disable_hags() {
+                    Ok(_) => { println!("OK (disabled)"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "nagle" => {
+                print!("[*] Nagle Algorithm... ");
+                match pieuvre_sync::network::disable_nagle_algorithm() {
+                    Ok(n) => { println!("OK ({} interfaces)", n); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "power_throttle" => {
+                print!("[*] Power Throttling... ");
+                match pieuvre_sync::registry::disable_power_throttling() {
                     Ok(_) => { println!("OK (disabled)"); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
                 }

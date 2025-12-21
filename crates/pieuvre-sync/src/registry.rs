@@ -181,12 +181,18 @@ pub fn enable_global_timer_resolution() -> Result<()> {
 
 /// Desactive le delai de demarrage des apps startup
 pub fn disable_startup_delay() -> Result<()> {
-    // Note: Cette cle peut ne pas exister, on la cree
-    set_dword_value(
-        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Serialize",
-        "StartupDelayInMSec",
-        0,
-    )?;
+    use std::process::Command;
+    // Note: Cette cle peut ne pas exister, on la cree avec reg add
+    let _ = Command::new("reg")
+        .args([
+            "add",
+            r"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Serialize",
+            "/v", "StartupDelayInMSec",
+            "/t", "REG_DWORD",
+            "/d", "0",
+            "/f"
+        ])
+        .output();
     tracing::info!("Startup delay disabled");
     Ok(())
 }
@@ -201,5 +207,123 @@ pub fn reduce_shutdown_timeout() -> Result<()> {
         2000,
     )?;
     tracing::info!("Shutdown timeout reduced to 2000ms");
+    Ok(())
+}
+
+// ============================================
+// P4 SOTA - ADVANCED TWEAKS
+// ============================================
+
+/// Disable CPU Power Throttling for max performance
+pub fn disable_power_throttling() -> Result<()> {
+    set_dword_value(
+        r"SYSTEM\CurrentControlSet\Control\Power\PowerThrottling",
+        "PowerThrottlingOff",
+        1,
+    )?;
+    tracing::info!("Power Throttling disabled");
+    Ok(())
+}
+
+/// Enable CPU Power Throttling (restore default)
+pub fn enable_power_throttling() -> Result<()> {
+    use std::process::Command;
+    let _ = Command::new("reg")
+        .args([
+            "delete",
+            r"HKLM\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling",
+            "/v", "PowerThrottlingOff",
+            "/f"
+        ])
+        .output();
+    tracing::info!("Power Throttling enabled (default)");
+    Ok(())
+}
+
+/// Block Windows Recall (24H2 AI feature)
+pub fn disable_recall() -> Result<()> {
+    use std::process::Command;
+    // Disable via Group Policy
+    let _ = Command::new("reg")
+        .args([
+            "add",
+            r"HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
+            "/v", "DisableAIDataAnalysis",
+            "/t", "REG_DWORD",
+            "/d", "1",
+            "/f"
+        ])
+        .output();
+    
+    // Also disable Recall specifically
+    let _ = Command::new("reg")
+        .args([
+            "add",
+            r"HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
+            "/v", "TurnOffSavingSnapshots",
+            "/t", "REG_DWORD",
+            "/d", "1",
+            "/f"
+        ])
+        .output();
+    
+    tracing::info!("Windows Recall disabled");
+    Ok(())
+}
+
+/// Enable Windows Recall
+pub fn enable_recall() -> Result<()> {
+    use std::process::Command;
+    let _ = Command::new("reg")
+        .args([
+            "delete",
+            r"HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
+            "/f"
+        ])
+        .output();
+    tracing::info!("Windows Recall enabled");
+    Ok(())
+}
+
+/// Set Group Policy Telemetry level (enterprise style)
+pub fn set_group_policy_telemetry(level: u32) -> Result<()> {
+    use std::process::Command;
+    // Computer Configuration > Administrative Templates > Windows Components > Data Collection
+    let _ = Command::new("reg")
+        .args([
+            "add",
+            r"HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection",
+            "/v", "AllowTelemetry",
+            "/t", "REG_DWORD",
+            "/d", &level.to_string(),
+            "/f"
+        ])
+        .output();
+    
+    // Disable device name in diagnostics
+    let _ = Command::new("reg")
+        .args([
+            "add",
+            r"HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection",
+            "/v", "AllowDeviceNameInTelemetry",
+            "/t", "REG_DWORD",
+            "/d", "0",
+            "/f"
+        ])
+        .output();
+    
+    // Disable tailored experiences
+    let _ = Command::new("reg")
+        .args([
+            "add",
+            r"HKLM\SOFTWARE\Policies\Microsoft\Windows\CloudContent",
+            "/v", "DisableTailoredExperiencesWithDiagnosticData",
+            "/t", "REG_DWORD",
+            "/d", "1",
+            "/f"
+        ])
+        .output();
+    
+    tracing::info!("Group Policy Telemetry set to {}", level);
     Ok(())
 }

@@ -55,7 +55,7 @@ Unlike batch scripts or registry tweaks, Pieuvre:
 - AppX package inventory
 - Network configuration auditing
 
-### Sync Engine (16 modules)
+### Sync Engine (17 modules)
 - Service state management (disable/manual/automatic)
 - Timer resolution control (0.5ms minimum)
 - Power plan configuration (Ultimate Performance)
@@ -74,6 +74,9 @@ Unlike batch scripts or registry tweaks, Pieuvre:
 - **Edge Management**: Disable sidebar, shopping, collections, PDF handler
 - **Explorer Tweaks**: Show extensions, This PC default, hide recent files
 - **Game Mode**: Disable Game Bar/DVR, Fullscreen Optimizations, HAGS control
+- **Network Optimizations**: Disable Nagle Algorithm (TcpNoDelay)
+- **CPU Power Throttling**: Disable PowerThrottlingOff registry
+- **Windows Recall Block**: Block 24H2 AI feature via Group Policy
 
 ### Persistence Engine
 - Snapshot creation before any modification
@@ -81,13 +84,13 @@ Unlike batch scripts or registry tweaks, Pieuvre:
 - Change record tracking with timestamps (9 services + registry)
 - JSON export for external analysis
 
-### Interactive Mode (39 options)
+### Interactive Mode (45 options)
 - Terminal-based selection interface
 - Category-based optimization grouping
 - Pre-selection based on hardware type
 - **13 telemetry options** (services + hosts + tasks + onedrive)
-- **9 privacy options** (registry + context menu + widgets + updates)
-- **12 performance options** (timer, power, MSI, edge, explorer, game mode)
+- **11 privacy options** (registry + context menu + widgets + recall)
+- **14 performance options** (timer, power, MSI, nagle, edge, explorer, game mode)
 - **10 bloatware categories** (Bing, Media, Copilot, etc.)
 - Real-time application feedback
 

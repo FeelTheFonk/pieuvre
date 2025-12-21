@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.0] - 2025-12-21 (SOTA P4)
+
+### Added
+
+- **Network Optimizations**: Disable Nagle Algorithm (TcpNoDelay, TcpAckFrequency)
+- **CPU Power Throttling**: Disable PowerThrottling for max performance
+- **Windows Recall Block**: Block 24H2 AI feature via Group Policy
+- **Group Policy Telemetry**: Enterprise-level telemetry control
+
+### Changed
+
+- Section PRIVACY: 11 options (was 9)
+- Section PERFORMANCE: 14 options (was 12)
+- 17 modules pieuvre-sync (was 16)
+- Total options interactive: 45 (was 39)
+
 ## [0.4.0] - 2025-12-21 (SOTA P3)
 
 ### Added

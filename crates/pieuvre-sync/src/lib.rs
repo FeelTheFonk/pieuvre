@@ -10,6 +10,7 @@ pub mod firewall;
 pub mod game_mode;
 pub mod hosts;
 pub mod msi;
+pub mod network;
 pub mod onedrive;
 pub mod power;
 pub mod registry;
