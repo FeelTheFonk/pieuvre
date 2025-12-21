@@ -1,0 +1,21 @@
+[package]
+name = "pieuvre-gui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Interface graphique Slint pour Pieuvre"
+build = "build.rs"
+
+[dependencies]
+slint = "1.14"
+pieuvre-common = { path = "../pieuvre-common" }
+pieuvre-audit = { path = "../pieuvre-audit" }
+pieuvre-sync = { path = "../pieuvre-sync" }
+pieuvre-persist = { path = "../pieuvre-persist" }
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+serde.workspace = true
+
+[build-dependencies]
+slint-build = "1.14"

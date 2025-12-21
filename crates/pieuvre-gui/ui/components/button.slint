@@ -1,0 +1,127 @@
+// Pieuvre — Composant Bouton
+//
+// Boutons primaire et secondaire avec états.
+
+import { Tokens } from "../tokens.slint";
+
+// Bouton primaire (action principale)
+export component PrimaryButton inherits Rectangle {
+    in property <string> label: "Button";
+    in property <bool> enabled: true;
+    in property <bool> loading: false;
+    callback clicked;
+    
+    min-width: 100px;
+    height: Tokens.button-height;
+    border-radius: Tokens.radius-md;
+    background: !enabled ? Tokens.surface-color : 
+                ta.pressed ? Tokens.primary-active :
+                ta.has-hover ? Tokens.primary-hover : 
+                Tokens.primary-color;
+    
+    animate background { duration: Tokens.anim-fast; }
+    
+    HorizontalLayout {
+        padding-left: Tokens.spacing-md;
+        padding-right: Tokens.spacing-md;
+        alignment: center;
+        
+        if loading: Rectangle {
+            width: 16px;
+            height: 16px;
+            border-radius: 8px;
+            border-width: 2px;
+            border-color: Tokens.text-primary;
+            // Animation spinner implicite
+        }
+        
+        if !loading: Text {
+            text: label;
+            color: Tokens.text-primary;
+            font-size: Tokens.font-size-md;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+    
+    ta := TouchArea {
+        enabled: parent.enabled && !loading;
+        clicked => { clicked(); }
+        mouse-cursor: enabled ? pointer : default;
+    }
+}
+
+// Bouton secondaire (action secondaire)
+export component SecondaryButton inherits Rectangle {
+    in property <string> label: "Button";
+    in property <bool> enabled: true;
+    callback clicked;
+    
+    min-width: 100px;
+    height: Tokens.button-height;
+    border-radius: Tokens.radius-md;
+    border-width: 1px;
+    border-color: Tokens.border-color;
+    background: ta.pressed ? Tokens.surface-active :
+                ta.has-hover ? Tokens.surface-hover : 
+                transparent;
+    
+    animate background { duration: Tokens.anim-fast; }
+    
+    HorizontalLayout {
+        padding-left: Tokens.spacing-md;
+        padding-right: Tokens.spacing-md;
+        alignment: center;
+        
+        Text {
+            text: label;
+            color: enabled ? Tokens.text-primary : Tokens.text-muted;
+            font-size: Tokens.font-size-md;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+    
+    ta := TouchArea {
+        enabled: parent.enabled;
+        clicked => { clicked(); }
+        mouse-cursor: enabled ? pointer : default;
+    }
+}
+
+// Bouton danger (action destructive)
+export component DangerButton inherits Rectangle {
+    in property <string> label: "Delete";
+    in property <bool> enabled: true;
+    callback clicked;
+    
+    min-width: 100px;
+    height: Tokens.button-height;
+    border-radius: Tokens.radius-md;
+    background: !enabled ? Tokens.surface-color : 
+                ta.pressed ? #DC2626 :
+                ta.has-hover ? #EF4444 : 
+                Tokens.error-color;
+    
+    animate background { duration: Tokens.anim-fast; }
+    
+    HorizontalLayout {
+        padding-left: Tokens.spacing-md;
+        padding-right: Tokens.spacing-md;
+        alignment: center;
+        
+        Text {
+            text: label;
+            color: Tokens.background-color;
+            font-size: Tokens.font-size-md;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+    
+    ta := TouchArea {
+        enabled: parent.enabled;
+        clicked => { clicked(); }
+        mouse-cursor: enabled ? pointer : default;
+    }
+}

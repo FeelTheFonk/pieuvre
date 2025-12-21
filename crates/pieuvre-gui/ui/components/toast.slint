@@ -1,0 +1,74 @@
+// Pieuvre — Composant Toast
+//
+// Notification toast avec auto-dismiss.
+
+import { Tokens } from "../tokens.slint";
+import { BadgeVariant } from "status_badge.slint";
+
+export component Toast inherits Rectangle {
+    in property <string> message: "";
+    in property <BadgeVariant> variant: BadgeVariant.info;
+    in-out property <bool> is-visible: false;
+    callback dismissed;
+    
+    width: 400px;
+    height: 48px;
+    border-radius: Tokens.radius-md;
+    background: variant == BadgeVariant.success ? Tokens.success-color :
+                variant == BadgeVariant.warning ? Tokens.warning-color :
+                variant == BadgeVariant.error ? Tokens.error-color :
+                Tokens.info-color;
+    opacity: is-visible ? 1.0 : 0.0;
+    
+    animate opacity { duration: Tokens.anim-normal; easing: ease-out; }
+    
+    HorizontalLayout {
+        padding-left: Tokens.spacing-md;
+        padding-right: Tokens.spacing-sm;
+        spacing: Tokens.spacing-sm;
+        alignment: space-between;
+        
+        // Icon
+        Text {
+            text: variant == BadgeVariant.success ? "✓" :
+                  variant == BadgeVariant.warning ? "⚠" :
+                  variant == BadgeVariant.error ? "✕" : "ℹ";
+            color: Tokens.background-color;
+            font-size: Tokens.font-size-lg;
+            vertical-alignment: center;
+        }
+        
+        // Message
+        Text {
+            text: message;
+            color: Tokens.background-color;
+            font-size: Tokens.font-size-md;
+            vertical-alignment: center;
+            horizontal-stretch: 1;
+        }
+        
+        // Close button
+        Rectangle {
+            width: 32px;
+            height: 32px;
+            border-radius: Tokens.radius-sm;
+            background: close-ta.has-hover ? #00000020 : transparent;
+            
+            Text {
+                text: "✕";
+                color: Tokens.background-color;
+                font-size: Tokens.font-size-md;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+            
+            close-ta := TouchArea {
+                clicked => {
+                    is-visible = false;
+                    dismissed();
+                }
+                mouse-cursor: pointer;
+            }
+        }
+    }
+}

@@ -1,0 +1,292 @@
+// Pieuvre — Vue Dashboard
+//
+// Vue d'ensemble système avec cards.
+
+import { Tokens } from "../tokens.slint";
+import { SystemInfo, AppState } from "../globals.slint";
+import { StatusBadge, BadgeVariant } from "../components/status_badge.slint";
+import { PrimaryButton, SecondaryButton } from "../components/button.slint";
+
+// Card générique
+component InfoCard inherits Rectangle {
+    in property <string> title: "Card";
+    in property <string> icon: "📊";
+    
+    background: Tokens.surface-color;
+    border-radius: Tokens.radius-lg;
+    
+    VerticalLayout {
+        padding: Tokens.spacing-md;
+        spacing: Tokens.spacing-sm;
+        
+        // Header
+        HorizontalLayout {
+            spacing: Tokens.spacing-sm;
+            
+            Text {
+                text: icon;
+                font-size: Tokens.font-size-lg;
+                vertical-alignment: center;
+            }
+            
+            Text {
+                text: title;
+                color: Tokens.text-primary;
+                font-size: Tokens.font-size-md;
+                font-weight: 600;
+                vertical-alignment: center;
+            }
+        }
+        
+        // Content slot
+        @children
+    }
+}
+
+// Ligne info key-value
+component InfoRow inherits Rectangle {
+    in property <string> label: "Label";
+    in property <string> value: "Value";
+    
+    height: 28px;
+    background: transparent;
+    
+    HorizontalLayout {
+        alignment: space-between;
+        
+        Text {
+            text: label;
+            color: Tokens.text-secondary;
+            font-size: Tokens.font-size-sm;
+            vertical-alignment: center;
+        }
+        
+        Text {
+            text: value;
+            color: Tokens.text-primary;
+            font-size: Tokens.font-size-sm;
+            font-weight: 500;
+            vertical-alignment: center;
+        }
+    }
+}
+
+export component DashboardView inherits Rectangle {
+    callback run-audit;
+    callback open-optimizations;
+    
+    background: Tokens.background-color;
+    
+    Flickable {
+        viewport-height: content.preferred-height;
+        
+        content := VerticalLayout {
+            padding: Tokens.spacing-lg;
+            spacing: Tokens.spacing-lg;
+            
+            // Quick actions
+            HorizontalLayout {
+                spacing: Tokens.spacing-md;
+                
+                PrimaryButton {
+                    label: "▶ Lancer Audit";
+                    clicked => { run-audit(); }
+                }
+                
+                SecondaryButton {
+                    label: "⚡ Optimiser";
+                    clicked => { open-optimizations(); }
+                }
+            }
+            
+            // Cards grid
+            HorizontalLayout {
+                spacing: Tokens.spacing-lg;
+                
+                // System card
+                InfoCard {
+                    title: "Système";
+                    icon: "🖥";
+                    horizontal-stretch: 1;
+                    
+                    VerticalLayout {
+                        spacing: Tokens.spacing-xs;
+                        
+                        InfoRow {
+                            label: "OS";
+                            value: SystemInfo.os-version;
+                        }
+                        
+                        InfoRow {
+                            label: "Build";
+                            value: SystemInfo.build-number;
+                        }
+                        
+                        InfoRow {
+                            label: "Hostname";
+                            value: SystemInfo.hostname;
+                        }
+                    }
+                }
+                
+                // Hardware card
+                InfoCard {
+                    title: "Matériel";
+                    icon: "💻";
+                    horizontal-stretch: 1;
+                    
+                    VerticalLayout {
+                        spacing: Tokens.spacing-xs;
+                        
+                        InfoRow {
+                            label: "CPU";
+                            value: SystemInfo.cpu-name;
+                        }
+                        
+                        InfoRow {
+                            label: "Cœurs";
+                            value: SystemInfo.cpu-cores + "";
+                        }
+                        
+                        InfoRow {
+                            label: "RAM";
+                            value: SystemInfo.ram-gb + " GB";
+                        }
+                        
+                        InfoRow {
+                            label: "GPU";
+                            value: SystemInfo.gpu-name;
+                        }
+                    }
+                }
+            }
+            
+            HorizontalLayout {
+                spacing: Tokens.spacing-lg;
+                
+                // Telemetry card
+                InfoCard {
+                    title: "Télémétrie";
+                    icon: "📡";
+                    horizontal-stretch: 1;
+                    
+                    VerticalLayout {
+                        spacing: Tokens.spacing-sm;
+                        
+                        HorizontalLayout {
+                            alignment: space-between;
+                            
+                            Text {
+                                text: "DiagTrack";
+                                color: Tokens.text-secondary;
+                                font-size: Tokens.font-size-sm;
+                                vertical-alignment: center;
+                            }
+                            
+                            StatusBadge {
+                                label: "Actif";
+                                variant: BadgeVariant.warning;
+                            }
+                        }
+                        
+                        InfoRow {
+                            label: "Niveau collection";
+                            value: "Full";
+                        }
+                    }
+                }
+                
+                // Performance card
+                InfoCard {
+                    title: "Performance";
+                    icon: "⚡";
+                    horizontal-stretch: 1;
+                    
+                    VerticalLayout {
+                        spacing: Tokens.spacing-xs;
+                        
+                        InfoRow {
+                            label: "Timer Resolution";
+                            value: "15.6ms";
+                        }
+                        
+                        InfoRow {
+                            label: "Power Plan";
+                            value: "Balanced";
+                        }
+                        
+                        InfoRow {
+                            label: "MSI Mode";
+                            value: "Non détecté";
+                        }
+                    }
+                }
+            }
+            
+            // Health summary card
+            InfoCard {
+                title: "Santé Optimisations";
+                icon: "❤";
+                
+                VerticalLayout {
+                    spacing: Tokens.spacing-md;
+                    
+                    HorizontalLayout {
+                        spacing: Tokens.spacing-lg;
+                        
+                        VerticalLayout {
+                            spacing: Tokens.spacing-xs;
+                            
+                            Text {
+                                text: "0";
+                                color: Tokens.success-color;
+                                font-size: Tokens.font-size-2xl;
+                                font-weight: 700;
+                            }
+                            
+                            Text {
+                                text: "Appliquées";
+                                color: Tokens.text-secondary;
+                                font-size: Tokens.font-size-sm;
+                            }
+                        }
+                        
+                        VerticalLayout {
+                            spacing: Tokens.spacing-xs;
+                            
+                            Text {
+                                text: "45";
+                                color: Tokens.warning-color;
+                                font-size: Tokens.font-size-2xl;
+                                font-weight: 700;
+                            }
+                            
+                            Text {
+                                text: "Recommandées";
+                                color: Tokens.text-secondary;
+                                font-size: Tokens.font-size-sm;
+                            }
+                        }
+                        
+                        VerticalLayout {
+                            spacing: Tokens.spacing-xs;
+                            
+                            Text {
+                                text: "0";
+                                color: Tokens.text-secondary;
+                                font-size: Tokens.font-size-2xl;
+                                font-weight: 700;
+                            }
+                            
+                            Text {
+                                text: "Snapshots";
+                                color: Tokens.text-secondary;
+                                font-size: Tokens.font-size-sm;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

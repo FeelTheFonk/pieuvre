@@ -1,0 +1,211 @@
+// Pieuvre — Vue Profils
+//
+// Gestion des profils d'optimisation.
+
+import { Tokens } from "../tokens.slint";
+import { AppState, ProfileConfig } from "../globals.slint";
+import { PrimaryButton, SecondaryButton } from "../components/button.slint";
+import { StatusBadge, BadgeVariant } from "../components/status_badge.slint";
+
+// Card de profil
+component ProfileCard inherits Rectangle {
+    in property <string> name: "Profile";
+    in property <string> description: "";
+    in property <string> risk-level: "low"; // low, medium, high
+    in property <int> optimizations-count: 0;
+    in property <bool> is-active: false;
+    callback load-profile;
+    callback compare-profile;
+    
+    height: 140px;
+    background: is-active ? Tokens.primary-color : Tokens.surface-color;
+    border-radius: Tokens.radius-lg;
+    border-width: is-active ? 0 : 1px;
+    border-color: Tokens.border-color;
+    
+    VerticalLayout {
+        padding: Tokens.spacing-md;
+        spacing: Tokens.spacing-sm;
+        
+        // Header
+        HorizontalLayout {
+            alignment: space-between;
+            
+            HorizontalLayout {
+                spacing: Tokens.spacing-sm;
+                
+                Text {
+                    text: name == "gaming" ? "🎮" :
+                          name == "privacy" ? "🔒" : "💼";
+                    font-size: Tokens.font-size-xl;
+                    vertical-alignment: center;
+                }
+                
+                Text {
+                    text: name == "gaming" ? "Gaming" :
+                          name == "privacy" ? "Privacy" : "Workstation";
+                    color: is-active ? Tokens.text-primary : Tokens.text-primary;
+                    font-size: Tokens.font-size-lg;
+                    font-weight: 600;
+                    vertical-alignment: center;
+                }
+            }
+            
+            // Risk badge
+            StatusBadge {
+                label: risk-level == "high" ? "Risqué" :
+                       risk-level == "medium" ? "Modéré" : "Sûr";
+                variant: risk-level == "high" ? BadgeVariant.error :
+                         risk-level == "medium" ? BadgeVariant.warning :
+                         BadgeVariant.success;
+            }
+        }
+        
+        // Description
+        Text {
+            text: description;
+            color: is-active ? Tokens.text-primary : Tokens.text-secondary;
+            font-size: Tokens.font-size-sm;
+            wrap: word-wrap;
+        }
+        
+        // Stats
+        HorizontalLayout {
+            spacing: Tokens.spacing-lg;
+            
+            Text {
+                text: optimizations-count + " optimisations";
+                color: is-active ? Tokens.text-primary : Tokens.text-muted;
+                font-size: Tokens.font-size-xs;
+                vertical-alignment: center;
+            }
+            
+            if is-active: StatusBadge {
+                label: "Actif";
+                variant: BadgeVariant.success;
+            }
+        }
+        
+        // Spacer
+        Rectangle { vertical-stretch: 1; }
+        
+        // Actions
+        HorizontalLayout {
+            spacing: Tokens.spacing-sm;
+            alignment: end;
+            
+            SecondaryButton {
+                label: "Comparer";
+                clicked => { compare-profile(); }
+            }
+            
+            if !is-active: PrimaryButton {
+                label: "Charger";
+                clicked => { load-profile(); }
+            }
+        }
+    }
+}
+
+export component ProfilesView inherits Rectangle {
+    callback load-profile(string);
+    callback compare-profile(string);
+    
+    background: Tokens.background-color;
+    
+    Flickable {
+        viewport-height: content.preferred-height;
+        
+        content := VerticalLayout {
+            padding: Tokens.spacing-lg;
+            spacing: Tokens.spacing-lg;
+            
+            // Header
+            Text {
+                text: "Sélectionnez un profil d'optimisation";
+                color: Tokens.text-secondary;
+                font-size: Tokens.font-size-md;
+            }
+            
+            // Profile cards grid
+            HorizontalLayout {
+                spacing: Tokens.spacing-lg;
+                
+                ProfileCard {
+                    horizontal-stretch: 1;
+                    name: "gaming";
+                    description: "Latence minimale, performance maximale. Idéal pour le gaming compétitif.";
+                    risk-level: "medium";
+                    optimizations-count: 25;
+                    is-active: AppState.active-profile == "gaming";
+                    load-profile => { root.load-profile("gaming"); }
+                    compare-profile => { root.compare-profile("gaming"); }
+                }
+                
+                ProfileCard {
+                    horizontal-stretch: 1;
+                    name: "privacy";
+                    description: "Télémétrie minimale, protection des données. Focus sur la vie privée.";
+                    risk-level: "low";
+                    optimizations-count: 18;
+                    is-active: AppState.active-profile == "privacy";
+                    load-profile => { root.load-profile("privacy"); }
+                    compare-profile => { root.compare-profile("privacy"); }
+                }
+                
+                ProfileCard {
+                    horizontal-stretch: 1;
+                    name: "workstation";
+                    description: "Équilibre performance et stabilité. Usage professionnel quotidien.";
+                    risk-level: "low";
+                    optimizations-count: 12;
+                    is-active: AppState.active-profile == "workstation";
+                    load-profile => { root.load-profile("workstation"); }
+                    compare-profile => { root.compare-profile("workstation"); }
+                }
+            }
+            
+            // Separator
+            Rectangle {
+                height: 1px;
+                background: Tokens.border-color;
+            }
+            
+            // Current profile details
+            Rectangle {
+                background: Tokens.surface-color;
+                border-radius: Tokens.radius-lg;
+                
+                VerticalLayout {
+                    padding: Tokens.spacing-lg;
+                    spacing: Tokens.spacing-md;
+                    
+                    Text {
+                        text: "Profil actuel: " + AppState.active-profile;
+                        color: Tokens.text-primary;
+                        font-size: Tokens.font-size-lg;
+                        font-weight: 600;
+                    }
+                    
+                    Text {
+                        text: "Les optimisations du profil seront pré-sélectionnées dans la vue Optimisations.";
+                        color: Tokens.text-secondary;
+                        font-size: Tokens.font-size-sm;
+                    }
+                    
+                    HorizontalLayout {
+                        spacing: Tokens.spacing-md;
+                        
+                        SecondaryButton {
+                            label: "📄 Exporter profil";
+                        }
+                        
+                        SecondaryButton {
+                            label: "📥 Importer profil";
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

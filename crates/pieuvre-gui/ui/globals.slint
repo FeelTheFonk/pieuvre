@@ -1,0 +1,35 @@
+// Pieuvre — Global State
+//
+// Singletons partagés entre Rust et UI.
+
+import { Tokens } from "tokens.slint";
+
+// État global de l'application
+export global AppState {
+    in-out property <string> current-view: "dashboard";
+    in-out property <string> active-profile: "workstation";
+    in-out property <bool> is-laptop: false;
+    in-out property <bool> is-loading: false;
+    in-out property <string> last-action: "";
+    in-out property <int> selected-count: 0;
+    in-out property <string> error-message: "";
+}
+
+// Informations système
+export global SystemInfo {
+    in property <string> os-version: "Windows 11";
+    in property <string> build-number: "22631";
+    in property <string> hostname: "DESKTOP";
+    in property <string> cpu-name: "Unknown CPU";
+    in property <int> cpu-cores: 8;
+    in property <int> ram-gb: 16;
+    in property <string> gpu-name: "Unknown GPU";
+    in property <bool> has-battery: false;
+}
+
+// Configuration profil courant
+export global ProfileConfig {
+    in-out property <string> name: "workstation";
+    in-out property <string> description: "";
+    in-out property <string> risk-level: "low";
+}

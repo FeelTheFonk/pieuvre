@@ -1,0 +1,338 @@
+// Pieuvre — Vue Audit
+//
+// Analyse système détaillée.
+
+import { Tokens } from "../tokens.slint";
+import { AppState, SystemInfo } from "../globals.slint";
+import { PrimaryButton, SecondaryButton } from "../components/button.slint";
+import { StatusBadge, BadgeVariant } from "../components/status_badge.slint";
+import { ProgressBar } from "../components/progress_bar.slint";
+
+// Item de service
+component ServiceRow inherits Rectangle {
+    in property <string> name: "Service";
+    in property <string> display-name: "Service Name";
+    in property <string> status: "stopped"; // running, stopped, disabled
+    in property <string> start-type: "manual";
+    
+    height: 44px;
+    background: ta.has-hover ? Tokens.surface-hover : transparent;
+    border-radius: Tokens.radius-sm;
+    
+    HorizontalLayout {
+        padding-left: Tokens.spacing-sm;
+        padding-right: Tokens.spacing-sm;
+        spacing: Tokens.spacing-md;
+        alignment: space-between;
+        
+        // Name
+        VerticalLayout {
+            spacing: 2px;
+            alignment: center;
+            horizontal-stretch: 1;
+            
+            Text {
+                text: name;
+                color: Tokens.text-primary;
+                font-size: Tokens.font-size-sm;
+                font-weight: 500;
+            }
+            
+            Text {
+                text: display-name;
+                color: Tokens.text-secondary;
+                font-size: Tokens.font-size-xs;
+                overflow: elide;
+            }
+        }
+        
+        // Status badge
+        StatusBadge {
+            label: status == "running" ? "Running" :
+                   status == "stopped" ? "Stopped" : "Disabled";
+            variant: status == "running" ? BadgeVariant.success :
+                     status == "stopped" ? BadgeVariant.neutral :
+                     BadgeVariant.error;
+        }
+        
+        // Start type
+        Text {
+            text: start-type;
+            color: Tokens.text-muted;
+            font-size: Tokens.font-size-xs;
+            width: 60px;
+            horizontal-alignment: right;
+            vertical-alignment: center;
+        }
+    }
+    
+    ta := TouchArea {
+        mouse-cursor: pointer;
+    }
+}
+
+// Section collapsible
+component AuditSection inherits Rectangle {
+    in property <string> title: "Section";
+    in property <int> count: 0;
+    in-out property <bool> expanded: true;
+    
+    background: Tokens.surface-color;
+    border-radius: Tokens.radius-md;
+    clip: true;
+    
+    VerticalLayout {
+        // Header
+        Rectangle {
+            height: 48px;
+            background: header-ta.has-hover ? Tokens.surface-hover : transparent;
+            border-radius: Tokens.radius-md;
+            
+            HorizontalLayout {
+                padding-left: Tokens.spacing-md;
+                padding-right: Tokens.spacing-md;
+                alignment: space-between;
+                
+                HorizontalLayout {
+                    spacing: Tokens.spacing-sm;
+                    
+                    Text {
+                        text: expanded ? "▼" : "▶";
+                        color: Tokens.text-secondary;
+                        font-size: Tokens.font-size-sm;
+                        vertical-alignment: center;
+                    }
+                    
+                    Text {
+                        text: title;
+                        color: Tokens.text-primary;
+                        font-size: Tokens.font-size-md;
+                        font-weight: 600;
+                        vertical-alignment: center;
+                    }
+                    
+                    Rectangle {
+                        width: 32px;
+                        height: 20px;
+                        border-radius: 10px;
+                        background: Tokens.surface-active;
+                        
+                        Text {
+                            text: count + "";
+                            color: Tokens.text-primary;
+                            font-size: Tokens.font-size-xs;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+            
+            header-ta := TouchArea {
+                clicked => { expanded = !expanded; }
+                mouse-cursor: pointer;
+            }
+        }
+        
+        // Content - use opacity instead of if
+        Rectangle {
+            opacity: expanded ? 1.0 : 0.0;
+            height: expanded ? self.preferred-height : 0;
+            
+            animate opacity { duration: Tokens.anim-fast; }
+            animate height { duration: Tokens.anim-fast; }
+            
+            @children
+        }
+    }
+}
+
+export component AuditView inherits Rectangle {
+    in property <bool> is-auditing: false;
+    in property <float> audit-progress: 0.0;
+    callback run-audit;
+    callback export-json;
+    
+    background: Tokens.background-color;
+    
+    Flickable {
+        viewport-height: content.preferred-height;
+        
+        content := VerticalLayout {
+            padding: Tokens.spacing-lg;
+            spacing: Tokens.spacing-lg;
+            
+            // Actions
+            HorizontalLayout {
+                spacing: Tokens.spacing-md;
+                
+                PrimaryButton {
+                    label: is-auditing ? "Audit en cours..." : "▶ Audit Complet";
+                    loading: is-auditing;
+                    enabled: !is-auditing;
+                    clicked => { run-audit(); }
+                }
+                
+                SecondaryButton {
+                    label: "📄 Export JSON";
+                    enabled: !is-auditing;
+                    clicked => { export-json(); }
+                }
+            }
+            
+            // Progress bar when auditing
+            if is-auditing: VerticalLayout {
+                spacing: Tokens.spacing-sm;
+                
+                ProgressBar {
+                    value: audit-progress;
+                }
+                
+                Text {
+                    text: "Analyse en cours...";
+                    color: Tokens.text-secondary;
+                    font-size: Tokens.font-size-sm;
+                }
+            }
+            
+            // Hardware section
+            AuditSection {
+                title: "Matériel";
+                count: 4;
+                
+                VerticalLayout {
+                    padding: Tokens.spacing-sm;
+                    spacing: Tokens.spacing-xs;
+                    
+                    HorizontalLayout {
+                        spacing: Tokens.spacing-lg;
+                        
+                        VerticalLayout {
+                            spacing: Tokens.spacing-xs;
+                            horizontal-stretch: 1;
+                            
+                            Text {
+                                text: "Type";
+                                color: Tokens.text-secondary;
+                                font-size: Tokens.font-size-xs;
+                            }
+                            
+                            Text {
+                                text: SystemInfo.has-battery ? "Laptop" : "Desktop";
+                                color: Tokens.text-primary;
+                                font-size: Tokens.font-size-md;
+                            }
+                        }
+                        
+                        VerticalLayout {
+                            spacing: Tokens.spacing-xs;
+                            horizontal-stretch: 1;
+                            
+                            Text {
+                                text: "CPU";
+                                color: Tokens.text-secondary;
+                                font-size: Tokens.font-size-xs;
+                            }
+                            
+                            Text {
+                                text: SystemInfo.cpu-name;
+                                color: Tokens.text-primary;
+                                font-size: Tokens.font-size-md;
+                            }
+                        }
+                        
+                        VerticalLayout {
+                            spacing: Tokens.spacing-xs;
+                            horizontal-stretch: 1;
+                            
+                            Text {
+                                text: "RAM";
+                                color: Tokens.text-secondary;
+                                font-size: Tokens.font-size-xs;
+                            }
+                            
+                            Text {
+                                text: SystemInfo.ram-gb + " GB";
+                                color: Tokens.text-primary;
+                                font-size: Tokens.font-size-md;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Services section
+            AuditSection {
+                title: "Services";
+                count: 8;
+                
+                VerticalLayout {
+                    padding: Tokens.spacing-sm;
+                    spacing: Tokens.spacing-xs;
+                    
+                    ServiceRow {
+                        name: "DiagTrack";
+                        display-name: "Connected User Experiences and Telemetry";
+                        status: "running";
+                        start-type: "Automatic";
+                    }
+                    
+                    ServiceRow {
+                        name: "dmwappushservice";
+                        display-name: "Device Management WAP Push";
+                        status: "stopped";
+                        start-type: "Manual";
+                    }
+                    
+                    ServiceRow {
+                        name: "SysMain";
+                        display-name: "Superfetch";
+                        status: "running";
+                        start-type: "Automatic";
+                    }
+                    
+                    ServiceRow {
+                        name: "WSearch";
+                        display-name: "Windows Search";
+                        status: "running";
+                        start-type: "Automatic";
+                    }
+                }
+            }
+            
+            // Network section
+            AuditSection {
+                title: "Réseau";
+                count: 2;
+                expanded: false;
+                
+                VerticalLayout {
+                    padding: Tokens.spacing-sm;
+                    
+                    Text {
+                        text: "Configuration réseau à analyser...";
+                        color: Tokens.text-secondary;
+                        font-size: Tokens.font-size-sm;
+                    }
+                }
+            }
+            
+            // AppX section
+            AuditSection {
+                title: "Packages AppX";
+                count: 0;
+                expanded: false;
+                
+                VerticalLayout {
+                    padding: Tokens.spacing-sm;
+                    
+                    Text {
+                        text: "Lancer un audit complet pour analyser les packages.";
+                        color: Tokens.text-secondary;
+                        font-size: Tokens.font-size-sm;
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,167 @@
+// Pieuvre — Sidebar Navigation
+//
+// Navigation latérale avec items.
+
+import { Tokens } from "../tokens.slint";
+import { AppState } from "../globals.slint";
+
+component NavItem inherits Rectangle {
+    in property <string> icon: "●";
+    in property <string> label: "Item";
+    in property <string> view-id: "";
+    in property <bool> active: AppState.current-view == view-id;
+    callback clicked;
+    
+    height: 44px;
+    border-radius: Tokens.radius-md;
+    background: active ? Tokens.primary-color : 
+                ta.has-hover ? Tokens.surface-hover : 
+                transparent;
+    
+    animate background { duration: Tokens.anim-fast; }
+    
+    HorizontalLayout {
+        padding-left: Tokens.spacing-md;
+        padding-right: Tokens.spacing-md;
+        spacing: Tokens.spacing-sm;
+        alignment: start;
+        
+        Text {
+            text: icon;
+            color: active ? Tokens.text-primary : Tokens.text-secondary;
+            font-size: Tokens.font-size-lg;
+            width: 24px;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+        
+        Text {
+            text: label;
+            color: active ? Tokens.text-primary : Tokens.text-secondary;
+            font-size: Tokens.font-size-md;
+            vertical-alignment: center;
+        }
+    }
+    
+    ta := TouchArea {
+        clicked => { 
+            AppState.current-view = view-id;
+            clicked(); 
+        }
+        mouse-cursor: pointer;
+    }
+}
+
+export component Sidebar inherits Rectangle {
+    callback navigate(string);
+    
+    width: Tokens.sidebar-width;
+    background: Tokens.surface-color;
+    
+    VerticalLayout {
+        padding: Tokens.spacing-sm;
+        spacing: Tokens.spacing-xs;
+        alignment: start;
+        
+        // Logo section
+        Rectangle {
+            height: 64px;
+            
+            HorizontalLayout {
+                padding-left: Tokens.spacing-md;
+                spacing: Tokens.spacing-sm;
+                alignment: start;
+                
+                // Logo icon
+                Text {
+                    text: "🐙";
+                    font-size: Tokens.font-size-2xl;
+                    vertical-alignment: center;
+                }
+                
+                Text {
+                    text: "Pieuvre";
+                    color: Tokens.text-primary;
+                    font-size: Tokens.font-size-xl;
+                    font-weight: 700;
+                    vertical-alignment: center;
+                }
+            }
+        }
+        
+        // Separator
+        Rectangle {
+            height: 1px;
+            background: Tokens.border-color;
+        }
+        
+        // Navigation items
+        Rectangle { height: Tokens.spacing-sm; }
+        
+        NavItem {
+            icon: "📊";
+            label: "Dashboard";
+            view-id: "dashboard";
+            clicked => { navigate("dashboard"); }
+        }
+        
+        NavItem {
+            icon: "🔍";
+            label: "Audit";
+            view-id: "audit";
+            clicked => { navigate("audit"); }
+        }
+        
+        NavItem {
+            icon: "⚡";
+            label: "Optimisations";
+            view-id: "optimizations";
+            clicked => { navigate("optimizations"); }
+        }
+        
+        NavItem {
+            icon: "📁";
+            label: "Profils";
+            view-id: "profiles";
+            clicked => { navigate("profiles"); }
+        }
+        
+        NavItem {
+            icon: "📸";
+            label: "Snapshots";
+            view-id: "snapshots";
+            clicked => { navigate("snapshots"); }
+        }
+        
+        // Spacer
+        Rectangle { vertical-stretch: 1; }
+        
+        // Separator
+        Rectangle {
+            height: 1px;
+            background: Tokens.border-color;
+        }
+        
+        Rectangle { height: Tokens.spacing-xs; }
+        
+        NavItem {
+            icon: "⚙";
+            label: "Paramètres";
+            view-id: "settings";
+            clicked => { navigate("settings"); }
+        }
+        
+        // Version info
+        Rectangle {
+            height: 32px;
+            
+            Text {
+                text: "v0.1.0";
+                color: Tokens.text-muted;
+                font-size: Tokens.font-size-xs;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+    }
+}

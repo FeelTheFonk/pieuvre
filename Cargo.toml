@@ -6,6 +6,7 @@ members = [
     "crates/pieuvre-audit",
     "crates/pieuvre-sync",
     "crates/pieuvre-persist",
+    "crates/pieuvre-gui",
 ]
 
 [workspace.package]

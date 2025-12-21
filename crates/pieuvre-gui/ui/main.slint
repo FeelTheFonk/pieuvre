@@ -1,0 +1,120 @@
+// Pieuvre — Main Window
+//
+// Point d'entrée UI principal.
+
+import { Tokens } from "tokens.slint";
+import { AppState, SystemInfo, ProfileConfig } from "globals.slint";
+import { Toast } from "components/toast.slint";
+import { BadgeVariant } from "components/status_badge.slint";
+
+import { Sidebar } from "views/sidebar.slint";
+import { Header } from "views/header.slint";
+import { StatusBar } from "views/statusbar.slint";
+import { DashboardView } from "views/dashboard.slint";
+import { AuditView } from "views/audit.slint";
+import { OptimizationsView } from "views/optimizations.slint";
+import { ProfilesView } from "views/profiles.slint";
+import { SnapshotsView } from "views/snapshots.slint";
+import { SettingsView } from "views/settings.slint";
+
+export component MainWindow inherits Window {
+    title: "Pieuvre — Windows System Optimizer";
+    min-width: 1024px;
+    min-height: 768px;
+    background: Tokens.background-color;
+    
+    // Callbacks pour le code Rust
+    callback run-audit;
+    callback apply-optimizations(bool);
+    callback load-profile(string);
+    callback restore-snapshot(string);
+    callback create-snapshot;
+    callback save-settings;
+    
+    // Toast state
+    in-out property <string> toast-message: "";
+    in-out property <BadgeVariant> toast-variant: BadgeVariant.info;
+    in-out property <bool> toast-visible: false;
+    
+    // Audit state
+    in-out property <bool> is-auditing: false;
+    in-out property <float> audit-progress: 0.0;
+    
+    // Optimizations state
+    in-out property <int> selected-optimizations: 0;
+    in-out property <bool> is-applying: false;
+    
+    // Snapshots state
+    in-out property <int> snapshot-count: 2;
+    
+    // Layout principal
+    HorizontalLayout {
+        // Sidebar
+        Sidebar {
+            navigate(view) => {
+                AppState.current-view = view;
+            }
+        }
+        
+        // Main content area
+        VerticalLayout {
+            horizontal-stretch: 1;
+            
+            // Header
+            Header {
+                refresh-clicked => {
+                    run-audit();
+                }
+            }
+            
+            // Content area
+            Rectangle {
+                vertical-stretch: 1;
+                background: Tokens.background-color;
+                
+                // View switcher
+                if AppState.current-view == "dashboard": DashboardView {
+                    run-audit => { run-audit(); }
+                    open-optimizations => { AppState.current-view = "optimizations"; }
+                }
+                
+                if AppState.current-view == "audit": AuditView {
+                    is-auditing: is-auditing;
+                    audit-progress: audit-progress;
+                    run-audit => { run-audit(); }
+                }
+                
+                if AppState.current-view == "optimizations": OptimizationsView {
+                    selected-count: selected-optimizations;
+                    is-applying: is-applying;
+                    apply-clicked(dry-run) => { apply-optimizations(dry-run); }
+                }
+                
+                if AppState.current-view == "profiles": ProfilesView {
+                    load-profile(name) => { load-profile(name); }
+                }
+                
+                if AppState.current-view == "snapshots": SnapshotsView {
+                    snapshot-count: snapshot-count;
+                    create-snapshot => { create-snapshot(); }
+                    restore-snapshot(id) => { restore-snapshot(id); }
+                }
+                
+                if AppState.current-view == "settings": SettingsView {
+                    save-settings => { save-settings(); }
+                }
+            }
+            
+            // Status bar
+            StatusBar {}
+        }
+    }
+    
+    // Toast overlay
+    Toast {
+        message: toast-message;
+        variant: toast-variant;
+        is-visible: toast-visible;
+        dismissed => { toast-visible = false; }
+    }
+}

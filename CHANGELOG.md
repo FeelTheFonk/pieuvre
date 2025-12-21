@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.6.0] - 2025-12-21 (GUI)
+
+### Added
+
+- **pieuvre-gui**: Native GUI crate using Slint 1.14
+  - Dark theme design system (Catppuccin-inspired)
+  - Tokens: colors, spacing, typography, animations
+  - Globals: AppState, SystemInfo, ProfileConfig
+  - Components: Button, Toggle, Checkbox, ProgressBar, StatusBadge, Toast, CategoryGroup
+  - Views: Dashboard, Audit, Optimizations, Profiles, Snapshots, Settings
+  - Sidebar navigation with 6 sections
+  - Header with profile badge and refresh action
+  - StatusBar with system info and selection counter
+  - Toast notification system with variants
+  - Collapsible sections with smooth animations
+  - Worker thread for async operations (audit, sync, rollback)
+  - Rust bindings: models.rs, init.rs, callbacks.rs, worker.rs
+
+### Changed
+
+- Workspace: added pieuvre-gui member
+- Dependencies: slint 1.14, slint-build 1.14
+
+### Technical
+
+- Build system: build.rs with slint_build::compile
+- Architecture: separate crate (Option A), modular design
+- Zero clippy warnings in pieuvre-gui
+- Release build optimized
+
 ## [0.5.0] - 2025-12-21 (SOTA P4)
 
 ### Added

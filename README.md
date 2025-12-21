@@ -106,11 +106,22 @@ pieuvre/
     pieuvre-sync/       Modification application
     pieuvre-persist/    Snapshot and rollback management
     pieuvre-cli/        Command-line interface
+    pieuvre-gui/        Native Slint GUI (NEW)
   config/
     default.toml        Default configuration
     telemetry-domains.txt
     profiles/           gaming.toml, privacy.toml, workstation.toml
 ```
+
+### GUI (pieuvre-gui)
+
+Native graphical interface built with Slint 1.14:
+
+- **Design System**: Dark theme (Catppuccin), tokens, animations
+- **Views**: Dashboard, Audit, Optimizations, Profiles, Snapshots, Settings
+- **Components**: Button, Toggle, Checkbox, ProgressBar, StatusBadge, Toast
+- **Architecture**: Separate crate, worker thread for async operations
+- **Build**: `cargo build -p pieuvre-gui --release`
 
 ### Data Flow
 

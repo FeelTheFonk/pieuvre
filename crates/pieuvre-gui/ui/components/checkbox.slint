@@ -1,0 +1,147 @@
+// Pieuvre — Composant Checkbox
+//
+// Case à cocher avec support tristate.
+
+import { Tokens } from "../tokens.slint";
+
+// État checkbox
+export enum CheckState {
+    unchecked,
+    checked,
+    indeterminate,
+}
+
+export component Checkbox inherits Rectangle {
+    in-out property <bool> checked: false;
+    in property <bool> enabled: true;
+    in property <string> label: "";
+    callback toggled(bool);
+    
+    height: 32px;
+    background: transparent;
+    
+    HorizontalLayout {
+        spacing: Tokens.spacing-sm;
+        alignment: start;
+        
+        // Box
+        Rectangle {
+            width: 20px;
+            height: 20px;
+            border-radius: Tokens.radius-sm;
+            border-width: 2px;
+            border-color: checked ? Tokens.primary-color : Tokens.border-color;
+            background: checked ? Tokens.primary-color : transparent;
+            
+            animate background { duration: Tokens.anim-fast; }
+            animate border-color { duration: Tokens.anim-fast; }
+            
+            // Checkmark
+            if checked: Text {
+                text: "✓";
+                color: Tokens.text-primary;
+                font-size: 14px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+        
+        // Label
+        if label != "": Text {
+            text: label;
+            color: enabled ? Tokens.text-primary : Tokens.text-muted;
+            font-size: Tokens.font-size-md;
+            vertical-alignment: center;
+        }
+    }
+    
+    ta := TouchArea {
+        enabled: parent.enabled;
+        clicked => {
+            checked = !checked;
+            toggled(checked);
+        }
+        mouse-cursor: enabled ? pointer : default;
+    }
+}
+
+// Checkbox avec description
+export component CheckboxWithDesc inherits Rectangle {
+    in-out property <bool> checked: false;
+    in property <bool> enabled: true;
+    in property <string> label: "";
+    in property <string> description: "";
+    in property <string> risk-level: "none"; // none, low, medium, high
+    callback toggled(bool);
+    
+    min-height: 48px;
+    background: ta.has-hover ? Tokens.surface-hover : transparent;
+    border-radius: Tokens.radius-md;
+    
+    animate background { duration: Tokens.anim-fast; }
+    
+    HorizontalLayout {
+        padding: Tokens.spacing-sm;
+        spacing: Tokens.spacing-sm;
+        
+        // Box
+        Rectangle {
+            width: 20px;
+            height: 20px;
+            border-radius: Tokens.radius-sm;
+            border-width: 2px;
+            border-color: checked ? Tokens.primary-color : Tokens.border-color;
+            background: checked ? Tokens.primary-color : transparent;
+            
+            if checked: Text {
+                text: "✓";
+                color: Tokens.text-primary;
+                font-size: 14px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+        
+        // Content
+        VerticalLayout {
+            spacing: 2px;
+            alignment: center;
+            
+            HorizontalLayout {
+                spacing: Tokens.spacing-sm;
+                
+                Text {
+                    text: label;
+                    color: enabled ? Tokens.text-primary : Tokens.text-muted;
+                    font-size: Tokens.font-size-md;
+                }
+                
+                // Risk badge
+                if risk-level != "none": Rectangle {
+                    width: 8px;
+                    height: 8px;
+                    border-radius: 4px;
+                    background: risk-level == "high" ? Tokens.error-color :
+                                risk-level == "medium" ? Tokens.warning-color :
+                                Tokens.success-color;
+                }
+            }
+            
+            if description != "": Text {
+                text: description;
+                color: Tokens.text-secondary;
+                font-size: Tokens.font-size-sm;
+                wrap: word-wrap;
+            }
+        }
+    }
+    
+    ta := TouchArea {
+        enabled: parent.enabled;
+        clicked => {
+            checked = !checked;
+            toggled(checked);
+        }
+        mouse-cursor: enabled ? pointer : default;
+    }
+}

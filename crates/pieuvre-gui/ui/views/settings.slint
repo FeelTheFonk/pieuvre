@@ -1,0 +1,251 @@
+// Pieuvre — Vue Paramètres
+//
+// Configuration de l'application.
+
+import { Tokens } from "../tokens.slint";
+import { LabeledToggle } from "../components/toggle.slint";
+import { PrimaryButton, SecondaryButton } from "../components/button.slint";
+
+// Section de paramètres
+component SettingsSection inherits Rectangle {
+    in property <string> title: "Section";
+    
+    background: Tokens.surface-color;
+    border-radius: Tokens.radius-lg;
+    
+    VerticalLayout {
+        padding: Tokens.spacing-md;
+        spacing: Tokens.spacing-md;
+        
+        Text {
+            text: title;
+            color: Tokens.text-primary;
+            font-size: Tokens.font-size-md;
+            font-weight: 600;
+        }
+        
+        Rectangle {
+            height: 1px;
+            background: Tokens.border-color;
+        }
+        
+        @children
+    }
+}
+
+// Select dropdown simple
+component SettingsSelect inherits Rectangle {
+    in property <string> label: "Option";
+    in property <string> value: "Value";
+    
+    height: 44px;
+    background: transparent;
+    
+    HorizontalLayout {
+        alignment: space-between;
+        
+        Text {
+            text: label;
+            color: Tokens.text-primary;
+            font-size: Tokens.font-size-md;
+            vertical-alignment: center;
+        }
+        
+        Rectangle {
+            width: 150px;
+            height: 36px;
+            background: Tokens.surface-active;
+            border-radius: Tokens.radius-md;
+            
+            HorizontalLayout {
+                padding-left: Tokens.spacing-sm;
+                padding-right: Tokens.spacing-sm;
+                alignment: space-between;
+                
+                Text {
+                    text: value;
+                    color: Tokens.text-primary;
+                    font-size: Tokens.font-size-sm;
+                    vertical-alignment: center;
+                }
+                
+                Text {
+                    text: "▼";
+                    color: Tokens.text-secondary;
+                    font-size: Tokens.font-size-xs;
+                    vertical-alignment: center;
+                }
+            }
+            
+            TouchArea {
+                mouse-cursor: pointer;
+            }
+        }
+    }
+}
+
+// Input text simple
+component SettingsInput inherits Rectangle {
+    in property <string> label: "Label";
+    in-out property <string> value: "";
+    
+    height: 44px;
+    background: transparent;
+    
+    HorizontalLayout {
+        alignment: space-between;
+        
+        Text {
+            text: label;
+            color: Tokens.text-primary;
+            font-size: Tokens.font-size-md;
+            vertical-alignment: center;
+        }
+        
+        Rectangle {
+            width: 250px;
+            height: 36px;
+            background: Tokens.surface-active;
+            border-radius: Tokens.radius-md;
+            border-width: 1px;
+            border-color: Tokens.border-color;
+            
+            Text {
+                text: value != "" ? value : "Non défini";
+                color: value != "" ? Tokens.text-primary : Tokens.text-muted;
+                font-size: Tokens.font-size-sm;
+                horizontal-alignment: left;
+                vertical-alignment: center;
+                x: Tokens.spacing-sm;
+            }
+        }
+    }
+}
+
+export component SettingsView inherits Rectangle {
+    callback save-settings;
+    callback reset-settings;
+    
+    background: Tokens.background-color;
+    
+    Flickable {
+        viewport-height: content.preferred-height;
+        
+        content := VerticalLayout {
+            padding: Tokens.spacing-lg;
+            spacing: Tokens.spacing-lg;
+            
+            // Général
+            SettingsSection {
+                title: "Général";
+                
+                VerticalLayout {
+                    spacing: Tokens.spacing-sm;
+                    
+                    SettingsSelect {
+                        label: "Thème";
+                        value: "Sombre";
+                    }
+                    
+                    SettingsSelect {
+                        label: "Niveau de log";
+                        value: "Info";
+                    }
+                    
+                    SettingsSelect {
+                        label: "Profil par défaut";
+                        value: "Workstation";
+                    }
+                }
+            }
+            
+            // Snapshots
+            SettingsSection {
+                title: "Snapshots";
+                
+                VerticalLayout {
+                    spacing: Tokens.spacing-sm;
+                    
+                    LabeledToggle {
+                        label: "Créer snapshot automatiquement";
+                        checked: true;
+                    }
+                    
+                    SettingsSelect {
+                        label: "Nombre max de snapshots";
+                        value: "10";
+                    }
+                    
+                    LabeledToggle {
+                        label: "Compresser les snapshots";
+                        checked: false;
+                    }
+                    
+                    SettingsInput {
+                        label: "Répertoire snapshots";
+                        value: "C:\\ProgramData\\Pieuvre\\snapshots";
+                    }
+                }
+            }
+            
+            // Sécurité
+            SettingsSection {
+                title: "Sécurité";
+                
+                VerticalLayout {
+                    spacing: Tokens.spacing-sm;
+                    
+                    LabeledToggle {
+                        label: "Confirmer actions destructives";
+                        checked: true;
+                    }
+                    
+                    LabeledToggle {
+                        label: "Mode Dry Run par défaut";
+                        checked: false;
+                    }
+                    
+                    LabeledToggle {
+                        label: "Afficher avertissements laptop";
+                        checked: true;
+                    }
+                }
+            }
+            
+            // Avancé
+            SettingsSection {
+                title: "Avancé";
+                
+                VerticalLayout {
+                    spacing: Tokens.spacing-sm;
+                    
+                    LabeledToggle {
+                        label: "Mode debug";
+                        checked: false;
+                    }
+                    
+                    SettingsInput {
+                        label: "Fichier configuration";
+                        value: "config/default.toml";
+                    }
+                }
+            }
+            
+            // Actions
+            HorizontalLayout {
+                spacing: Tokens.spacing-md;
+                alignment: start;
+                
+                PrimaryButton {
+                    label: "💾 Sauvegarder";
+                    clicked => { save-settings(); }
+                }
+                
+                SecondaryButton {
+                    label: "↺ Réinitialiser";
+                    clicked => { reset-settings(); }
+                }
+            }
+        }
+    }
+}

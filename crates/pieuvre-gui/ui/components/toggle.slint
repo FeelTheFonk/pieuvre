@@ -1,0 +1,71 @@
+// Pieuvre — Composant Toggle Switch
+//
+// Interrupteur on/off animé.
+
+import { Tokens } from "../tokens.slint";
+
+export component Toggle inherits Rectangle {
+    in-out property <bool> checked: false;
+    in property <bool> enabled: true;
+    callback toggled(bool);
+    
+    width: 44px;
+    height: 24px;
+    border-radius: 12px;
+    background: checked ? Tokens.primary-color : Tokens.surface-color;
+    border-width: 1px;
+    border-color: checked ? Tokens.primary-color : Tokens.border-color;
+    
+    animate background { duration: Tokens.anim-normal; easing: ease-out; }
+    animate border-color { duration: Tokens.anim-normal; easing: ease-out; }
+    
+    // Knob
+    Rectangle {
+        x: checked ? parent.width - self.width - 3px : 3px;
+        y: 3px;
+        width: 18px;
+        height: 18px;
+        border-radius: 9px;
+        background: Tokens.text-primary;
+        
+        animate x { duration: Tokens.anim-normal; easing: ease-out; }
+    }
+    
+    ta := TouchArea {
+        enabled: root.enabled;
+        clicked => {
+            checked = !checked;
+            toggled(checked);
+        }
+        mouse-cursor: root.enabled ? pointer : default;
+    }
+}
+
+// Toggle avec label
+export component LabeledToggle inherits Rectangle {
+    in property <string> label: "Option";
+    in-out property <bool> checked: false;
+    in property <bool> enabled: true;
+    callback toggled(bool);
+    
+    height: 40px;
+    background: transparent;
+    
+    HorizontalLayout {
+        spacing: Tokens.spacing-md;
+        alignment: space-between;
+        
+        Text {
+            text: label;
+            color: enabled ? Tokens.text-primary : Tokens.text-muted;
+            font-size: Tokens.font-size-md;
+            vertical-alignment: center;
+        }
+        
+        Toggle {
+            checked <=> root.checked;
+            enabled: root.enabled;
+            toggled(value) => { root.toggled(value); }
+        }
+    }
+}

@@ -1,0 +1,267 @@
+// Pieuvre — Vue Optimisations
+//
+// Sélection interactive des optimisations.
+
+import { Tokens } from "../tokens.slint";
+import { AppState } from "../globals.slint";
+import { PrimaryButton, SecondaryButton, DangerButton } from "../components/button.slint";
+import { CheckboxWithDesc } from "../components/checkbox.slint";
+import { CategoryGroup } from "../components/category_group.slint";
+
+export component OptimizationsView inherits Rectangle {
+    in-out property <int> selected-count: 0;
+    in property <bool> is-applying: false;
+    callback apply-clicked(bool); // bool = dry_run
+    callback selection-changed;
+    
+    background: Tokens.background-color;
+    
+    VerticalLayout {
+        // Action bar fixe
+        Rectangle {
+            height: 64px;
+            background: Tokens.background-color;
+            border-width: 1px;
+            border-color: Tokens.border-color;
+            
+            HorizontalLayout {
+                padding-left: Tokens.spacing-lg;
+                padding-right: Tokens.spacing-lg;
+                alignment: space-between;
+                
+                // Left: Counter
+                HorizontalLayout {
+                    spacing: Tokens.spacing-sm;
+                    alignment: start;
+                    
+                    Text {
+                        text: selected-count + "";
+                        color: Tokens.primary-color;
+                        font-size: Tokens.font-size-xl;
+                        font-weight: 700;
+                        vertical-alignment: center;
+                    }
+                    
+                    Text {
+                        text: "optimisation(s) sélectionnée(s)";
+                        color: Tokens.text-secondary;
+                        font-size: Tokens.font-size-md;
+                        vertical-alignment: center;
+                    }
+                }
+                
+                // Right: Actions
+                HorizontalLayout {
+                    spacing: Tokens.spacing-sm;
+                    alignment: end;
+                    
+                    SecondaryButton {
+                        label: "🔍 Dry Run";
+                        enabled: selected-count > 0 && !is-applying;
+                        clicked => { apply-clicked(true); }
+                    }
+                    
+                    PrimaryButton {
+                        label: is-applying ? "Application..." : "⚡ Appliquer";
+                        loading: is-applying;
+                        enabled: selected-count > 0 && !is-applying;
+                        clicked => { apply-clicked(false); }
+                    }
+                }
+            }
+        }
+        
+        // Content scrollable
+        Flickable {
+            viewport-height: scroll-content.preferred-height;
+            
+            scroll-content := VerticalLayout {
+                padding: Tokens.spacing-lg;
+                spacing: Tokens.spacing-md;
+                
+                // Télémétrie
+                CategoryGroup {
+                    title: "Télémétrie";
+                    total-count: 8;
+                    selected-count: 4;
+                    
+                    VerticalLayout {
+                        padding: Tokens.spacing-sm;
+                        spacing: Tokens.spacing-xs;
+                        
+                        CheckboxWithDesc {
+                            label: "Désactiver DiagTrack";
+                            description: "Service de télémétrie principal Windows";
+                            risk-level: "none";
+                            checked: true;
+                        }
+                        
+                        CheckboxWithDesc {
+                            label: "Désactiver dmwappushservice";
+                            description: "WAP Push Message Routing Service";
+                            risk-level: "none";
+                            checked: true;
+                        }
+                        
+                        CheckboxWithDesc {
+                            label: "Bloquer domaines télémétrie (Firewall)";
+                            description: "47 domaines Microsoft bloqués";
+                            risk-level: "low";
+                            checked: true;
+                        }
+                        
+                        CheckboxWithDesc {
+                            label: "Bloquer domaines télémétrie (Hosts)";
+                            description: "50+ domaines via fichier hosts";
+                            risk-level: "low";
+                            checked: true;
+                        }
+                        
+                        CheckboxWithDesc {
+                            label: "Désactiver tâches planifiées télémétrie";
+                            description: "25 tâches Microsoft Compatibility";
+                            risk-level: "none";
+                            checked: false;
+                        }
+                        
+                        CheckboxWithDesc {
+                            label: "Supprimer OneDrive";
+                            description: "Désinstallation complète avec rollback";
+                            risk-level: "medium";
+                            checked: false;
+                        }
+                    }
+                }
+                
+                // Privacy
+                CategoryGroup {
+                    title: "Privacy";
+                    total-count: 6;
+                    selected-count: 2;
+                    
+                    VerticalLayout {
+                        padding: Tokens.spacing-sm;
+                        spacing: Tokens.spacing-xs;
+                        
+                        CheckboxWithDesc {
+                            label: "Désactiver Advertising ID";
+                            description: "Identifiant publicitaire Microsoft";
+                            risk-level: "none";
+                            checked: true;
+                        }
+                        
+                        CheckboxWithDesc {
+                            label: "Menu contextuel classique";
+                            description: "Restaure menu Windows 10";
+                            risk-level: "none";
+                            checked: true;
+                        }
+                        
+                        CheckboxWithDesc {
+                            label: "Désactiver Widgets";
+                            description: "Widget board Win11 + service";
+                            risk-level: "none";
+                            checked: false;
+                        }
+                        
+                        CheckboxWithDesc {
+                            label: "Désactiver Copilot";
+                            description: "Assistant IA Microsoft";
+                            risk-level: "none";
+                            checked: false;
+                        }
+                        
+                        CheckboxWithDesc {
+                            label: "Bloquer Windows Recall";
+                            description: "Fonctionnalité IA 24H2";
+                            risk-level: "none";
+                            checked: false;
+                        }
+                    }
+                }
+                
+                // Performance
+                CategoryGroup {
+                    title: "Performance";
+                    total-count: 10;
+                    selected-count: 0;
+                    expanded: false;
+                    
+                    VerticalLayout {
+                        padding: Tokens.spacing-sm;
+                        spacing: Tokens.spacing-xs;
+                        
+                        CheckboxWithDesc {
+                            label: "Timer Resolution 0.5ms";
+                            description: "Latence minimale (impact batterie)";
+                            risk-level: "low";
+                            checked: false;
+                        }
+                        
+                        CheckboxWithDesc {
+                            label: "Ultimate Performance";
+                            description: "Plan d'alimentation haute performance";
+                            risk-level: "low";
+                            checked: false;
+                        }
+                        
+                        CheckboxWithDesc {
+                            label: "Désactiver Nagle Algorithm";
+                            description: "TcpNoDelay - réduit latence réseau";
+                            risk-level: "none";
+                            checked: false;
+                        }
+                        
+                        CheckboxWithDesc {
+                            label: "MMCSS Gaming";
+                            description: "SystemResponsiveness 10%";
+                            risk-level: "none";
+                            checked: false;
+                        }
+                        
+                        CheckboxWithDesc {
+                            label: "Désactiver VBS/HVCI";
+                            description: "Gain 5-15% gaming - RISQUE sécurité";
+                            risk-level: "high";
+                            checked: false;
+                        }
+                    }
+                }
+                
+                // Bloatware
+                CategoryGroup {
+                    title: "Bloatware";
+                    total-count: 10;
+                    selected-count: 0;
+                    expanded: false;
+                    
+                    VerticalLayout {
+                        padding: Tokens.spacing-sm;
+                        spacing: Tokens.spacing-xs;
+                        
+                        CheckboxWithDesc {
+                            label: "Supprimer Bing Apps";
+                            description: "Weather, News, Finance, Sports";
+                            risk-level: "none";
+                            checked: false;
+                        }
+                        
+                        CheckboxWithDesc {
+                            label: "Supprimer Xbox Apps";
+                            description: "Xbox, Game Bar (garde Gaming Services)";
+                            risk-level: "low";
+                            checked: false;
+                        }
+                        
+                        CheckboxWithDesc {
+                            label: "Supprimer Media Apps";
+                            description: "Movies & TV, Groove Music";
+                            risk-level: "none";
+                            checked: false;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

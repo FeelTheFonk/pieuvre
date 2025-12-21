@@ -1,0 +1,142 @@
+// Pieuvre — Composant Category Group
+//
+// Groupe collapsible de checkboxes.
+
+import { Tokens } from "../tokens.slint";
+import { Checkbox, CheckboxWithDesc } from "checkbox.slint";
+
+export component CategoryGroup inherits Rectangle {
+    in property <string> title: "Category";
+    in property <int> total-count: 0;
+    in property <int> selected-count: 0;
+    in-out property <bool> expanded: true;
+    in property <bool> enabled: true;
+    callback header-clicked;
+    callback select-all;
+    callback deselect-all;
+    
+    background: Tokens.surface-color;
+    border-radius: Tokens.radius-md;
+    clip: true;
+    
+    VerticalLayout {
+        // Header
+        Rectangle {
+            height: 48px;
+            background: header-ta.has-hover ? Tokens.surface-hover : transparent;
+            border-radius: Tokens.radius-md;
+            
+            HorizontalLayout {
+                padding-left: Tokens.spacing-md;
+                padding-right: Tokens.spacing-md;
+                spacing: Tokens.spacing-sm;
+                alignment: space-between;
+                
+                HorizontalLayout {
+                    spacing: Tokens.spacing-sm;
+                    alignment: start;
+                    
+                    // Chevron
+                    Text {
+                        text: expanded ? "▼" : "▶";
+                        color: Tokens.text-secondary;
+                        font-size: Tokens.font-size-sm;
+                        vertical-alignment: center;
+                    }
+                    
+                    // Title
+                    Text {
+                        text: title;
+                        color: Tokens.text-primary;
+                        font-size: Tokens.font-size-md;
+                        font-weight: 600;
+                        vertical-alignment: center;
+                    }
+                    
+                    // Counter
+                    Rectangle {
+                        width: 48px;
+                        height: 24px;
+                        border-radius: 12px;
+                        background: selected-count > 0 ? Tokens.primary-color : Tokens.surface-active;
+                        
+                        Text {
+                            text: selected-count + "/" + total-count;
+                            color: Tokens.text-primary;
+                            font-size: Tokens.font-size-sm;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+                
+                // Actions
+                HorizontalLayout {
+                    spacing: Tokens.spacing-xs;
+                    alignment: end;
+                    
+                    // Select all
+                    Rectangle {
+                        width: 32px;
+                        height: 32px;
+                        border-radius: Tokens.radius-sm;
+                        background: all-ta.has-hover ? Tokens.surface-active : transparent;
+                        
+                        Text {
+                            text: "☑";
+                            color: Tokens.text-secondary;
+                            font-size: Tokens.font-size-md;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                        
+                        all-ta := TouchArea {
+                            clicked => { select-all(); }
+                            mouse-cursor: pointer;
+                        }
+                    }
+                    
+                    // Deselect all
+                    Rectangle {
+                        width: 32px;
+                        height: 32px;
+                        border-radius: Tokens.radius-sm;
+                        background: none-ta.has-hover ? Tokens.surface-active : transparent;
+                        
+                        Text {
+                            text: "☐";
+                            color: Tokens.text-secondary;
+                            font-size: Tokens.font-size-md;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                        
+                        none-ta := TouchArea {
+                            clicked => { deselect-all(); }
+                            mouse-cursor: pointer;
+                        }
+                    }
+                }
+            }
+            
+            header-ta := TouchArea {
+                clicked => {
+                    expanded = !expanded;
+                    header-clicked();
+                }
+                mouse-cursor: pointer;
+            }
+        }
+        
+        // Content - use opacity/height instead of if
+        Rectangle {
+            opacity: expanded ? 1.0 : 0.0;
+            height: expanded ? self.preferred-height : 0;
+            
+            animate opacity { duration: Tokens.anim-fast; }
+            animate height { duration: Tokens.anim-fast; }
+            
+            @children
+        }
+    }
+}

@@ -1,0 +1,65 @@
+// Pieuvre — Composant Status Badge
+//
+// Badge d'état coloré.
+
+import { Tokens } from "../tokens.slint";
+
+export enum BadgeVariant {
+    success,
+    warning,
+    error,
+    info,
+    neutral,
+}
+
+export component StatusBadge inherits Rectangle {
+    in property <string> label: "Status";
+    in property <BadgeVariant> variant: BadgeVariant.neutral;
+    
+    height: 24px;
+    min-width: 48px;
+    border-radius: 12px;
+    background: variant == BadgeVariant.success ? Tokens.success-color :
+                variant == BadgeVariant.warning ? Tokens.warning-color :
+                variant == BadgeVariant.error ? Tokens.error-color :
+                variant == BadgeVariant.info ? Tokens.info-color :
+                Tokens.surface-active;
+    
+    HorizontalLayout {
+        padding-left: Tokens.spacing-sm;
+        padding-right: Tokens.spacing-sm;
+        alignment: center;
+        
+        Text {
+            text: label;
+            color: variant == BadgeVariant.neutral ? Tokens.text-primary : Tokens.background-color;
+            font-size: Tokens.font-size-xs;
+            font-weight: 600;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+        }
+    }
+}
+
+// Badge avec icône
+export component IconBadge inherits Rectangle {
+    in property <string> icon: "●";
+    in property <BadgeVariant> variant: BadgeVariant.neutral;
+    
+    width: 24px;
+    height: 24px;
+    border-radius: 12px;
+    background: variant == BadgeVariant.success ? Tokens.success-color :
+                variant == BadgeVariant.warning ? Tokens.warning-color :
+                variant == BadgeVariant.error ? Tokens.error-color :
+                variant == BadgeVariant.info ? Tokens.info-color :
+                Tokens.surface-active;
+    
+    Text {
+        text: icon;
+        color: variant == BadgeVariant.neutral ? Tokens.text-primary : Tokens.background-color;
+        font-size: Tokens.font-size-sm;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+}

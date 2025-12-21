@@ -1,0 +1,124 @@
+// Pieuvre — Header Bar
+//
+// Barre d'en-tête avec titre et actions.
+
+import { Tokens } from "../tokens.slint";
+import { AppState, ProfileConfig } from "../globals.slint";
+import { SecondaryButton } from "../components/button.slint";
+
+export component Header inherits Rectangle {
+    callback refresh-clicked;
+    
+    height: Tokens.header-height;
+    background: Tokens.background-color;
+    border-width: 1px;
+    border-color: Tokens.border-color;
+    
+    HorizontalLayout {
+        padding-left: Tokens.spacing-lg;
+        padding-right: Tokens.spacing-lg;
+        alignment: space-between;
+        
+        // Left: View title
+        HorizontalLayout {
+            spacing: Tokens.spacing-md;
+            alignment: start;
+            
+            Text {
+                text: AppState.current-view == "dashboard" ? "Dashboard" :
+                      AppState.current-view == "audit" ? "Audit Système" :
+                      AppState.current-view == "optimizations" ? "Optimisations" :
+                      AppState.current-view == "profiles" ? "Profils" :
+                      AppState.current-view == "snapshots" ? "Snapshots" :
+                      AppState.current-view == "settings" ? "Paramètres" :
+                      "Pieuvre";
+                color: Tokens.text-primary;
+                font-size: Tokens.font-size-xl;
+                font-weight: 600;
+                vertical-alignment: center;
+            }
+            
+            // Loading indicator
+            if AppState.is-loading: Rectangle {
+                width: 16px;
+                height: 16px;
+                border-radius: 8px;
+                border-width: 2px;
+                border-color: Tokens.primary-color;
+                // Spinner animation via code
+            }
+        }
+        
+        // Right: Profile badge + actions
+        HorizontalLayout {
+            spacing: Tokens.spacing-md;
+            alignment: end;
+            
+            // Profile badge
+            Rectangle {
+                height: 32px;
+                min-width: 100px;
+                border-radius: 16px;
+                background: Tokens.surface-color;
+                border-width: 1px;
+                border-color: Tokens.border-color;
+                
+                HorizontalLayout {
+                    padding-left: Tokens.spacing-sm;
+                    padding-right: Tokens.spacing-sm;
+                    spacing: Tokens.spacing-xs;
+                    alignment: center;
+                    
+                    Text {
+                        text: "📋";
+                        font-size: Tokens.font-size-sm;
+                        vertical-alignment: center;
+                    }
+                    
+                    Text {
+                        text: AppState.active-profile;
+                        color: Tokens.text-primary;
+                        font-size: Tokens.font-size-sm;
+                        font-weight: 500;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+            
+            // Laptop indicator
+            if AppState.is-laptop: Rectangle {
+                width: 32px;
+                height: 32px;
+                border-radius: 16px;
+                background: Tokens.warning-color;
+                
+                Text {
+                    text: "💻";
+                    font-size: Tokens.font-size-sm;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+            
+            // Refresh button
+            Rectangle {
+                width: 40px;
+                height: 40px;
+                border-radius: Tokens.radius-md;
+                background: refresh-ta.has-hover ? Tokens.surface-hover : transparent;
+                
+                Text {
+                    text: "🔄";
+                    font-size: Tokens.font-size-lg;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+                
+                refresh-ta := TouchArea {
+                    clicked => { refresh-clicked(); }
+                    mouse-cursor: pointer;
+                }
+            }
+        }
+    }
+}
