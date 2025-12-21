@@ -3632,11 +3632,13 @@ name = "pieuvre-gui"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "pieuvre-audit",
  "pieuvre-common",
  "pieuvre-persist",
  "pieuvre-sync",
  "serde",
+ "serde_json",
  "slint",
  "slint-build",
  "tracing",

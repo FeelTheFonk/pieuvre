@@ -18,7 +18,7 @@ import { SnapshotsView } from "views/snapshots.slint";
 import { SettingsView } from "views/settings.slint";
 
 export component MainWindow inherits Window {
-    title: "Pieuvre — Windows System Optimizer";
+    title: "Pieuvre - Windows System Optimizer";
     min-width: 1024px;
     min-height: 768px;
     background: Tokens.background-color;
@@ -30,6 +30,16 @@ export component MainWindow inherits Window {
     callback restore-snapshot(string);
     callback create-snapshot;
     callback save-settings;
+    
+    // System info (set from Rust)
+    in-out property <string> sys-os-version: "Windows 11";
+    in-out property <string> sys-build-number: "22631";
+    in-out property <string> sys-hostname: "DESKTOP";
+    in-out property <string> sys-cpu-name: "Unknown CPU";
+    in-out property <int> sys-cpu-cores: 8;
+    in-out property <int> sys-ram-gb: 16;
+    in-out property <string> sys-gpu-name: "Unknown GPU";
+    in-out property <bool> sys-is-laptop: false;
     
     // Toast state
     in-out property <string> toast-message: "";
@@ -74,6 +84,14 @@ export component MainWindow inherits Window {
                 
                 // View switcher
                 if AppState.current-view == "dashboard": DashboardView {
+                    os-version: sys-os-version;
+                    build-number: sys-build-number;
+                    hostname: sys-hostname;
+                    cpu-name: sys-cpu-name;
+                    cpu-cores: sys-cpu-cores;
+                    ram-gb: sys-ram-gb;
+                    gpu-name: sys-gpu-name;
+                    is-laptop: sys-is-laptop;
                     run-audit => { run-audit(); }
                     open-optimizations => { AppState.current-view = "optimizations"; }
                 }

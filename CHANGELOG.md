@@ -19,20 +19,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - StatusBar with system info and selection counter
   - Toast notification system with variants
   - Collapsible sections with smooth animations
-  - Worker thread for async operations (audit, sync, rollback)
-  - Rust bindings: models.rs, init.rs, callbacks.rs, worker.rs
+  - Worker thread for async operations
+
+### Backend Integration
+
+- **init.rs**: Real system info via WMI/Registry (CPU, RAM, GPU, hostname, OS version)
+- **callbacks.rs**: Full integration with pieuvre_audit, pieuvre_sync, pieuvre_persist
+- **worker.rs**: Async execution with proper error handling
+- Handlers: handle_run_audit, handle_apply_optimizations, handle_load_profile, handle_rollback_snapshot
 
 ### Changed
 
 - Workspace: added pieuvre-gui member
-- Dependencies: slint 1.14, slint-build 1.14
+- Dependencies: slint 1.14, slint-build 1.14, chrono, serde_json
 
 ### Technical
 
 - Build system: build.rs with slint_build::compile
-- Architecture: separate crate (Option A), modular design
-- Zero clippy warnings in pieuvre-gui
-- Release build optimized
+- Architecture: separate crate, modular design
+- Zero TODO/FIXME, zero clippy warnings
+- Release build optimized (1m27s)
+
+### Phase 1 Complete - Slint-Rust Bindings
+
+- **main.rs**: Full callback integration
+  - `on_run_audit`, `on_apply_optimizations`, `on_load_profile`
+  - `on_restore_snapshot`, `on_create_snapshot`, `on_save_settings`
+- **Worker poll**: Timer 100ms, Arc<Mutex> thread-safe
+- **Toast system**: Auto-dismiss 3s, success/error variants
+
+### Phase 2.1 Complete - Dynamic Dashboard
+
+- **MainWindow properties**: sys-os-version, sys-cpu-name, sys-ram-gb, etc.
+- **DashboardView bindings**: Receives real system data from Rust
+- **Data flow**: init.rs -> MainWindow -> DashboardView cards
 
 ## [0.5.0] - 2025-12-21 (SOTA P4)
 
