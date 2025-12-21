@@ -191,6 +191,11 @@ pub fn run(profile: &str) -> Result<()> {
     
     let sched_options = vec![
         OptItem { id: "priority_sep", label: "[SAFE] Win32PrioritySeparation 0x26 - Short quantum, foreground boost", default: true },
+        OptItem { id: "mmcss", label: "[SAFE] MMCSS Gaming - SystemResponsiveness 10%, Network throttling OFF", default: true },
+        OptItem { id: "games_priority", label: "[SAFE] GPU Priority 8, Task Priority 6 - Gaming boost", default: true },
+        OptItem { id: "global_timer", label: "[PERF] Timer resolution permanente - Reboot recommande", default: false },
+        OptItem { id: "startup_delay", label: "[SAFE] Desactiver delai startup apps", default: true },
+        OptItem { id: "shutdown_timeout", label: "[SAFE] Shutdown rapide (2s timeout)", default: true },
     ];
     
     let sched_labels: Vec<&str> = sched_options.iter().map(|o| o.label).collect();
@@ -352,6 +357,12 @@ pub fn run(profile: &str) -> Result<()> {
             }
             "wersvc" => {
                 print!("[*] WerSvc... ");
+                if let Ok(original) = pieuvre_sync::services::get_service_start_type("WerSvc") {
+                    changes.push(ChangeRecord::Service {
+                        name: "WerSvc".to_string(),
+                        original_start_type: original,
+                    });
+                }
                 match pieuvre_sync::services::disable_service("WerSvc") {
                     Ok(_) => { println!("OK"); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
@@ -359,6 +370,12 @@ pub fn run(profile: &str) -> Result<()> {
             }
             "wercplsupport" => {
                 print!("[*] wercplsupport... ");
+                if let Ok(original) = pieuvre_sync::services::get_service_start_type("wercplsupport") {
+                    changes.push(ChangeRecord::Service {
+                        name: "wercplsupport".to_string(),
+                        original_start_type: original,
+                    });
+                }
                 match pieuvre_sync::services::disable_service("wercplsupport") {
                     Ok(_) => { println!("OK"); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
@@ -366,6 +383,12 @@ pub fn run(profile: &str) -> Result<()> {
             }
             "pcasvc" => {
                 print!("[*] PcaSvc... ");
+                if let Ok(original) = pieuvre_sync::services::get_service_start_type("PcaSvc") {
+                    changes.push(ChangeRecord::Service {
+                        name: "PcaSvc".to_string(),
+                        original_start_type: original,
+                    });
+                }
                 match pieuvre_sync::services::disable_service("PcaSvc") {
                     Ok(_) => { println!("OK"); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
@@ -373,6 +396,12 @@ pub fn run(profile: &str) -> Result<()> {
             }
             "wdisystem" => {
                 print!("[*] WdiSystemHost... ");
+                if let Ok(original) = pieuvre_sync::services::get_service_start_type("WdiSystemHost") {
+                    changes.push(ChangeRecord::Service {
+                        name: "WdiSystemHost".to_string(),
+                        original_start_type: original,
+                    });
+                }
                 match pieuvre_sync::services::disable_service("WdiSystemHost") {
                     Ok(_) => { println!("OK"); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
@@ -380,6 +409,12 @@ pub fn run(profile: &str) -> Result<()> {
             }
             "wdiservice" => {
                 print!("[*] WdiServiceHost... ");
+                if let Ok(original) = pieuvre_sync::services::get_service_start_type("WdiServiceHost") {
+                    changes.push(ChangeRecord::Service {
+                        name: "WdiServiceHost".to_string(),
+                        original_start_type: original,
+                    });
+                }
                 match pieuvre_sync::services::disable_service("WdiServiceHost") {
                     Ok(_) => { println!("OK"); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
@@ -387,6 +422,12 @@ pub fn run(profile: &str) -> Result<()> {
             }
             "lfsvc" => {
                 print!("[*] lfsvc... ");
+                if let Ok(original) = pieuvre_sync::services::get_service_start_type("lfsvc") {
+                    changes.push(ChangeRecord::Service {
+                        name: "lfsvc".to_string(),
+                        original_start_type: original,
+                    });
+                }
                 match pieuvre_sync::services::disable_service("lfsvc") {
                     Ok(_) => { println!("OK"); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
@@ -394,6 +435,12 @@ pub fn run(profile: &str) -> Result<()> {
             }
             "mapsbroker" => {
                 print!("[*] MapsBroker... ");
+                if let Ok(original) = pieuvre_sync::services::get_service_start_type("MapsBroker") {
+                    changes.push(ChangeRecord::Service {
+                        name: "MapsBroker".to_string(),
+                        original_start_type: original,
+                    });
+                }
                 match pieuvre_sync::services::disable_service("MapsBroker") {
                     Ok(_) => { println!("OK"); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
@@ -536,12 +583,50 @@ pub fn run(profile: &str) -> Result<()> {
     for idx in &sched_selected {
         let opt = &sched_options[*idx];
         
-        if opt.id == "priority_sep" {
-            print!("[*] Win32PrioritySeparation... ");
-            match registry::set_priority_separation(0x26) {
-                Ok(_) => { println!("OK (0x26)"); success_count += 1; }
-                Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+        match opt.id {
+            "priority_sep" => {
+                print!("[*] Win32PrioritySeparation... ");
+                match registry::set_priority_separation(0x26) {
+                    Ok(_) => { println!("OK (0x26)"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
             }
+            "mmcss" => {
+                print!("[*] MMCSS Gaming... ");
+                match registry::configure_mmcss_gaming() {
+                    Ok(_) => { println!("OK"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "games_priority" => {
+                print!("[*] Games Priority... ");
+                match registry::configure_games_priority() {
+                    Ok(_) => { println!("OK (GPU=8, Priority=6)"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "global_timer" => {
+                print!("[*] Global Timer Resolution... ");
+                match registry::enable_global_timer_resolution() {
+                    Ok(_) => { println!("OK (reboot required)"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "startup_delay" => {
+                print!("[*] Startup Delay... ");
+                match registry::disable_startup_delay() {
+                    Ok(_) => { println!("OK (0ms)"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "shutdown_timeout" => {
+                print!("[*] Shutdown Timeout... ");
+                match registry::reduce_shutdown_timeout() {
+                    Ok(_) => { println!("OK (2000ms)"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            _ => {}
         }
     }
     

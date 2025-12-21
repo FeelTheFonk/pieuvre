@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.2.0] - 2025-12-21
+
+### Added
+
+- **MMCSS Gaming**: SystemResponsiveness 10%, NetworkThrottling OFF
+- **Games Priority**: GPU Priority 8, Task Priority 6
+- **Global Timer Resolution**: Permanent timer via registry
+- **Startup Delay**: Disable startup apps delay
+- **Shutdown Timeout**: 2000ms fast shutdown
+- **ChangeRecord**: 9 services telemetrie capturent etat original
+
+### Changed
+
+- Section SCHEDULER: 6 options (vs 1)
+- Rollback fonctionnel avec services restaurables
+
 ## [0.1.3] - 2025-12-21
 
 ### Fixed

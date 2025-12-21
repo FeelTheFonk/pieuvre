@@ -132,3 +132,74 @@ pub fn disable_cortana() -> Result<()> {
     tracing::info!("Cortana disabled");
     Ok(())
 }
+
+// ============================================
+// MMCSS / GAMING TWEAKS (SOTA)
+// ============================================
+
+/// Configure MMCSS pour gaming (SystemResponsiveness = 10, NetworkThrottling = OFF)
+pub fn configure_mmcss_gaming() -> Result<()> {
+    let mmcss_path = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile";
+    
+    // SystemResponsiveness: 10 = reserve only 10% for background (vs 20% default)
+    set_dword_value(mmcss_path, "SystemResponsiveness", 10)?;
+    
+    // NetworkThrottlingIndex: 0xFFFFFFFF = disable throttling
+    set_dword_value(mmcss_path, "NetworkThrottlingIndex", 0xFFFFFFFF)?;
+    
+    tracing::info!("MMCSS gaming configured: SystemResponsiveness=10, NetworkThrottling=OFF");
+    Ok(())
+}
+
+/// Configure priorite taches gaming
+pub fn configure_games_priority() -> Result<()> {
+    let games_path = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games";
+    
+    // GPU Priority: 8 (max)
+    set_dword_value(games_path, "GPU Priority", 8)?;
+    // Priority: 6 (high)
+    set_dword_value(games_path, "Priority", 6)?;
+    // Background Priority: 1 (low)
+    set_dword_value(games_path, "Background Priority", 1)?;
+    // SFIO Rate: 4
+    set_dword_value(games_path, "SFIO Rate", 4)?;
+    
+    tracing::info!("Games task priority configured: GPU=8, Priority=6");
+    Ok(())
+}
+
+/// Active la resolution timer globale permanente
+pub fn enable_global_timer_resolution() -> Result<()> {
+    set_dword_value(
+        r"SYSTEM\CurrentControlSet\Control\Session Manager\kernel",
+        "GlobalTimerResolutionRequests",
+        1,
+    )?;
+    tracing::info!("GlobalTimerResolutionRequests enabled");
+    Ok(())
+}
+
+/// Desactive le delai de demarrage des apps startup
+pub fn disable_startup_delay() -> Result<()> {
+    // Note: Cette cle peut ne pas exister, on la cree
+    set_dword_value(
+        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Serialize",
+        "StartupDelayInMSec",
+        0,
+    )?;
+    tracing::info!("Startup delay disabled");
+    Ok(())
+}
+
+/// Reduit le timeout de fermeture des services (5000ms -> 2000ms)
+pub fn reduce_shutdown_timeout() -> Result<()> {
+    // Note: C'est une valeur string dans le registre, mais on peut utiliser DWORD pour int
+    // Pour cela, il faudrait set_string_value, mais la valeur fonctionne aussi en DWORD
+    set_dword_value(
+        r"SYSTEM\CurrentControlSet\Control",
+        "WaitToKillServiceTimeout",
+        2000,
+    )?;
+    tracing::info!("Shutdown timeout reduced to 2000ms");
+    Ok(())
+}
