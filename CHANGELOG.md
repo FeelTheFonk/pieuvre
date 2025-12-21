@@ -72,6 +72,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **OptimizationsApplied with profile_name**: Tracks applied profile
 - **Tests**: 6/6 unit tests passing
 
+### Zero Placeholder Implementation
+
+- **Dashboard Telemetry**: DiagTrack status, collection level from pieuvre_audit
+- **Dashboard Performance**: Timer resolution, power plan dynamiques
+- **AuditView**: Removed all SystemInfo.* globals, uses root.* properties
+- **ProfilesView**: Profile counts from config TOML files
+- **TelemetryState struct**: Extracted from audit report
+- **setup_profiles_counts()**: Counts optimizations from TOML sections
+
 ## [0.5.0] - 2025-12-21 (SOTA P4)
 
 ### Added

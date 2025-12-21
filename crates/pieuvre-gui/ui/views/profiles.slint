@@ -111,6 +111,11 @@ export component ProfilesView inherits Rectangle {
     callback load-profile(string);
     callback compare-profile(string);
     
+    // Profiles counts (from config TOML)
+    in property <int> profile-gaming-count: 0;
+    in property <int> profile-privacy-count: 0;
+    in property <int> profile-workstation-count: 0;
+    
     background: Tokens.background-color;
     
     Flickable {
@@ -136,7 +141,7 @@ export component ProfilesView inherits Rectangle {
                     name: "gaming";
                     description: "Latence minimale, performance maximale. Idéal pour le gaming compétitif.";
                     risk-level: "medium";
-                    optimizations-count: 25;
+                    optimizations-count: root.profile-gaming-count;
                     is-active: AppState.active-profile == "gaming";
                     load-profile => { root.load-profile("gaming"); }
                     compare-profile => { root.compare-profile("gaming"); }
@@ -147,7 +152,7 @@ export component ProfilesView inherits Rectangle {
                     name: "privacy";
                     description: "Télémétrie minimale, protection des données. Focus sur la vie privée.";
                     risk-level: "low";
-                    optimizations-count: 18;
+                    optimizations-count: root.profile-privacy-count;
                     is-active: AppState.active-profile == "privacy";
                     load-profile => { root.load-profile("privacy"); }
                     compare-profile => { root.compare-profile("privacy"); }
@@ -158,7 +163,7 @@ export component ProfilesView inherits Rectangle {
                     name: "workstation";
                     description: "Équilibre performance et stabilité. Usage professionnel quotidien.";
                     risk-level: "low";
-                    optimizations-count: 12;
+                    optimizations-count: root.profile-workstation-count;
                     is-active: AppState.active-profile == "workstation";
                     load-profile => { root.load-profile("workstation"); }
                     compare-profile => { root.compare-profile("workstation"); }

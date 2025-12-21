@@ -29,6 +29,13 @@ pub struct ServiceStates {
     pub mapbroker: bool,
 }
 
+/// Etats telemetrie
+#[derive(Debug, Default)]
+pub struct TelemetryState {
+    pub diagtrack_enabled: bool,
+    pub data_collection_level: i32,
+}
+
 /// Messages de retour du worker
 #[derive(Debug)]
 pub enum WorkerResult {
@@ -37,6 +44,7 @@ pub enum WorkerResult {
         message: String, 
         services_count: usize,
         services: ServiceStates,
+        telemetry: TelemetryState,
     },
     OptimizationsApplied { success: bool, message: String, profile_name: String },
     ProfileLoaded { success: bool, message: String, profile_name: String },
@@ -120,11 +128,18 @@ fn worker_loop(rx: Receiver<WorkerCommand>, tx: Sender<WorkerResult>) {
                             }
                         }
                         
+                        // Extraire telemetry depuis rapport
+                        let telemetry = TelemetryState {
+                            diagtrack_enabled: report.telemetry.diagtrack_enabled,
+                            data_collection_level: report.telemetry.data_collection_level as i32,
+                        };
+                        
                         let _ = tx.send(WorkerResult::AuditComplete {
                             success: true,
                             message: format!("Audit termine: {} services", services_count),
                             services_count,
                             services,
+                            telemetry,
                         });
                     }
                     Err(e) => {

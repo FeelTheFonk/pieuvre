@@ -53,6 +53,22 @@ export component MainWindow inherits Window {
     in-out property <int> services-total: 8;
     in-out property <int> services-running: 6;
     
+    // Telemetry state (from audit)
+    in-out property <bool> telemetry-diagtrack: true;
+    in-out property <int> telemetry-level: 3;  // 0=Off, 1=Basic, 2=Enhanced, 3=Full
+    in-out property <bool> telemetry-advertising-id: true;
+    in-out property <bool> telemetry-location: true;
+    
+    // Performance state (from audit)
+    in-out property <string> timer-resolution: "15.6ms";
+    in-out property <string> power-plan: "Balanced";
+    in-out property <bool> msi-mode: false;
+    
+    // Profiles counts (from config TOML)
+    in-out property <int> profile-gaming-count: 0;
+    in-out property <int> profile-privacy-count: 0;
+    in-out property <int> profile-workstation-count: 0;
+    
     // Toast state
     in-out property <string> toast-message: "";
     in-out property <BadgeVariant> toast-variant: BadgeVariant.info;
@@ -122,6 +138,11 @@ export component MainWindow inherits Window {
                     ram-gb: sys-ram-gb;
                     gpu-name: sys-gpu-name;
                     is-laptop: sys-is-laptop;
+                    telemetry-diagtrack: telemetry-diagtrack;
+                    telemetry-level: telemetry-level;
+                    timer-resolution: timer-resolution;
+                    power-plan: power-plan;
+                    msi-mode: msi-mode;
                     run-audit => { run-audit(); }
                     open-optimizations => { AppState.current-view = "optimizations"; }
                 }
@@ -154,6 +175,9 @@ export component MainWindow inherits Window {
                 }
                 
                 if AppState.current-view == "profiles": ProfilesView {
+                    profile-gaming-count: profile-gaming-count;
+                    profile-privacy-count: profile-privacy-count;
+                    profile-workstation-count: profile-workstation-count;
                     load-profile(name) => { load-profile(name); }
                 }
                 

@@ -37,11 +37,49 @@ fn main() -> Result<()> {
     
     // Charger snapshots existants
     setup_snapshots(&app);
+    
+    // Charger profiles counts
+    setup_profiles_counts(&app);
 
     // Lancement event loop
     app.run()?;
 
     Ok(())
+}
+
+/// Configure les counts des profils depuis les fichiers TOML
+fn setup_profiles_counts(app: &MainWindow) {
+    // Compter optimisations dans chaque profil
+    let gaming = count_profile_optimizations("config/profiles/gaming.toml");
+    let privacy = count_profile_optimizations("config/profiles/privacy.toml");
+    let workstation = count_profile_optimizations("config/profiles/workstation.toml");
+    
+    app.set_profile_gaming_count(gaming);
+    app.set_profile_privacy_count(privacy);
+    app.set_profile_workstation_count(workstation);
+    
+    tracing::info!("Profiles counts: gaming={}, privacy={}, workstation={}", gaming, privacy, workstation);
+}
+
+/// Compte le nombre d'optimisations dans un fichier profil TOML
+fn count_profile_optimizations(path: &str) -> i32 {
+    if let Ok(content) = std::fs::read_to_string(path) {
+        // Compter les sections principales (timer, scheduler, power, services, network, telemetry)
+        let mut count = 0;
+        if content.contains("[timer]") { count += 2; }
+        if content.contains("[scheduler]") { count += 1; }
+        if content.contains("[power]") { count += 3; }
+        if content.contains("[services]") { 
+            // Compter services a disable + manual
+            count += content.matches("disable = [").count() as i32 * 5;
+            count += content.matches("manual = [").count() as i32 * 3;
+        }
+        if content.contains("[network]") { count += 2; }
+        if content.contains("[telemetry]") { count += 2; }
+        count.max(5) // Minimum 5 pour affichage
+    } else {
+        0
+    }
 }
 
 /// Charge et affiche les snapshots existants
@@ -212,7 +250,7 @@ fn setup_worker_poll(app: &MainWindow, worker: Arc<Mutex<WorkerHandle>>) {
 /// Traite les resultats du worker
 fn handle_worker_result(app: &MainWindow, result: WorkerResult) {
     match result {
-        WorkerResult::AuditComplete { success, message, services_count, services } => {
+        WorkerResult::AuditComplete { success, message, services_count, services, telemetry } => {
             tracing::info!("Audit complete: {} ({} services)", message, services_count);
             app.set_is_auditing(false);
             app.set_audit_progress(1.0);
@@ -227,6 +265,10 @@ fn handle_worker_result(app: &MainWindow, result: WorkerResult) {
             app.set_svc_wuauserv(services.wuauserv);
             app.set_svc_mapbroker(services.mapbroker);
             app.set_services_total(services_count as i32);
+            
+            // Mise a jour telemetry
+            app.set_telemetry_diagtrack(telemetry.diagtrack_enabled);
+            app.set_telemetry_level(telemetry.data_collection_level);
             
             show_toast(app, &message, success);
         }

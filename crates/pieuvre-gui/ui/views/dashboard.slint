@@ -85,6 +85,15 @@ export component DashboardView inherits Rectangle {
     in property <string> gpu-name: "Unknown GPU";
     in property <bool> is-laptop: false;
     
+    // Telemetry state
+    in property <bool> telemetry-diagtrack: true;
+    in property <int> telemetry-level: 3;
+    
+    // Performance state
+    in property <string> timer-resolution: "15.6ms";
+    in property <string> power-plan: "Balanced";
+    in property <bool> msi-mode: false;
+    
     background: Tokens.background-color;
     
     Flickable {
@@ -176,8 +185,8 @@ export component DashboardView inherits Rectangle {
                 
                 // Telemetry card
                 InfoCard {
-                    title: "Télémétrie";
-                    icon: "📡";
+                    title: "Telemetrie";
+                    icon: ">";
                     horizontal-stretch: 1;
                     
                     VerticalLayout {
@@ -194,14 +203,16 @@ export component DashboardView inherits Rectangle {
                             }
                             
                             StatusBadge {
-                                label: "Actif";
-                                variant: BadgeVariant.warning;
+                                label: root.telemetry-diagtrack ? "Actif" : "Inactif";
+                                variant: root.telemetry-diagtrack ? BadgeVariant.warning : BadgeVariant.success;
                             }
                         }
                         
                         InfoRow {
                             label: "Niveau collection";
-                            value: "Full";
+                            value: root.telemetry-level == 0 ? "Off" :
+                                   root.telemetry-level == 1 ? "Basic" :
+                                   root.telemetry-level == 2 ? "Enhanced" : "Full";
                         }
                     }
                 }
@@ -209,7 +220,7 @@ export component DashboardView inherits Rectangle {
                 // Performance card
                 InfoCard {
                     title: "Performance";
-                    icon: "⚡";
+                    icon: "<";
                     horizontal-stretch: 1;
                     
                     VerticalLayout {
@@ -217,17 +228,17 @@ export component DashboardView inherits Rectangle {
                         
                         InfoRow {
                             label: "Timer Resolution";
-                            value: "15.6ms";
+                            value: root.timer-resolution;
                         }
                         
                         InfoRow {
                             label: "Power Plan";
-                            value: "Balanced";
+                            value: root.power-plan;
                         }
                         
                         InfoRow {
                             label: "MSI Mode";
-                            value: "Non détecté";
+                            value: root.msi-mode ? "Actif" : "Non detecte";
                         }
                     }
                 }

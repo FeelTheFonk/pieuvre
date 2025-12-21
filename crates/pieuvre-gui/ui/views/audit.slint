@@ -239,7 +239,7 @@ export component AuditView inherits Rectangle {
                             }
                             
                             Text {
-                                text: SystemInfo.has-battery ? "Laptop" : "Desktop";
+                                text: root.is-laptop ? "Laptop" : "Desktop";
                                 color: Tokens.text-primary;
                                 font-size: Tokens.font-size-md;
                             }
@@ -256,7 +256,7 @@ export component AuditView inherits Rectangle {
                             }
                             
                             Text {
-                                text: SystemInfo.cpu-name;
+                                text: root.cpu-name;
                                 color: Tokens.text-primary;
                                 font-size: Tokens.font-size-md;
                             }
@@ -273,7 +273,7 @@ export component AuditView inherits Rectangle {
                             }
                             
                             Text {
-                                text: SystemInfo.ram-gb + " GB";
+                                text: root.ram-gb + " GB";
                                 color: Tokens.text-primary;
                                 font-size: Tokens.font-size-md;
                             }
