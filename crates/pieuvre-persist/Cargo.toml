@@ -7,6 +7,7 @@ description = "Module de persistance et rollback pour Pieuvre"
 
 [dependencies]
 pieuvre-common = { path = "../pieuvre-common" }
+pieuvre-sync = { path = "../pieuvre-sync" }
 
 serde.workspace = true
 serde_json.workspace = true

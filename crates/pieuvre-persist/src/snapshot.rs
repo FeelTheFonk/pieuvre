@@ -59,7 +59,7 @@ pub fn list_all() -> Result<Vec<Snapshot>> {
     Ok(snapshots)
 }
 
-/// Restaure un snapshot
+/// Restaure un snapshot (applique les valeurs originales)
 pub fn restore(id: &str) -> Result<()> {
     let snapshots = list_all()?;
     let snapshot = snapshots
@@ -69,21 +69,76 @@ pub fn restore(id: &str) -> Result<()> {
     
     tracing::info!("Restauration snapshot: {}", snapshot.id);
     
+    let mut restored = 0;
+    let mut errors = 0;
+    
     for change in &snapshot.changes {
         match change {
-            ChangeRecord::Registry { key, value_name, value_type: _, original_data: _ } => {
+            ChangeRecord::Registry { key, value_name, value_type: _, original_data } => {
                 tracing::debug!("Restauration registre: {}\\{}", key, value_name);
-                // TODO: Implémenter restauration registre
+                
+                // Restaurer la valeur DWORD originale
+                if original_data.len() == 4 {
+                    let value = u32::from_le_bytes([
+                        original_data[0], original_data[1], 
+                        original_data[2], original_data[3]
+                    ]);
+                    
+                    match pieuvre_sync::registry::set_dword_value(key, value_name, value) {
+                        Ok(_) => {
+                            tracing::info!("Registry restauré: {}\\{} = {}", key, value_name, value);
+                            restored += 1;
+                        }
+                        Err(e) => {
+                            tracing::warn!("Échec restauration registry: {}", e);
+                            errors += 1;
+                        }
+                    }
+                }
             }
             ChangeRecord::Service { name, original_start_type } => {
                 tracing::debug!("Restauration service: {} -> {}", name, original_start_type);
-                // TODO: Implémenter restauration service
+                
+                // Restaurer le start type original
+                let result = match *original_start_type {
+                    2 => pieuvre_sync::services::set_service_automatic(name),
+                    3 => pieuvre_sync::services::set_service_manual(name),
+                    4 => pieuvre_sync::services::disable_service(name),
+                    _ => {
+                        tracing::warn!("Start type {} non supporté pour {}", original_start_type, name);
+                        Ok(())
+                    }
+                };
+                
+                match result {
+                    Ok(_) => {
+                        tracing::info!("Service restauré: {} -> start_type {}", name, original_start_type);
+                        restored += 1;
+                    }
+                    Err(e) => {
+                        tracing::warn!("Échec restauration service {}: {}", name, e);
+                        errors += 1;
+                    }
+                }
             }
             ChangeRecord::FirewallRule { name } => {
                 tracing::debug!("Suppression règle firewall: {}", name);
-                // TODO: Implémenter suppression règle
+                
+                // Supprimer la règle firewall ajoutée
+                if let Err(e) = pieuvre_sync::firewall::remove_pieuvre_rules() {
+                    tracing::warn!("Échec suppression règle {}: {}", name, e);
+                    errors += 1;
+                } else {
+                    restored += 1;
+                }
             }
         }
+    }
+    
+    tracing::info!("Restauration terminée: {} restaurés, {} erreurs", restored, errors);
+    
+    if errors > 0 {
+        tracing::warn!("Certaines restaurations ont échoué");
     }
     
     Ok(())

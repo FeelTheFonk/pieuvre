@@ -626,6 +626,7 @@ dependencies = [
  "anyhow",
  "chrono",
  "pieuvre-common",
+ "pieuvre-sync",
  "serde",
  "serde_json",
  "thiserror 2.0.17",

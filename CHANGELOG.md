@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.1.3] - 2025-12-21
+
+### Fixed
+
+- interactive.rs: Capture ChangeRecord avant modification services (DiagTrack, dmwappush)
+- Snapshot cree APRES modifications avec changes rempli (rollback fonctionnel)
+
+## [0.1.2] - 2025-12-21
+
+### Added
+
+- verify command: 6 verifications (timer, power, DiagTrack, MSI, firewall, scheduler)
+- get_service_start_type function for snapshot capture
+- snapshot restore() implementation (registry, services, firewall)
+
+### Fixed
+
+- services.rs: CloseServiceHandle to prevent handle leaks
+- snapshot restore now actually restores values instead of TODO
+
 ## [0.1.1] - 2025-12-21
 
 ### Added

@@ -312,14 +312,8 @@ pub fn run(profile: &str) -> Result<()> {
     println!("================================================================");
     println!();
     
-    // Creer snapshot avant modifications
-    println!("[*] Creation snapshot de sauvegarde...");
-    let changes = Vec::<ChangeRecord>::new();
-    match snapshot::create("Avant mode interactif", changes) {
-        Ok(snap) => println!("    Snapshot: {}", snap.id),
-        Err(e) => println!("    Snapshot erreur: {}", e),
-    }
-    println!();
+    // Vecteur pour capturer les changements (pour rollback)
+    let mut changes = Vec::<ChangeRecord>::new();
     
     let mut success_count = 0;
     let mut error_count = 0;
@@ -331,6 +325,13 @@ pub fn run(profile: &str) -> Result<()> {
         match opt.id {
             "diagtrack" => {
                 print!("[*] DiagTrack... ");
+                // Capturer etat original
+                if let Ok(original) = pieuvre_sync::services::get_service_start_type("DiagTrack") {
+                    changes.push(ChangeRecord::Service {
+                        name: "DiagTrack".to_string(),
+                        original_start_type: original,
+                    });
+                }
                 match pieuvre_sync::services::disable_service("DiagTrack") {
                     Ok(_) => { println!("OK"); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
@@ -338,6 +339,12 @@ pub fn run(profile: &str) -> Result<()> {
             }
             "dmwappush" => {
                 print!("[*] dmwappushservice... ");
+                if let Ok(original) = pieuvre_sync::services::get_service_start_type("dmwappushservice") {
+                    changes.push(ChangeRecord::Service {
+                        name: "dmwappushservice".to_string(),
+                        original_start_type: original,
+                    });
+                }
                 match pieuvre_sync::services::disable_service("dmwappushservice") {
                     Ok(_) => { println!("OK"); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
@@ -559,6 +566,16 @@ pub fn run(profile: &str) -> Result<()> {
             }
             _ => {}
         }
+    }
+    
+    // =========================================
+    // CREATION SNAPSHOT AVEC CHANGEMENTS
+    // =========================================
+    println!();
+    println!("[*] Creation snapshot de sauvegarde...");
+    match snapshot::create("Avant mode interactif", changes) {
+        Ok(snap) => println!("    Snapshot: {} ({} changements)", snap.id, snap.changes.len()),
+        Err(e) => println!("    Snapshot erreur: {}", e),
     }
     
     // =========================================
