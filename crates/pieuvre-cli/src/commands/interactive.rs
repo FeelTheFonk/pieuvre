@@ -216,8 +216,17 @@ pub fn run(profile: &str) -> Result<()> {
     println!("----------------------------------------------------------------");
     
     let appx_options = vec![
-        OptItem { id: "bloatware", label: "[SAFE] Supprimer bloatware Microsoft (20+ apps)", default: false },
-        OptItem { id: "xbox", label: "[COND] Supprimer Xbox apps (attention Game Pass)", default: false },
+        // Categories granulaires
+        OptItem { id: "bing_apps", label: "[SAFE] Apps Bing (News, Weather, Finance, Sports, Search)", default: true },
+        OptItem { id: "ms_productivity", label: "[SAFE] Apps productivite (Todos, People, OfficeHub)", default: true },
+        OptItem { id: "ms_media", label: "[SAFE] Apps media (ZuneMusic, ZuneVideo, Clipchamp)", default: true },
+        OptItem { id: "ms_communication", label: "[COND] Mail/Calendar, Skype, Teams - Attention si utilises", default: false },
+        OptItem { id: "ms_legacy", label: "[SAFE] Apps legacy (Paint3D, 3DBuilder, Print3D, MixedReality)", default: true },
+        OptItem { id: "ms_tools", label: "[SAFE] Outils (FeedbackHub, GetHelp, GetStarted, QuickAssist)", default: true },
+        OptItem { id: "third_party", label: "[SAFE] Third-party (Spotify, Disney+, CandyCrush, Facebook)", default: true },
+        OptItem { id: "copilot", label: "[COND] Microsoft Copilot - Desactiver AI integree", default: false },
+        OptItem { id: "cortana", label: "[SAFE] Cortana", default: true },
+        OptItem { id: "xbox", label: "[COND] Xbox apps (attention Game Pass)", default: false },
     ];
     
     let appx_labels: Vec<&str> = appx_options.iter().map(|o| o.label).collect();
@@ -635,17 +644,73 @@ pub fn run(profile: &str) -> Result<()> {
         let opt = &appx_options[*idx];
         
         match opt.id {
-            "bloatware" => {
-                print!("[*] Removing bloatware... ");
-                match appx::remove_bloatware() {
-                    Ok(removed) => { println!("OK ({} removed)", removed.len()); success_count += 1; }
+            "bing_apps" => {
+                print!("[*] Bing apps... ");
+                match appx::remove_bing_apps() {
+                    Ok(r) => { println!("OK ({} removed)", r.len()); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "ms_productivity" => {
+                print!("[*] Productivity apps... ");
+                match appx::remove_ms_productivity() {
+                    Ok(r) => { println!("OK ({} removed)", r.len()); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "ms_media" => {
+                print!("[*] Media apps... ");
+                match appx::remove_ms_media() {
+                    Ok(r) => { println!("OK ({} removed)", r.len()); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "ms_communication" => {
+                print!("[*] Communication apps... ");
+                match appx::remove_ms_communication() {
+                    Ok(r) => { println!("OK ({} removed)", r.len()); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "ms_legacy" => {
+                print!("[*] Legacy apps... ");
+                match appx::remove_ms_legacy() {
+                    Ok(r) => { println!("OK ({} removed)", r.len()); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "ms_tools" => {
+                print!("[*] MS Tools... ");
+                match appx::remove_ms_tools() {
+                    Ok(r) => { println!("OK ({} removed)", r.len()); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "third_party" => {
+                print!("[*] Third-party apps... ");
+                match appx::remove_third_party() {
+                    Ok(r) => { println!("OK ({} removed)", r.len()); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "copilot" => {
+                print!("[*] Copilot... ");
+                match appx::remove_copilot() {
+                    Ok(r) => { println!("OK ({} removed)", r.len()); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "cortana" => {
+                print!("[*] Cortana... ");
+                match appx::remove_cortana() {
+                    Ok(r) => { println!("OK ({} removed)", r.len()); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
                 }
             }
             "xbox" => {
-                print!("[*] Removing Xbox apps... ");
+                print!("[*] Xbox apps... ");
                 match appx::remove_xbox_packages() {
-                    Ok(removed) => { println!("OK ({} removed)", removed.len()); success_count += 1; }
+                    Ok(r) => { println!("OK ({} removed)", r.len()); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
                 }
             }

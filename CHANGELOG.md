@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.2.2] - 2025-12-21
+
+### Added
+
+- **Selection granulaire bloatware**: 10 categories au lieu de 1
+  - Bing apps, Productivity, Media, Communication
+  - Legacy, Tools, Third-party, Copilot, Cortana, Xbox
+- 9 nouvelles fonctions appx.rs par categorie
+
+## [0.2.1] - 2025-12-21
+
+### Added
+
+- **Bloatware etendu**: 42 packages (was 20)
+  - Teams, Copilot, BingSearch
+  - Disney+, Spotify, CandyCrush, Facebook
+  - Paint3D, 3DBuilder, Print3D
+  - WindowsAlarms, Mail/Calendar
+
 ## [0.2.0] - 2025-12-21
 
 ### Added

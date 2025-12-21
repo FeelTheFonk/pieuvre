@@ -29,12 +29,15 @@ pub fn remove_package(name: &str) -> Result<()> {
     Ok(())
 }
 
-/// Liste des bloatware a supprimer
+/// Liste des bloatware a supprimer (SOTA - base Win11Debloat)
 const BLOATWARE: &[&str] = &[
+    // Bing apps
     "Microsoft.BingNews",
     "Microsoft.BingWeather",
     "Microsoft.BingFinance",
     "Microsoft.BingSports",
+    "Microsoft.BingSearch",
+    // Microsoft apps non essentiels
     "Microsoft.GetHelp",
     "Microsoft.Getstarted",
     "Microsoft.MicrosoftSolitaireCollection",
@@ -46,11 +49,36 @@ const BLOATWARE: &[&str] = &[
     "Microsoft.YourPhone",
     "Microsoft.ZuneMusic",
     "Microsoft.ZuneVideo",
-    "Clipchamp.Clipchamp",
-    "MicrosoftCorporationII.QuickAssist",
-    "Microsoft.549981C3F5F10", // Cortana
     "Microsoft.MixedReality.Portal",
     "Microsoft.SkypeApp",
+    "Microsoft.549981C3F5F10", // Cortana
+    "Microsoft.WindowsAlarms",
+    "Microsoft.windowscommunicationsapps", // Mail & Calendar
+    "Microsoft.MicrosoftOfficeHub",
+    "Microsoft.OutlookForWindows",
+    "Microsoft.Paint3D",
+    "Microsoft.3DBuilder",
+    "Microsoft.OneConnect",
+    "Microsoft.Wallet",
+    "Microsoft.Messaging",
+    "Microsoft.Print3D",
+    "Microsoft.NetworkSpeedTest",
+    // Microsoft extras
+    "Clipchamp.Clipchamp",
+    "MicrosoftCorporationII.QuickAssist",
+    "MicrosoftTeams",
+    "Microsoft.MicrosoftStickyNotes",
+    "Microsoft.ScreenSketch", // Snipping Tool moderne
+    // Third party pre-installs
+    "SpotifyAB.SpotifyMusic",
+    "Disney.37853FC22B2CE",
+    "king.com.CandyCrushSaga",
+    "king.com.CandyCrushSodaSaga",
+    "FACEBOOK.FACEBOOK",
+    "AdobeSystemsIncorporated.AdobePhotoshopExpress",
+    // Copilot
+    "Microsoft.Copilot",
+    "Microsoft.Windows.Ai.Copilot.Provider",
 ];
 
 /// Supprime tous les bloatware connus
@@ -110,4 +138,80 @@ pub fn is_package_installed(name: &str) -> bool {
         }
         Err(_) => false,
     }
+}
+
+// ============================================
+// FONCTIONS PAR CATEGORIE (selection granulaire)
+// ============================================
+
+/// Supprime les apps Bing
+pub fn remove_bing_apps() -> Result<Vec<String>> {
+    let pkgs = &["Microsoft.BingNews", "Microsoft.BingWeather", "Microsoft.BingFinance", 
+                 "Microsoft.BingSports", "Microsoft.BingSearch"];
+    remove_packages_list(pkgs)
+}
+
+/// Supprime les apps productivite
+pub fn remove_ms_productivity() -> Result<Vec<String>> {
+    let pkgs = &["Microsoft.Todos", "Microsoft.People", "Microsoft.MicrosoftOfficeHub",
+                 "Microsoft.YourPhone", "Microsoft.MicrosoftStickyNotes"];
+    remove_packages_list(pkgs)
+}
+
+/// Supprime les apps media
+pub fn remove_ms_media() -> Result<Vec<String>> {
+    let pkgs = &["Microsoft.ZuneMusic", "Microsoft.ZuneVideo", "Clipchamp.Clipchamp"];
+    remove_packages_list(pkgs)
+}
+
+/// Supprime les apps communication
+pub fn remove_ms_communication() -> Result<Vec<String>> {
+    let pkgs = &["Microsoft.windowscommunicationsapps", "Microsoft.SkypeApp", 
+                 "MicrosoftTeams", "Microsoft.OutlookForWindows"];
+    remove_packages_list(pkgs)
+}
+
+/// Supprime les apps legacy
+pub fn remove_ms_legacy() -> Result<Vec<String>> {
+    let pkgs = &["Microsoft.Paint3D", "Microsoft.3DBuilder", "Microsoft.Print3D",
+                 "Microsoft.MixedReality.Portal", "Microsoft.OneConnect", "Microsoft.Wallet"];
+    remove_packages_list(pkgs)
+}
+
+/// Supprime les outils Microsoft
+pub fn remove_ms_tools() -> Result<Vec<String>> {
+    let pkgs = &["Microsoft.WindowsFeedbackHub", "Microsoft.GetHelp", "Microsoft.Getstarted",
+                 "MicrosoftCorporationII.QuickAssist", "Microsoft.WindowsMaps"];
+    remove_packages_list(pkgs)
+}
+
+/// Supprime les apps third-party
+pub fn remove_third_party() -> Result<Vec<String>> {
+    let pkgs = &["SpotifyAB.SpotifyMusic", "Disney.37853FC22B2CE", 
+                 "king.com.CandyCrushSaga", "king.com.CandyCrushSodaSaga",
+                 "FACEBOOK.FACEBOOK", "AdobeSystemsIncorporated.AdobePhotoshopExpress"];
+    remove_packages_list(pkgs)
+}
+
+/// Supprime Copilot
+pub fn remove_copilot() -> Result<Vec<String>> {
+    let pkgs = &["Microsoft.Copilot", "Microsoft.Windows.Ai.Copilot.Provider"];
+    remove_packages_list(pkgs)
+}
+
+/// Supprime Cortana
+pub fn remove_cortana() -> Result<Vec<String>> {
+    let pkgs = &["Microsoft.549981C3F5F10"];
+    remove_packages_list(pkgs)
+}
+
+/// Helper: supprime une liste de packages
+fn remove_packages_list(pkgs: &[&str]) -> Result<Vec<String>> {
+    let mut removed = Vec::new();
+    for pkg in pkgs {
+        if remove_package(pkg).is_ok() {
+            removed.push(pkg.to_string());
+        }
+    }
+    Ok(removed)
 }
