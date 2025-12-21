@@ -59,20 +59,24 @@ Unlike batch scripts or registry tweaks, Pieuvre:
 - Service state management (disable/manual/automatic)
 - Timer resolution control (0.5ms minimum)
 - Power plan configuration (Ultimate Performance)
-- Windows Firewall rule injection
+- Windows Firewall rule injection (30 domains, 17 IP ranges)
 - MSI Mode detection for GPU/NVMe
 - Registry atomic writes
+- **MMCSS Gaming**: SystemResponsiveness 10%, NetworkThrottling OFF
+- **Games Priority**: GPU Priority 8, Task Priority 6
+- **Startup/Shutdown optimization**: 0ms delay, 2s timeout
 
 ### Persistence Engine
 - Snapshot creation before any modification
 - Rollback to any previous state
-- Change record tracking with timestamps
+- Change record tracking with timestamps (9 services + registry)
 - JSON export for external analysis
 
 ### Interactive Mode
 - Terminal-based selection interface
 - Category-based optimization grouping
 - Pre-selection based on hardware type
+- **10 bloatware categories** (Bing, Media, Copilot, etc.)
 - Real-time application feedback
 
 ---
@@ -237,6 +241,10 @@ Optimizes for minimum latency and maximum performance.
 | DiagTrack | Disabled | None |
 | SysMain (Superfetch) | Disabled | None (SSD) |
 | Win32PrioritySeparation | 0x26 | None |
+| **MMCSS SystemResponsiveness** | 10% | None |
+| **NetworkThrottlingIndex** | OFF | None |
+| **GPU Priority** | 8 (max) | None |
+| **GlobalTimerResolution** | Permanent | Low |
 
 ### Privacy
 
@@ -248,7 +256,8 @@ Minimizes telemetry and data collection.
 | dmwappushservice | Disabled | None |
 | Data Collection Level | 0 (Security) | None |
 | Advertising ID | Disabled | None |
-| Firewall Rules | Block 42 domains | Low |
+| **Firewall Rules** | Block 30 domains, 17 IP ranges | Low |
+| **Copilot** | Disabled | None |
 
 ### Workstation
 

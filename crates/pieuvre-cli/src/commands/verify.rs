@@ -117,6 +117,48 @@ pub fn run(repair: bool) -> Result<()> {
         }
     }
     
+    // Verification MMCSS SystemResponsiveness
+    print!("[*] MMCSS Gaming... ");
+    match pieuvre_audit::registry::read_dword_value(
+        r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile",
+        "SystemResponsiveness"
+    ) {
+        Ok(value) => {
+            if value == 10 {
+                println!("OK ({}%)", value);
+                ok_count += 1;
+            } else {
+                println!("WARN ({}%)", value);
+                issues.push(("MMCSS", format!("SystemResponsiveness={}%, attendu 10%", value)));
+            }
+        }
+        Err(_) => {
+            println!("WARN (non configure)");
+            issues.push(("MMCSS", "SystemResponsiveness non configure".to_string()));
+        }
+    }
+    
+    // Verification Network Throttling
+    print!("[*] Network Throttling... ");
+    match pieuvre_audit::registry::read_dword_value(
+        r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile",
+        "NetworkThrottlingIndex"
+    ) {
+        Ok(value) => {
+            if value == 0xFFFFFFFF {
+                println!("OK (OFF)");
+                ok_count += 1;
+            } else {
+                println!("WARN (0x{:08X})", value);
+                issues.push(("NetworkThrottle", format!("NetworkThrottlingIndex=0x{:08X}, attendu OFF", value)));
+            }
+        }
+        Err(_) => {
+            println!("WARN (non configure)");
+            issues.push(("NetworkThrottle", "Non configure".to_string()));
+        }
+    }
+    
     // Resume
     println!();
     println!("================================================================");

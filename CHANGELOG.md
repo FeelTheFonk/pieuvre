@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.2.3] - 2025-12-21
+
+### Added
+
+- **Firewall SOTA**: 30 domaines (was 13), 17 IP ranges (was 6)
+  - SmartScreen, Copilot, Spotlight/Ads, Watson blobs
+- **Verify MMCSS**: 8 checks (was 6)
+  - SystemResponsiveness, NetworkThrottlingIndex
+
 ## [0.2.2] - 2025-12-21
 
 ### Added

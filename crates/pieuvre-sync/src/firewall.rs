@@ -6,8 +6,9 @@
 use pieuvre_common::{PieuvreError, Result};
 use std::process::Command;
 
-/// Domaines télémétrie Microsoft à bloquer
+/// Domaines télémétrie Microsoft à bloquer (SOTA)
 const TELEMETRY_DOMAINS: &[&str] = &[
+    // Telemetry core
     "vortex.data.microsoft.com",
     "vortex-win.data.microsoft.com",
     "telecommand.telemetry.microsoft.com",
@@ -21,16 +22,48 @@ const TELEMETRY_DOMAINS: &[&str] = &[
     "v20.events.data.microsoft.com",
     "diagnostic.data.microsoft.com",
     "activity.windows.com",
+    // Events
+    "umwatson.events.data.microsoft.com",
+    "ceuswatcab01.blob.core.windows.net",
+    "ceuswatcab02.blob.core.windows.net",
+    // NCSI / connectivity check
+    "dns.msftncsi.com",
+    "www.msftconnecttest.com",
+    // SmartScreen
+    "smartscreen.microsoft.com",
+    "smartscreen-prod.microsoft.com",
+    // Spotlight / Ads
+    "arc.msn.com",
+    "ris.api.iris.microsoft.com",
+    "g.live.com",
+    "c.msn.com",
+    "c.microsoft.com",
+    "ntp.msn.com",
+    // Copilot / AI
+    "copilot.microsoft.com",
+    "sydney.bing.com",
 ];
 
-/// Plages IP Microsoft télémétrie
+/// Plages IP Microsoft télémétrie (Azure + M365 ranges)
 const TELEMETRY_IP_RANGES: &[&str] = &[
+    // Azure telemetry endpoints
     "13.64.0.0/11",
     "13.96.0.0/13",
+    "20.33.0.0/16",
     "20.40.0.0/13",
+    "20.128.0.0/16",
+    "23.96.0.0/13",
+    "40.64.0.0/10",
     "40.76.0.0/14",
+    "51.104.0.0/15",
     "52.96.0.0/12",
+    "52.112.0.0/14",
     "104.40.0.0/13",
+    "104.208.0.0/13",
+    "131.253.0.0/16",
+    "134.170.0.0/16",
+    "157.55.0.0/16",
+    "204.79.195.0/24",
 ];
 
 #[derive(Debug, Clone)]
