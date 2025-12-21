@@ -10,6 +10,12 @@ use pieuvre_sync::{timer, power, firewall, msi, registry};
 use pieuvre_persist::snapshot;
 use pieuvre_common::ChangeRecord;
 
+/// IDs fixes pour identifier les options
+const OPT_DIAGTRACK: usize = 0;
+const OPT_DMWAPPUSH: usize = 1;
+const OPT_WERSVC: usize = 2;
+const OPT_FIREWALL: usize = 3;
+
 pub fn run(profile: &str) -> Result<()> {
     println!();
     println!("================================================================");
@@ -17,9 +23,9 @@ pub fn run(profile: &str) -> Result<()> {
     println!("================================================================");
     println!();
     println!("  NAVIGATION:");
-    println!("    [Fleches]  Haut/Bas pour naviguer");
-    println!("    [Espace]   Cocher/Decocher une option");
-    println!("    [Entree]   Valider la selection");
+    println!("    Fleches    Haut/Bas pour naviguer");
+    println!("    Espace     Cocher/Decocher une option");
+    println!("    Entree     Valider la selection");
     println!();
     
     let laptop = is_laptop();
@@ -60,44 +66,78 @@ pub fn run(profile: &str) -> Result<()> {
     println!("  2/3  PERFORMANCE");
     println!("----------------------------------------------------------------");
     
-    let mut perf_items: Vec<String> = Vec::new();
-    let mut perf_defaults: Vec<bool> = Vec::new();
+    // Construction dynamique avec IDs explicites
+    #[derive(Clone)]
+    struct PerfOption {
+        id: &'static str,
+        label: String,
+        default: bool,
+    }
+    
+    let mut perf_options: Vec<PerfOption> = Vec::new();
     
     // Timer 0.5ms
     if laptop {
-        perf_items.push("[WARN][LAPTOP] Timer 0.5ms - +25% conso batterie".to_string());
-        perf_defaults.push(false);
+        perf_options.push(PerfOption {
+            id: "timer",
+            label: "[WARN][LAPTOP] Timer 0.5ms - +25% conso batterie".to_string(),
+            default: false,
+        });
     } else {
-        perf_items.push("[SAFE] Timer 0.5ms - Latence reduite (gaming)".to_string());
-        perf_defaults.push(true);
+        perf_options.push(PerfOption {
+            id: "timer",
+            label: "[SAFE] Timer 0.5ms - Latence reduite (gaming)".to_string(),
+            default: true,
+        });
     }
     
-    // Power Plan
+    // Power Plan - TOUJOURS ajouter les deux options pour laptop
     if laptop {
-        perf_items.push("[WARN][LAPTOP] Ultimate Performance - Usure batterie".to_string());
-        perf_defaults.push(false);
-        perf_items.push("[SAFE] High Performance - Recommande laptop".to_string());
-        perf_defaults.push(true);
+        perf_options.push(PerfOption {
+            id: "power_ultimate",
+            label: "[WARN][LAPTOP] Ultimate Performance - Usure batterie".to_string(),
+            default: false,
+        });
+        perf_options.push(PerfOption {
+            id: "power_high",
+            label: "[SAFE] High Performance - Recommande laptop".to_string(),
+            default: true,
+        });
     } else {
-        perf_items.push("[SAFE] Ultimate Performance - Max performance desktop".to_string());
-        perf_defaults.push(true);
+        perf_options.push(PerfOption {
+            id: "power_ultimate",
+            label: "[SAFE] Ultimate Performance - Max performance desktop".to_string(),
+            default: true,
+        });
     }
     
     // MSI Mode
-    perf_items.push("[SAFE] MSI Mode GPU/NVMe - -40% latence interrupts".to_string());
-    perf_defaults.push(true);
+    perf_options.push(PerfOption {
+        id: "msi",
+        label: "[SAFE] MSI Mode GPU/NVMe - -40% latence interrupts".to_string(),
+        default: true,
+    });
     
     // SysMain
-    perf_items.push("[SAFE] Desactiver SysMain - Recommande si SSD".to_string());
-    perf_defaults.push(true);
+    perf_options.push(PerfOption {
+        id: "sysmain",
+        label: "[SAFE] Desactiver SysMain - Recommande si SSD".to_string(),
+        default: true,
+    });
     
     // WSearch
-    perf_items.push("[COND] Desactiver WSearch - Recherche plus lente".to_string());
-    perf_defaults.push(false);
+    perf_options.push(PerfOption {
+        id: "wsearch",
+        label: "[COND] Desactiver WSearch - Recherche plus lente".to_string(),
+        default: false,
+    });
+    
+    let perf_labels: Vec<&str> = perf_options.iter().map(|o| o.label.as_str()).collect();
+    let perf_defaults: Vec<bool> = perf_options.iter().map(|o| o.default).collect();
     
     let perf_selected = MultiSelect::with_theme(&ColorfulTheme::default())
         .with_prompt("Performance (Espace=cocher, Entree=valider)")
-        .items(&perf_items)
+        .items(&perf_labels)
         .defaults(&perf_defaults)
         .interact()?;
     
@@ -142,7 +182,7 @@ pub fn run(profile: &str) -> Result<()> {
         println!();
         println!("  PERFORMANCE:");
         for idx in &perf_selected {
-            println!("    [x] {}", perf_items[*idx]);
+            println!("    [x] {}", perf_options[*idx].label);
             total += 1;
         }
     }
@@ -201,31 +241,31 @@ pub fn run(profile: &str) -> Result<()> {
     let mut success_count = 0;
     let mut error_count = 0;
     
-    // TELEMETRIE
+    // TELEMETRIE - utiliser les IDs fixes
     for idx in &telemetry_selected {
         match *idx {
-            0 => { // DiagTrack
+            OPT_DIAGTRACK => {
                 print!("[*] DiagTrack... ");
                 match pieuvre_sync::services::disable_service("DiagTrack") {
                     Ok(_) => { println!("OK"); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
                 }
             }
-            1 => { // dmwappushservice
+            OPT_DMWAPPUSH => {
                 print!("[*] dmwappushservice... ");
                 match pieuvre_sync::services::disable_service("dmwappushservice") {
                     Ok(_) => { println!("OK"); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
                 }
             }
-            2 => { // WerSvc
+            OPT_WERSVC => {
                 print!("[*] WerSvc... ");
                 match pieuvre_sync::services::disable_service("WerSvc") {
                     Ok(_) => { println!("OK"); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
                 }
             }
-            3 => { // Firewall
+            OPT_FIREWALL => {
                 print!("[*] Firewall rules... ");
                 match firewall::create_telemetry_block_rules() {
                     Ok(rules) => { println!("OK ({} regles)", rules.len()); success_count += 1; }
@@ -236,59 +276,57 @@ pub fn run(profile: &str) -> Result<()> {
         }
     }
     
-    // PERFORMANCE
+    // PERFORMANCE - utiliser les IDs explicites
     for idx in &perf_selected {
-        let item = &perf_items[*idx];
+        let opt = &perf_options[*idx];
         
-        if item.contains("Timer 0.5ms") {
-            print!("[*] Timer Resolution... ");
-            match timer::set_timer_resolution(5000) {
-                Ok(_) => { println!("OK (0.5ms)"); success_count += 1; }
-                Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
-            }
-        }
-        
-        if item.contains("Ultimate Performance") {
-            print!("[*] Power Plan Ultimate... ");
-            match power::set_power_plan(power::PowerPlan::UltimatePerformance) {
-                Ok(_) => { println!("OK"); success_count += 1; }
-                Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
-            }
-        }
-        
-        if item.contains("High Performance") && !item.contains("Ultimate") {
-            print!("[*] Power Plan High... ");
-            match power::set_power_plan(power::PowerPlan::HighPerformance) {
-                Ok(_) => { println!("OK"); success_count += 1; }
-                Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
-            }
-        }
-        
-        if item.contains("MSI Mode") {
-            print!("[*] MSI Mode detection... ");
-            match msi::list_msi_eligible_devices() {
-                Ok(devices) => { 
-                    println!("OK ({} devices)", devices.len()); 
-                    success_count += 1; 
+        match opt.id {
+            "timer" => {
+                print!("[*] Timer Resolution... ");
+                match timer::set_timer_resolution(5000) {
+                    Ok(_) => { println!("OK (0.5ms)"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
                 }
-                Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
             }
-        }
-        
-        if item.contains("SysMain") {
-            print!("[*] SysMain... ");
-            match pieuvre_sync::services::disable_service("SysMain") {
-                Ok(_) => { println!("OK"); success_count += 1; }
-                Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+            "power_ultimate" => {
+                print!("[*] Power Plan Ultimate... ");
+                match power::set_power_plan(power::PowerPlan::UltimatePerformance) {
+                    Ok(_) => { println!("OK"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
             }
-        }
-        
-        if item.contains("WSearch") {
-            print!("[*] WSearch... ");
-            match pieuvre_sync::services::disable_service("WSearch") {
-                Ok(_) => { println!("OK"); success_count += 1; }
-                Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+            "power_high" => {
+                print!("[*] Power Plan High... ");
+                match power::set_power_plan(power::PowerPlan::HighPerformance) {
+                    Ok(_) => { println!("OK"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
             }
+            "msi" => {
+                print!("[*] MSI Mode detection... ");
+                match msi::list_msi_eligible_devices() {
+                    Ok(devices) => { 
+                        println!("OK ({} devices)", devices.len()); 
+                        success_count += 1; 
+                    }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "sysmain" => {
+                print!("[*] SysMain... ");
+                match pieuvre_sync::services::disable_service("SysMain") {
+                    Ok(_) => { println!("OK"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "wsearch" => {
+                print!("[*] WSearch... ");
+                match pieuvre_sync::services::disable_service("WSearch") {
+                    Ok(_) => { println!("OK"); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            _ => {}
         }
     }
     

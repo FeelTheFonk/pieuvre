@@ -69,6 +69,16 @@ pub fn run(profile: &str) -> Result<()> {
     let is_laptop = pieuvre_audit::hardware::is_laptop();
     let mut recommendations = Vec::new();
     
+    // Detection etat actuel
+    let timer_info = pieuvre_sync::timer::get_timer_resolution();
+    let timer_optimized = match &timer_info {
+        Ok(info) => info.current_ms() <= 0.55,
+        Err(_) => false,
+    };
+    
+    let power_plan = pieuvre_sync::power::get_active_power_plan().unwrap_or_default();
+    let power_optimized = power_plan.contains("High") || power_plan.contains("Ultimate") || power_plan.contains("Bitsum");
+    
     // Recommandations basées sur le profil
     match profile {
         "gaming" => {
@@ -78,12 +88,21 @@ pub fn run(profile: &str) -> Result<()> {
             if report.hardware.cpu.is_hybrid {
                 recommendations.push(("PERF", "Optimiser scheduler pour CPU hybrid (P-Core priority)"));
             }
-            if is_laptop {
-                recommendations.push(("WARN", "Timer 0.5ms - Attention: +25% conso batterie sur laptop"));
-                recommendations.push(("WARN", "Power Plan - High Performance recommande (pas Ultimate)"));
-            } else {
-                recommendations.push(("PERF", "Timer Resolution -> 0.5ms"));
-                recommendations.push(("PERF", "Power Plan -> Ultimate Performance"));
+            // Timer: recommander seulement si pas deja optimise
+            if !timer_optimized {
+                if is_laptop {
+                    recommendations.push(("WARN", "Timer 0.5ms - Attention: +25% conso batterie sur laptop"));
+                } else {
+                    recommendations.push(("PERF", "Timer Resolution -> 0.5ms"));
+                }
+            }
+            // Power: recommander seulement si pas deja optimise
+            if !power_optimized {
+                if is_laptop {
+                    recommendations.push(("WARN", "Power Plan - High Performance recommande (pas Ultimate)"));
+                } else {
+                    recommendations.push(("PERF", "Power Plan -> Ultimate Performance"));
+                }
             }
             recommendations.push(("PERF", "Activer MSI-Mode sur GPU"));
         }
