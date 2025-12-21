@@ -1,0 +1,62 @@
+# Pieuvre Configuration - Profil Privacy
+
+[profile]
+name = "Privacy Maximum"
+description = "Télémétrie zéro, vie privée maximale"
+risk_level = "medium"
+
+[telemetry]
+# 0 = Security only (minimum absolu)
+level = 0
+
+[services]
+disable = [
+    "DiagTrack",
+    "dmwappushservice",
+    "WerSvc",
+    "wercplsupport",
+    "diagnosticshub.standardcollector.service",
+    "lfsvc",       # Geolocation
+    "MapsBroker",
+    "PcaSvc",
+    "WdiSystemHost",
+    "WdiServiceHost",
+]
+
+[firewall]
+block_telemetry_domains = true
+block_telemetry_ips = true
+
+[registry]
+# Désactiver les fonctionnalités invasives
+advertising_id = false
+location_tracking = false
+activity_history = false
+cortana = false
+web_search = false
+tailored_experiences = false
+diagnostic_data_viewer = false
+feedback_frequency = 0
+app_launch_tracking = false
+suggested_content = false
+timeline = false
+input_personalization = false
+handwriting_error_reports = false
+improve_inking = false
+
+[appx]
+# Packages à supprimer (bloatware télémétrie)
+remove = [
+    "Microsoft.BingNews",
+    "Microsoft.BingWeather",
+    "Microsoft.WindowsFeedbackHub",
+    "Microsoft.GetHelp",
+    "Microsoft.Getstarted",
+    "Clipchamp.Clipchamp",
+    "Microsoft.549981C3F5F10",  # Cortana
+    "Microsoft.YourPhone",
+]
+
+[network]
+# Hosts file additions pour bloquer télémétrie
+block_hosts = true

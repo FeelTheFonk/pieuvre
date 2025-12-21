@@ -1,0 +1,25 @@
+[package]
+name = "pieuvre-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Interface CLI pour Pieuvre"
+
+[[bin]]
+name = "pieuvre"
+path = "src/main.rs"
+
+[dependencies]
+pieuvre-common = { path = "../pieuvre-common" }
+pieuvre-audit = { path = "../pieuvre-audit" }
+pieuvre-sync = { path = "../pieuvre-sync" }
+pieuvre-persist = { path = "../pieuvre-persist" }
+
+clap.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+indicatif.workspace = true
+console.workspace = true

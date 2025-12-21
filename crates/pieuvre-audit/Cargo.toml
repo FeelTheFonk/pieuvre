@@ -1,0 +1,25 @@
+[package]
+name = "pieuvre-audit"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Module d'audit système pour Pieuvre"
+
+[dependencies]
+pieuvre-common = { path = "../pieuvre-common" }
+
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+
+# Windows APIs
+windows.workspace = true
+windows-sys.workspace = true
+
+# Registry parsing
+nt_hive2.workspace = true
+memmap2.workspace = true

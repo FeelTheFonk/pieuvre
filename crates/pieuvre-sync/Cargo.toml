@@ -1,0 +1,18 @@
+[package]
+name = "pieuvre-sync"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Module de synchronisation pour Pieuvre"
+
+[dependencies]
+pieuvre-common = { path = "../pieuvre-common" }
+
+serde.workspace = true
+thiserror.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+
+# Windows APIs
+windows.workspace = true
+windows-sys.workspace = true
