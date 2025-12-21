@@ -4,9 +4,12 @@
 
 pub mod appx;
 pub mod firewall;
+pub mod hosts;
 pub mod msi;
+pub mod onedrive;
 pub mod power;
 pub mod registry;
+pub mod scheduled_tasks;
 pub mod services;
 pub mod timer;
 

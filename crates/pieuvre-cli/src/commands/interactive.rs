@@ -56,7 +56,11 @@ pub fn run(profile: &str) -> Result<()> {
         OptItem { id: "wdiservice", label: "[SAFE] WdiServiceHost - Diagnostic Service", default: false },
         OptItem { id: "lfsvc", label: "[COND] lfsvc - Geolocation", default: true },
         OptItem { id: "mapsbroker", label: "[SAFE] MapsBroker - Maps download", default: true },
-        OptItem { id: "firewall", label: "[SAFE] Firewall - Bloquer 42 domaines telemetrie", default: true },
+        OptItem { id: "firewall", label: "[SAFE] Firewall - Bloquer 47 domaines telemetrie", default: true },
+        // SOTA P1
+        OptItem { id: "sched_tasks", label: "[SAFE] Scheduled Tasks - Desactiver 25 taches telemetrie", default: true },
+        OptItem { id: "hosts", label: "[SAFE] Hosts file - Bloquer 50+ domaines DNS natif", default: false },
+        OptItem { id: "onedrive", label: "[COND] OneDrive - Desinstaller completement", default: false },
     ];
     
     let telem_labels: Vec<&str> = telemetry_services.iter().map(|o| o.label).collect();
@@ -459,6 +463,27 @@ pub fn run(profile: &str) -> Result<()> {
                 print!("[*] Firewall rules... ");
                 match firewall::create_telemetry_block_rules() {
                     Ok(rules) => { println!("OK ({} regles)", rules.len()); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "sched_tasks" => {
+                print!("[*] Scheduled Tasks... ");
+                match pieuvre_sync::scheduled_tasks::disable_telemetry_tasks() {
+                    Ok(tasks) => { println!("OK ({} tasks disabled)", tasks.len()); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "hosts" => {
+                print!("[*] Hosts file... ");
+                match pieuvre_sync::hosts::add_telemetry_blocks() {
+                    Ok(count) => { println!("OK ({} domains blocked)", count); success_count += 1; }
+                    Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
+                }
+            }
+            "onedrive" => {
+                print!("[*] OneDrive... ");
+                match pieuvre_sync::onedrive::uninstall_onedrive() {
+                    Ok(_) => { println!("OK (removed)"); success_count += 1; }
                     Err(e) => { println!("ERREUR: {}", e); error_count += 1; }
                 }
             }

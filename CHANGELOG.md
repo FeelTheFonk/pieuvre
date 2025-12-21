@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.0] - 2025-12-21 (SOTA)
+
+### Added
+
+- **Scheduled Tasks**: Disable 25 telemetry tasks (Sophia Script reference)
+  - Microsoft Compatibility Appraiser, CEIP, Disk Diagnostics
+  - Family Safety, Feedback, Maps, Office Telemetry
+- **Hosts File Blocking**: 50+ domains blocked via native DNS
+  - SmartScreen, Copilot, Edge, Office, Bing telemetry
+  - Reversible via `remove_telemetry_blocks()`
+- **OneDrive Complete Removal**:
+  - Process kill, uninstall, folder cleanup
+  - Registry disable for Group Policy
+
+### Changed
+
+- Section Telemetrie: 13 options (was 10)
+- Firewall: 47 domaines (was 30)
+
 ## [0.2.3] - 2025-12-21
 
 ### Added
