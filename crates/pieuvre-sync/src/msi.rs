@@ -89,10 +89,75 @@ pub fn list_msi_eligible_devices() -> Result<Vec<MsiDevice>> {
 }
 
 fn check_msi_status(device_id: &str) -> (bool, bool) {
-    // Chercher la sous-clé pour ce device
+    // Chercher les sous-clés instances pour ce device
     // Structure: PCI\{device_id}\{instance}\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties
-    // Retourne (supported, enabled)
-    (true, false) // Simplifié - en production: lecture réelle du registre
+    use windows::Win32::System::Registry::{RegQueryValueExW, REG_DWORD};
+    
+    unsafe {
+        // Ouvrir la clé du device pour énumérer les instances
+        let device_path = format!(r"{}\{}", PCI_ENUM_BASE, device_id);
+        let device_key: Vec<u16> = device_path.encode_utf16().chain(std::iter::once(0)).collect();
+        let mut hkey_device = Default::default();
+        
+        if RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(device_key.as_ptr()), 0, KEY_READ, &mut hkey_device).is_err() {
+            return (false, false);
+        }
+        
+        // Énumérer les instances (ex: "3&2411e6fe&0&00E5")
+        let mut instance_buffer = vec![0u16; 256];
+        let mut instance_len = instance_buffer.len() as u32;
+        
+        let result = RegEnumKeyExW(
+            hkey_device,
+            0, // Première instance
+            windows::core::PWSTR(instance_buffer.as_mut_ptr()),
+            &mut instance_len,
+            None,
+            windows::core::PWSTR::null(),
+            None,
+            None,
+        );
+        
+        let _ = RegCloseKey(hkey_device);
+        
+        if result.is_err() {
+            return (false, false);
+        }
+        
+        let instance = String::from_utf16_lossy(&instance_buffer[..instance_len as usize]);
+        
+        // Construire le chemin complet vers MSI properties
+        let msi_path = format!(r"{}\{}\{}\{}", PCI_ENUM_BASE, device_id, instance, MSI_SUBPATH);
+        let msi_key: Vec<u16> = msi_path.encode_utf16().chain(std::iter::once(0)).collect();
+        let mut hkey_msi = Default::default();
+        
+        if RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(msi_key.as_ptr()), 0, KEY_READ, &mut hkey_msi).is_err() {
+            return (false, false); // MSI key n'existe pas = non supporté
+        }
+        
+        // Lire MSISupported
+        let value_name: Vec<u16> = "MSISupported".encode_utf16().chain(std::iter::once(0)).collect();
+        let mut msi_supported: u32 = 0;
+        let mut data_size = std::mem::size_of::<u32>() as u32;
+        let mut value_type = REG_DWORD;
+        
+        let supported = RegQueryValueExW(
+            hkey_msi,
+            PCWSTR(value_name.as_ptr()),
+            None,
+            Some(&mut value_type),
+            Some(&mut msi_supported as *mut u32 as *mut u8),
+            Some(&mut data_size),
+        ).is_ok();
+        
+        let _ = RegCloseKey(hkey_msi);
+        
+        if supported {
+            (true, msi_supported == 1)
+        } else {
+            (false, false)
+        }
+    }
 }
 
 fn categorize_device(device_id: &str) -> String {

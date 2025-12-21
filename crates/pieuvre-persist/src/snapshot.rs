@@ -71,7 +71,7 @@ pub fn restore(id: &str) -> Result<()> {
     
     for change in &snapshot.changes {
         match change {
-            ChangeRecord::Registry { key, value_name, value_type, original_data } => {
+            ChangeRecord::Registry { key, value_name, value_type: _, original_data: _ } => {
                 tracing::debug!("Restauration registre: {}\\{}", key, value_name);
                 // TODO: Implémenter restauration registre
             }

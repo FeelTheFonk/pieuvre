@@ -37,7 +37,7 @@ enum Commands {
     /// Affiche les recommandations d'optimisation
     Analyze {
         /// Profil à utiliser (gaming, privacy, workstation)
-        #[arg(short, long, default_value = "balanced")]
+        #[arg(short, long, default_value = "gaming")]
         profile: String,
     },
 
@@ -70,11 +70,18 @@ enum Commands {
         id: Option<String>,
     },
 
-    /// Vérifie l'intégrité des optimisations
+    /// Verifie l'integrite des optimisations
     Verify {
-        /// Répare automatiquement les dérives
+        /// Repare automatiquement les derives
         #[arg(long)]
         repair: bool,
+    },
+
+    /// Mode interactif - selection granulaire des optimisations
+    Interactive {
+        /// Profil de base (gaming, privacy, workstation)
+        #[arg(short, long, default_value = "gaming")]
+        profile: String,
     },
 }
 
@@ -101,5 +108,6 @@ fn main() -> anyhow::Result<()> {
         Commands::Status => commands::status::run(),
         Commands::Rollback { list, last, id } => commands::rollback::run(list, last, id),
         Commands::Verify { repair } => commands::verify::run(repair),
+        Commands::Interactive { profile } => commands::interactive::run(&profile),
     }
 }

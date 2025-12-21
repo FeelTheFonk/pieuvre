@@ -1,11 +1,171 @@
 //! Commande analyze
+//!
+//! Génère des recommandations basées sur l'audit système.
 
 use anyhow::Result;
+use pieuvre_audit::full_audit;
+use chrono::Local;
+use std::fs;
+use std::path::PathBuf;
+
+const OUTPUT_DIR: &str = r"C:\ProgramData\Pieuvre\reports";
 
 pub fn run(profile: &str) -> Result<()> {
-    println!("Analyse avec profil: {}", profile);
+    println!("\n╔══════════════════════════════════════════════════════════════════╗");
+    println!("║              🐙 PIEUVRE - Analyse Système                        ║");
+    println!("╚══════════════════════════════════════════════════════════════════╝\n");
     
-    // TODO: Charger l'audit et générer les recommandations
+    println!("📋 Profil cible: {}\n", profile.to_uppercase());
+    println!("🔍 Collecte des données système...\n");
+    
+    // Exécuter l'audit
+    let report = full_audit()?;
+    
+    // Afficher les résultats
+    println!("═══════════════════════════════════════════════════════════════════");
+    println!("                         SYSTÈME");
+    println!("═══════════════════════════════════════════════════════════════════");
+    println!("  OS:         {} (Build {})", report.system.os_version, report.system.build_number);
+    println!("  Hostname:   {}", report.system.hostname);
+    
+    println!("\n═══════════════════════════════════════════════════════════════════");
+    println!("                        HARDWARE");
+    println!("═══════════════════════════════════════════════════════════════════");
+    println!("  CPU:        {}", report.hardware.cpu.model_name);
+    println!("  Vendor:     {}", report.hardware.cpu.vendor);
+    println!("  Cores:      {} logical / {} physical", 
+        report.hardware.cpu.logical_cores, 
+        report.hardware.cpu.physical_cores);
+    if report.hardware.cpu.is_hybrid {
+        println!("  Hybrid:     ✓ {} P-Cores + {} E-Cores", 
+            report.hardware.cpu.p_cores.len(),
+            report.hardware.cpu.e_cores.len());
+    }
+    println!("  RAM:        {:.1} GB total / {:.1} GB disponible",
+        report.hardware.memory.total_bytes as f64 / 1024.0 / 1024.0 / 1024.0,
+        report.hardware.memory.available_bytes as f64 / 1024.0 / 1024.0 / 1024.0);
+    
+    println!("\n═══════════════════════════════════════════════════════════════════");
+    println!("                       TÉLÉMÉTRIE");
+    println!("═══════════════════════════════════════════════════════════════════");
+    let diag_status = if report.telemetry.diagtrack_enabled { "❌ ACTIF" } else { "✓ Désactivé" };
+    println!("  DiagTrack:  {}", diag_status);
+    println!("  Niveau:     {} ({})", 
+        report.telemetry.data_collection_level,
+        match report.telemetry.data_collection_level {
+            0 => "Security only",
+            1 => "Basic",
+            2 => "Enhanced",
+            _ => "Full",
+        });
+    let adv_status = if report.telemetry.advertising_id_enabled { "❌ Actif" } else { "✓ Désactivé" };
+    println!("  Advertising ID: {}", adv_status);
+    
+    println!("\n═══════════════════════════════════════════════════════════════════");
+    println!("                    RECOMMANDATIONS");
+    println!("═══════════════════════════════════════════════════════════════════");
+    
+    // Detection laptop pour warnings
+    let is_laptop = pieuvre_audit::hardware::is_laptop();
+    let mut recommendations = Vec::new();
+    
+    // Recommandations basées sur le profil
+    match profile {
+        "gaming" => {
+            if report.telemetry.diagtrack_enabled {
+                recommendations.push(("PERF", "Desactiver DiagTrack (service telemetrie)"));
+            }
+            if report.hardware.cpu.is_hybrid {
+                recommendations.push(("PERF", "Optimiser scheduler pour CPU hybrid (P-Core priority)"));
+            }
+            if is_laptop {
+                recommendations.push(("WARN", "Timer 0.5ms - Attention: +25% conso batterie sur laptop"));
+                recommendations.push(("WARN", "Power Plan - High Performance recommande (pas Ultimate)"));
+            } else {
+                recommendations.push(("PERF", "Timer Resolution -> 0.5ms"));
+                recommendations.push(("PERF", "Power Plan -> Ultimate Performance"));
+            }
+            recommendations.push(("PERF", "Activer MSI-Mode sur GPU"));
+        }
+        "privacy" => {
+            if report.telemetry.diagtrack_enabled {
+                recommendations.push(("PRIVACY", "Désactiver DiagTrack"));
+            }
+            if report.telemetry.data_collection_level > 0 {
+                recommendations.push(("PRIVACY", "Réduire niveau télémétrie → Security only"));
+            }
+            if report.telemetry.advertising_id_enabled {
+                recommendations.push(("PRIVACY", "Désactiver Advertising ID"));
+            }
+            recommendations.push(("PRIVACY", "Bloquer domaines télémétrie (firewall)"));
+            recommendations.push(("PRIVACY", "Désactiver services: WerSvc, lfsvc, MapsBroker"));
+        }
+        "workstation" => {
+            if report.telemetry.diagtrack_enabled {
+                recommendations.push(("BALANCED", "Désactiver DiagTrack"));
+            }
+            recommendations.push(("BALANCED", "Power Plan → High Performance"));
+            recommendations.push(("BALANCED", "Conserver WSearch pour productivité"));
+        }
+        _ => {
+            recommendations.push(("INFO", "Profil non reconnu, utilisez: gaming, privacy, workstation"));
+        }
+    }
+    
+    if recommendations.is_empty() {
+        println!("  ✓ Système déjà optimisé pour le profil {}", profile);
+    } else {
+        for (cat, rec) in &recommendations {
+            println!("  [{:^8}] {}", cat, rec);
+        }
+    }
+    
+    println!("\n═══════════════════════════════════════════════════════════════════");
+    println!("                      SERVICES ({} total)", report.services.len());
+    println!("═══════════════════════════════════════════════════════════════════");
+    
+    let telemetry_services: Vec<_> = report.services.iter()
+        .filter(|s| matches!(s.category, pieuvre_common::ServiceCategory::Telemetry))
+        .collect();
+    let running_telemetry = telemetry_services.iter().filter(|s| matches!(s.status, pieuvre_common::ServiceStatus::Running)).count();
+    
+    println!("  Télémétrie: {} services ({} running)", telemetry_services.len(), running_telemetry);
+    
+    let perf_services: Vec<_> = report.services.iter()
+        .filter(|s| matches!(s.category, pieuvre_common::ServiceCategory::Performance))
+        .collect();
+    println!("  Performance: {} services", perf_services.len());
+    
+    println!("\n═══════════════════════════════════════════════════════════════════");
+    println!("                      PACKAGES APPX");
+    println!("═══════════════════════════════════════════════════════════════════");
+    
+    let safe_to_remove: Vec<_> = report.appx.iter()
+        .filter(|p| matches!(p.removal_risk, pieuvre_common::RemovalRisk::Safe))
+        .take(5)
+        .collect();
+    
+    if !safe_to_remove.is_empty() {
+        println!("  Bloatware détecté (safe à supprimer):");
+        for pkg in safe_to_remove {
+            println!("    • {}", pkg.name);
+        }
+    }
+    
+    // Sauvegarder le rapport
+    fs::create_dir_all(OUTPUT_DIR)?;
+    let timestamp = Local::now().format("%Y%m%d_%H%M%S");
+    let report_path = PathBuf::from(OUTPUT_DIR).join(format!("analyze_{}_{}.json", profile, timestamp));
+    let json = serde_json::to_string_pretty(&report)?;
+    fs::write(&report_path, &json)?;
+    
+    println!("\n═══════════════════════════════════════════════════════════════════");
+    println!("📁 Rapport sauvegardé: {}", report_path.display());
+    println!("═══════════════════════════════════════════════════════════════════");
+    
+    println!("\n💡 Pour appliquer ces recommandations:");
+    println!("   pieuvre sync --profile {} --dry-run", profile);
+    println!("   pieuvre sync --profile {}", profile);
     
     Ok(())
 }

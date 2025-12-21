@@ -36,6 +36,7 @@ windows = { version = "0.58", features = [
     "Win32_System_Performance",
     "Win32_System_Threading",
     "Win32_System_SystemInformation",
+    "Win32_System_Power",
     "Win32_Security",
     "Win32_NetworkManagement_WindowsFirewall",
     "Win32_Storage_FileSystem",
@@ -50,6 +51,7 @@ memmap2 = "0.9"
 clap = { version = "4.5", features = ["derive", "env"] }
 indicatif = "0.17"
 console = "0.15"
+dialoguer = "0.11"
 
 # Testing
 tempfile = "3.0"

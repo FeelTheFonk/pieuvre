@@ -2,6 +2,7 @@
 
 pub mod analyze;
 pub mod audit;
+pub mod interactive;
 pub mod rollback;
 pub mod status;
 pub mod sync;

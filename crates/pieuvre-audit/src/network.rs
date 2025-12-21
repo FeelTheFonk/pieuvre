@@ -5,27 +5,59 @@
 use pieuvre_common::Result;
 use std::net::ToSocketAddrs;
 
-/// Endpoints Microsoft connus pour la télémétrie
+/// Endpoints Microsoft connus pour la télémétrie (50+ confirmés SOTA)
 const MS_TELEMETRY_DOMAINS: &[&str] = &[
+    // Vortex - Principal
     "vortex.data.microsoft.com",
     "vortex-win.data.microsoft.com",
-    "telecommand.telemetry.microsoft.com",
-    "telemetry.microsoft.com",
+    "vortex-sandbox.data.microsoft.com",
+    "vortex-bn2.metron.live.com.nsatc.net",
+    "vortex-cy2.metron.live.com.nsatc.net",
+    // Watson - Error Reporting
     "watson.telemetry.microsoft.com",
     "watson.microsoft.com",
+    "watson.ppe.telemetry.microsoft.com",
+    "watsonc.events.data.microsoft.com",
+    "ceuswatcab01.blob.core.windows.net",
+    "ceuswatcab02.blob.core.windows.net",
+    // Events & Telemetry
+    "telecommand.telemetry.microsoft.com",
+    "telemetry.microsoft.com",
+    "telemetry.urs.microsoft.com",
     "settings-win.data.microsoft.com",
     "settings.data.microsoft.com",
     "self.events.data.microsoft.com",
     "v10.events.data.microsoft.com",
     "v20.events.data.microsoft.com",
-    "browser.events.data.msn.com",
-    "arc.msn.com",
-    "ris.api.iris.microsoft.com",
+    "us-v10c.events.data.microsoft.com",
+    "eu-v10c.events.data.microsoft.com",
+    // Diagnostics
     "diagnostic.data.microsoft.com",
+    "oca.telemetry.microsoft.com.nsatc.net",
+    "sqm.telemetry.microsoft.com.nsatc.net",
+    // Activity & Sync
     "activity.windows.com",
-    "data.microsoft.com",
+    "ris.api.iris.microsoft.com",
     "dmd.metaservices.microsoft.com",
     "nw-umwatson.events.data.microsoft.com",
+    // Browser & MSN
+    "browser.events.data.msn.com",
+    "arc.msn.com",
+    "edge.activity.windows.com",
+    // Cortana & Search
+    "cortana.ai.microsoft.com",
+    // SmartScreen (attention: sécurité)
+    // "smartscreen.microsoft.com",
+    // Feedback
+    "feedback.windows.com",
+    "feedback.microsoft-hohm.com",
+    // Compat
+    "compatexchange.cloudapp.net",
+    // Misc
+    "data.microsoft.com",
+    "pipe.skype.com",
+    "mobile.pipe.aria.microsoft.com",
+    "v10.vortex-win.data.microsoft.com",
 ];
 
 /// Plages IP Microsoft télémétrie

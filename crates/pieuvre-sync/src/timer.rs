@@ -75,6 +75,16 @@ impl TimerResolutionInfo {
         self.current_100ns as f64 / 10000.0
     }
     
+    /// Convertit la résolution minimale (la plus grossière) en millisecondes
+    pub fn min_ms(&self) -> f64 {
+        self.minimum_100ns as f64 / 10000.0
+    }
+    
+    /// Convertit la résolution maximale (la plus fine) en millisecondes
+    pub fn max_ms(&self) -> f64 {
+        self.maximum_100ns as f64 / 10000.0
+    }
+    
     /// Convertit la résolution maximale (la plus fine) en millisecondes
     pub fn best_ms(&self) -> f64 {
         self.maximum_100ns as f64 / 10000.0

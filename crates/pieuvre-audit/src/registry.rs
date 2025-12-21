@@ -8,7 +8,8 @@ use windows::Win32::System::Registry::{
 };
 use windows::core::PCWSTR;
 
-/// Clés registre liées à la télémétrie
+/// Clés registre liées à la télémétrie (référence)
+#[allow(dead_code)]
 const TELEMETRY_KEYS: &[(&str, &str)] = &[
     (r"SOFTWARE\Policies\Microsoft\Windows\DataCollection", "AllowTelemetry"),
     (r"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection", "AllowTelemetry"),

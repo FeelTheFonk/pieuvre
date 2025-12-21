@@ -19,6 +19,23 @@ pub fn probe_hardware() -> Result<HardwareInfo> {
     })
 }
 
+/// Detecte si le systeme est un laptop (presence batterie)
+/// Utilise pour les warnings power/timer
+pub fn is_laptop() -> bool {
+    use windows::Win32::System::Power::{GetSystemPowerStatus, SYSTEM_POWER_STATUS};
+    
+    unsafe {
+        let mut status = SYSTEM_POWER_STATUS::default();
+        if GetSystemPowerStatus(&mut status).is_ok() {
+            // BatteryFlag: 128 = no battery, 255 = unknown
+            // Si batterie presente, c'est un laptop
+            status.BatteryFlag != 128 && status.BatteryFlag != 255
+        } else {
+            false
+        }
+    }
+}
+
 fn probe_cpu() -> Result<CpuInfo> {
     let mut p_cores = Vec::new();
     let mut e_cores = Vec::new();
