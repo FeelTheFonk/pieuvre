@@ -59,7 +59,7 @@ jobs:
         run: cargo build --workspace --all-targets
         
       - name: Run Tests
-        run: cargo nextest run --workspace --all-features
+        run: cargo nextest run --workspace --all-features --profile ci
 
   security:
     name: Security Audit
