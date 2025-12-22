@@ -203,4 +203,7 @@ pub enum ChangeRecord {
     FirewallRule {
         name: String,
     },
+    AppX {
+        package_full_name: String,
+    },
 }

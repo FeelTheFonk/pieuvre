@@ -58,7 +58,11 @@ enum Commands {
     },
 
     /// Affiche le statut actuel
-    Status,
+    Status {
+        /// Mode live (rafraîchissement continu)
+        #[arg(short, long)]
+        live: bool,
+    },
 
     /// Gère les snapshots et rollbacks
     Rollback {
@@ -120,7 +124,7 @@ async fn main() -> anyhow::Result<()> {
         Some(Commands::Audit { full, output }) => commands::audit::run(full, output),
         Some(Commands::Analyze { profile }) => commands::analyze::run(&profile),
         Some(Commands::Sync { profile, dry_run }) => commands::sync::run(&profile, dry_run).await,
-        Some(Commands::Status) => commands::status::run(),
+        Some(Commands::Status { live }) => commands::status::run(live),
         Some(Commands::Rollback { list, last, id }) => commands::rollback::run(list, last, id),
         Some(Commands::Verify { repair }) => commands::verify::run(repair),
         Some(Commands::Interactive { profile }) => commands::interactive::run(&profile).await,

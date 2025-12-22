@@ -29,13 +29,17 @@ impl InterruptSteering {
     pub fn steer_high_latency_drivers(threshold_us: u64, target_mask: u64) -> Result<()> {
         let stats = pieuvre_audit::etw::monitor::LatencyMonitor::global().get_all_stats();
         
-        for (routine, stat) in stats {
+        for (driver_name, stat) in stats {
             if stat.dpc_max_us > threshold_us || stat.isr_max_us > threshold_us {
-                tracing::warn!("Haute latence détectée pour routine {}: DPC={}us, ISR={}us. Steering vers mask {:x}", 
-                    routine, stat.dpc_max_us, stat.isr_max_us, target_mask);
+                tracing::warn!("Haute latence détectée pour {}: DPC={}us, ISR={}us. Steering vers mask {:x}", 
+                    driver_name, stat.dpc_max_us, stat.isr_max_us, target_mask);
                 
-                // Note: En mode SOTA, on devrait mapper la routine au driver via l'audit
-                // Pour l'instant, on log l'intention de steering.
+                // Tentative de steering si le nom ressemble à un driver (pas une adresse hex)
+                if !driver_name.starts_with("0x") {
+                    if let Err(e) = Self::set_driver_affinity(&driver_name, target_mask) {
+                        tracing::error!("Failed to steer driver {}: {:?}", driver_name, e);
+                    }
+                }
             }
         }
         

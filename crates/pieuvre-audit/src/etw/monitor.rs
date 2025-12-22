@@ -24,9 +24,9 @@ impl LatencyMonitor {
     }
 
     /// Met à jour les statistiques pour un driver/routine
-    pub fn update_dpc(&self, routine: u64, latency_us: u64) {
+    pub fn update_dpc(&self, driver_name: String, latency_us: u64) {
         let mut stats = self.stats.lock().unwrap();
-        let entry = stats.entry(format!("0x{:x}", routine)).or_default();
+        let entry = stats.entry(driver_name).or_default();
         entry.dpc_count += 1;
         entry.dpc_total_us += latency_us;
         if latency_us > entry.dpc_max_us {
@@ -35,9 +35,9 @@ impl LatencyMonitor {
     }
 
     /// Met à jour les statistiques ISR
-    pub fn update_isr(&self, routine: u64, latency_us: u64) {
+    pub fn update_isr(&self, driver_name: String, latency_us: u64) {
         let mut stats = self.stats.lock().unwrap();
-        let entry = stats.entry(format!("0x{:x}", routine)).or_default();
+        let entry = stats.entry(driver_name).or_default();
         entry.isr_count += 1;
         entry.isr_total_us += latency_us;
         if latency_us > entry.isr_max_us {

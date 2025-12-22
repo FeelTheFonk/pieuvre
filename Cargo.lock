@@ -704,6 +704,7 @@ dependencies = [
  "chrono",
  "memmap2",
  "nt_hive2",
+ "once_cell",
  "pieuvre-common",
  "serde",
  "serde_json",

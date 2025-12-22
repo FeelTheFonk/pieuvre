@@ -8,10 +8,10 @@ Detailed technical documentation for Pieuvre's Windows integration layer.
 
 ### Implementation
 
-Uses `NtSetTimerResolution` from ntdll.dll for sub-millisecond timer control:
+Uses `NtSetTimerResolution` from `ntdll.dll` for sub-millisecond timer control:
 
 ```rust
-NtSetTimerResolution(5000, TRUE, &actual);  // 0.5ms
+NtSetTimerResolution(5000, TRUE, &actual);  // 0.5ms (5000 * 100ns)
 ```
 
 ### Windows Behavior
@@ -21,14 +21,18 @@ NtSetTimerResolution(5000, TRUE, &actual);  // 0.5ms
 - Global effect: affects all processes
 - Power impact: increased CPU wake frequency
 
-### References
-
-- [Microsoft Timer Resolution](https://docs.microsoft.com/en-us/windows/win32/api/timeapi/)
-- [Bruce Dawson Analysis](https://randomascii.wordpress.com/2020/10/04/windows-timer-resolution-the-great-rule-change/)
-
 ---
 
 ## Power Plans
+
+### Native API Usage
+
+Pieuvre bypasses `powercfg.exe` and uses `PowrProf.dll` directly:
+
+```rust
+PowerGetActiveScheme(None, &mut scheme_guid);
+PowerSetActiveScheme(None, Some(&target_guid));
+```
 
 ### GUID Mapping
 
@@ -38,30 +42,16 @@ NtSetTimerResolution(5000, TRUE, &actual);  // 0.5ms
 | High Performance | `8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c` |
 | Ultimate Performance | `e9a42b02-d5df-448d-aa00-03f14749eb61` |
 
-### Activation
-
-```powershell
-powercfg /setactive e9a42b02-d5df-448d-aa00-03f14749eb61
-```
-
-### Ultimate Performance
-
-Hidden by default. Must be enabled via:
-
-```powershell
-powercfg -duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61
-```
-
 ---
 
 ## Service Control Manager
 
-### API Usage
+### Native API Usage
 
 ```rust
-OpenSCManagerW(NULL, NULL, SC_MANAGER_ALL_ACCESS)
-OpenServiceW(hSCManager, service_name, SERVICE_CHANGE_CONFIG)
-ChangeServiceConfigW(hService, SERVICE_NO_CHANGE, SERVICE_DISABLED, ...)
+OpenSCManagerW(None, None, SC_MANAGER_ALL_ACCESS);
+OpenServiceW(hSCManager, service_name, SERVICE_CHANGE_CONFIG);
+ChangeServiceConfigW(hService, SERVICE_NO_CHANGE, SERVICE_DISABLED, ...);
 ```
 
 ### Target Services
@@ -75,48 +65,27 @@ ChangeServiceConfigW(hService, SERVICE_NO_CHANGE, SERVICE_DISABLED, ...)
 
 ---
 
-## Windows Firewall
+## Sentinel Engine (Self-Healing)
 
-### Rule Injection
+### Implementation
 
-```powershell
-netsh advfirewall firewall add rule name="Pieuvre-Block-Telemetry" dir=out action=block remoteip=X.X.X.X
-```
+Uses `RegNotifyChangeKeyValue` for event-driven monitoring of critical registry keys.
 
-### Blocked Domains (47)
-
-See [telemetry-domains.txt](../config/telemetry-domains.txt)
-
-### Blocked IP Ranges (17)
-
-Microsoft telemetry endpoints including:
-- `13.64.0.0/11` - Azure
-- `20.33.0.0/16` - Microsoft
-- `52.96.0.0/12` - Office 365
+- **Mode**: Event-driven (0% CPU idle)
+- **Reaction**: Instantaneous restoration upon modification
+- **Scope**: IFEO, AppInit_DLLs, Winlogon, ShellServiceObjectDelayLoad
 
 ---
 
-## MSI Mode
+## ETW Engine (Latency Monitoring)
 
-### Detection
+### Implementation
 
-Registry path:
-```
-HKLM\SYSTEM\CurrentControlSet\Enum\PCI\*\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties
-```
+Uses `EventTrace` APIs to capture kernel events in real-time.
 
-### Enabling
-
-Set `MSISupported` DWORD to `1` for:
-- GPU devices
-- NVMe controllers
-- Network adapters
-
-### Benefits
-
-- Reduced interrupt latency
-- Better multi-core scaling
-- Required for optimal gaming performance
+- **DriverResolver**: Maps kernel routine addresses to `.sys` filenames using `EnumDeviceDrivers`.
+- **Metrics**: Captures DPC/ISR duration per driver.
+- **Feedback Loop**: Automatically adjusts interrupt affinity for high-latency drivers.
 
 ---
 
@@ -124,38 +93,16 @@ Set `MSISupported` DWORD to `1` for:
 
 ### Atomic Writes
 
-All registry modifications use transactional API when available:
+All registry modifications use native APIs:
 
 ```rust
-RegCreateKeyExW(..., REG_OPTION_NON_VOLATILE, ...)
-RegSetValueExW(hKey, value_name, 0, REG_DWORD, &data, size)
-RegCloseKey(hKey)
+RegCreateKeyExW(..., REG_OPTION_NON_VOLATILE, ...);
+RegSetValueExW(hKey, value_name, 0, REG_DWORD, Some(&data));
 ```
 
 ### Backup Strategy
 
-Original values captured in snapshot before any modification.
-
----
-
-## Scheduled Tasks
-
-### Disabled Tasks (25)
-
-Categories:
-- Microsoft Compatibility Appraiser
-- Customer Experience Improvement Program (CEIP)
-- Disk Diagnostics
-- Family Safety
-- Feedback
-- Maps telemetry
-- Office telemetry
-
-### Implementation
-
-```powershell
-schtasks /Change /TN "TaskPath" /Disable
-```
+Original values captured in `zstd` compressed snapshots with SHA256 integrity checks.
 
 ---
 

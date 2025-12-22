@@ -87,7 +87,7 @@ impl SyncOperation for RegistryDwordOperation {
                 key,
                 value_name: value,
                 value_type: "REG_DWORD".to_string(),
-                original_data: original.map(|d| d.to_le_bytes().to_vec()).unwrap_or_default(),
+                original_data: original.unwrap_or_default().to_le_bytes().to_vec(),
             }])
         }).await.map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))?
     }

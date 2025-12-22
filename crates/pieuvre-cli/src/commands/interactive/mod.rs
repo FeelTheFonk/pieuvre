@@ -37,7 +37,7 @@ pub async fn run_default() -> Result<()> {
     match action {
         MainAction::Interactive(profile) => run(&profile).await,
         MainAction::QuickApply(profile) => run_quick_apply(&profile).await,
-        MainAction::Status => super::status::run(),
+        MainAction::Status => super::status::run(false),
         MainAction::Rollback => super::rollback::run(true, false, None),
         MainAction::Exit => {
             ui::print_goodbye();

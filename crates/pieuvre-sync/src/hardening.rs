@@ -187,7 +187,7 @@ fn enable_privilege(privilege_name: &str) -> Result<()> {
     }
 }
 
-/// Clés critiques à verrouiller
+/// Clés critiques à verrouiller (SOTA 2026)
 pub const CRITICAL_KEYS: &[&str] = &[
     r"SYSTEM\CurrentControlSet\Control\PriorityControl",
     r"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management",
@@ -195,12 +195,19 @@ pub const CRITICAL_KEYS: &[&str] = &[
     r"SYSTEM\CurrentControlSet\Control\Session Manager\Kernel",
     r"SYSTEM\CurrentControlSet\Services\DiagTrack",
     r"SYSTEM\CurrentControlSet\Services\SysMain",
+    // Vecteurs de persistance & IFEO
+    r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options",
+    r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_DLLs",
+    r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon",
+    r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\ShellServiceObjectDelayLoad",
 ];
 
-/// Services critiques à verrouiller
+/// Services critiques à verrouiller (SOTA 2026)
 pub const CRITICAL_SERVICES: &[&str] = &[
     "DiagTrack",
     "SysMain",
     "WSearch",
     "WerSvc",
+    "NvTelemetryContainer", // NVIDIA Telemetry
+    "Intel(R) Content Protection HECI Service", // Intel
 ];

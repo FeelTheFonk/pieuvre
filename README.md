@@ -11,14 +11,15 @@ Windows system control and optimization tool. Full registry/service/network/powe
 
 ## Overview
 
-Pieuvre is a state-of-the-art Windows optimization toolkit built in Rust.
+Pieuvre is a state-of-the-art Windows optimization toolkit built in Rust, now in its **Climax (0.3.0)** phase.
 
 Unlike batch scripts or registry tweaks, Pieuvre:
 
-- **Audits before modifying** - Full system state capture
-- **Creates automatic snapshots** - Every change is reversible
-- **Validates sources** - Optimizations based on documented Windows internals
-- **Detects hardware** - Laptop/desktop-aware recommendations
+- **100% Native API Integration** - Zero reliance on external CLI tools (`netsh`, `powercfg`, etc.)
+- **Audits before modifying** - Full system state capture with deep ETW analysis
+- **Creates automatic snapshots** - Every change is reversible via `zstd` compressed backups
+- **Sentinel Engine** - Real-time monitoring and self-healing of critical system settings
+- **Hardware-Aware Intelligence** - Advanced detection for optimal DPC/ISR steering
 
 **Target Users**: Power users, gaming enthusiasts, privacy-focused users, system administrators.
 
@@ -26,13 +27,13 @@ Unlike batch scripts or registry tweaks, Pieuvre:
 
 ## Features
 
-- **Audit Engine** - Hardware (DXGI GPU, SSD), services (real start_type), telemetry (30+ keys), security scoring
-- **ETW Monitoring** - Real-time Kernel DPC/ISR latency capture (SOTA 2026)
-- **Security Audit** - Defender status, Firewall profiles, UAC, SecureBoot, recommendations
-- **Sync Engine** - 25+ optimization modules including Interrupt Affinity Steering
-- **Persistence Engine** - Snapshot creation & rollback (zstd compression)
-- **Sentinel Engine** - Background monitoring & auto-restoration of critical settings
-- **Interactive Mode** - 70+ granular options (Default launch mode)
+- **Audit Engine** - Hardware (DXGI GPU, SSD), services, telemetry (40+ keys), security scoring
+- **ETW Monitoring** - Real-time Kernel DPC/ISR latency capture with `DriverResolver` (SOTA 2026)
+- **Security Audit** - Defender status, Firewall profiles, UAC, SecureBoot, HVCI/VBS detection
+- **Sync Engine** - 30+ optimization modules including **Interrupt Affinity Steering**
+- **Persistence Engine** - Snapshot creation & rollback (zstd compression + SHA256)
+- **Sentinel Engine** - Event-driven background monitoring & auto-restoration (Self-Healing)
+- **Interactive Mode** - 9 sections, 80+ granular options (Default launch mode)
 
 → See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details
 

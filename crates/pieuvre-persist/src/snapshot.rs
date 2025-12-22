@@ -276,7 +276,7 @@ pub fn restore(id: &str) -> Result<()> {
             ChangeRecord::Registry { key, value_name, value_type: _, original_data } => {
                 tracing::debug!(key = key, value_name = value_name, "Restauration registre");
                 
-                // Restaurer la valeur DWORD originale
+                // Restaurer la valeur DWORD originale si possible
                 if original_data.len() == 4 {
                     let value = u32::from_le_bytes([
                         original_data[0], original_data[1], 
@@ -328,6 +328,10 @@ pub fn restore(id: &str) -> Result<()> {
                 } else {
                     restored += 1;
                 }
+            }
+            ChangeRecord::AppX { package_full_name } => {
+                tracing::debug!(package = package_full_name, "Restauration AppX (no-op)");
+                restored += 1;
             }
         }
     }

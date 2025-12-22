@@ -17,13 +17,16 @@ pub async fn rollback_changes(changes: Vec<ChangeRecord>) -> Result<()> {
     for record in changes {
         match record {
             ChangeRecord::Registry { key, value_name, value_type, original_data } => {
-                rollback_registry(&key, &value_name, &value_type, original_data).await?;
+                rollback_registry_full(&key, &value_name, &value_type, original_data).await?;
             }
             ChangeRecord::Service { name, original_start_type } => {
                 rollback_service(&name, original_start_type).await?;
             }
             ChangeRecord::FirewallRule { name } => {
                 rollback_firewall(&name).await?;
+            }
+            ChangeRecord::AppX { package_full_name } => {
+                rollback_appx(&package_full_name).await?;
             }
         }
     }
@@ -32,10 +35,11 @@ pub async fn rollback_changes(changes: Vec<ChangeRecord>) -> Result<()> {
     Ok(())
 }
 
-async fn rollback_registry(key: &str, value: &str, val_type: &str, data: Vec<u8>) -> Result<()> {
-    info!(key, value, "Restauration registre...");
+
+async fn rollback_registry_full(key: &str, value: &str, val_type: &str, data: Vec<u8>) -> Result<()> {
+    info!(key, value, "Restauration registre (Full)...");
     
-    // Déverrouillage SOTA (Phase 11)
+    // Déverrouillage SOTA
     let _ = tokio::task::spawn_blocking({
         let key = key.to_string();
         move || crate::hardening::unlock_registry_key(&key)
@@ -49,7 +53,7 @@ async fn rollback_registry(key: &str, value: &str, val_type: &str, data: Vec<u8>
             move || crate::registry::set_dword_value(&key, &value, dword)
         }).await.map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))??;
     } else {
-        warn!("Type de registre non supporte pour le rollback: {}", val_type);
+        warn!("Type de registre non supporte pour le rollback full: {}", val_type);
     }
     
     Ok(())
@@ -85,5 +89,11 @@ async fn rollback_firewall(name: &str) -> Result<()> {
         }
     }).await.map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))??;
     
+    Ok(())
+}
+
+async fn rollback_appx(package_full_name: &str) -> Result<()> {
+    info!(package_full_name, "Restauration AppX (Note: Reinstallation non supportee)...");
+    // TODO: Implémenter la réinstallation via Add-AppxPackage si nécessaire
     Ok(())
 }

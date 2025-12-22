@@ -9,32 +9,24 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
-#### Audit Global SOTA 2026 (Pinacle)
-- **Migration Native API (100%)** : Suppression totale de `reg.exe` via `Command::new`. Utilisation systématique de `RegCreateKeyExW`, `RegDeleteTreeW` et `RegSetValueExW`.
-- **Hardening Stabilisé** : Correction des descripteurs de sécurité (SDDL) et des casts de pointeurs dans `hardening.rs`.
-- **Intelligence Réactive** : Validation du moteur ETW Kernel pour la capture DPC/ISR en temps réel.
+#### Sentinel Engine : Inviolabilité Réactive (SOTA 2026)
+- **Mode Event-Driven** : Migration du polling vers une surveillance événementielle via `RegNotifyChangeKeyValue`.
+- **Self-Healing Instantané** : Restauration automatique et immédiate des clés de registre critiques (IFEO, Winlogon).
+- **Hardening Suprême** : Nouveau module `hardening.rs` pour la protection des vecteurs de persistance.
 
-#### Moteur ETW & Intelligence Réactive (Phase 12) - SOTA 2026
-- **Moteur ETW Kernel** : Capture en temps réel des événements `DPC` et `ISR` via les APIs natives `StartTraceW` et `ProcessTrace`.
-- **Analyse de Latence** : Parsing des payloads `EVENT_RECORD` pour extraire la latence exacte en microsecondes par routine driver.
-- **Interrupt Affinity Steering** : Moteur d'ajustement dynamique de l'affinité des interruptions via le registre (`Affinity Policy`) pour isoler les drivers à haute latence.
+#### Moteur ETW & Intelligence Réactive (SOTA 2026)
+- **Driver Resolution** : Implémentation du `DriverResolver` pour mapper les adresses noyau aux noms réels des drivers.
+- **Monitoring Précis** : Capture de la latence DPC/ISR par driver via les APIs `EventTrace` natives.
+- **Interrupt Steering Automatisé** : Nouveau module `interrupts.rs` ajustant dynamiquement l'affinité CPU.
 
-#### Hardening Total & Inviolabilité (Phase 13) - SOTA 2026
-- **Service Hardening** : Verrouillage des services critiques via DACLs restrictifs pour empêcher toute modification tierce.
-- **Sentinel Engine** : Surveillance active en arrière-plan avec restauration instantanée en cas de détection de dérive (drift) de configuration.
-
-#### Cockpit Pinacle & UX Hardware-Aware (Phase 14) - SOTA 2026
-- **Live Dashboard** : Intégration du monitoring de latence ETW en direct dans le statut rapide de la CLI.
-- **Topologie CPU** : Visualisation de la charge et de l'affinité sur les architectures hybrides (P-Cores/E-Cores).
-
-### Changed
-- **Refactorisation Profils** : Migration du profil `Gaming` vers le nouveau modèle polymorphe.
-- **Dépendances** : Mise à jour vers `windows` crate 0.62.2 et ajout de `tokio` pour le runtime asynchrone.
+#### Cockpit Pinacle & UX (SOTA 2026)
+- **Live Dashboard** : Commande `pieuvre status --live` avec rafraîchissement 500ms.
+- **Dashboard SOTA** : Refonte visuelle complète couvrant les 9 sections d'optimisation.
 
 ### Technical
-- **103 tests unitaires** validés avec le nouveau runtime asynchrone.
-- **0 avertissement Clippy** : Standard de qualité SOTA atteint sur l'ensemble du workspace.
-- **Native API Only** : Élimination totale des dépendances aux outils CLI externes pour les modifications système.
+- **Migration Native API (100%)** : Élimination totale des dépendances aux outils CLI (`netsh`, `powercfg`, `schtasks`).
+- **Async Runtime** : Intégration complète de `tokio` pour le monitoring parallèle.
+- **0 avertissement Clippy** : Standard de qualité SOTA maintenu.
 
 ---
 
@@ -192,10 +184,8 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Roadmap
 
-### [0.3.0] - Prévu
-- [ ] Migration complète APIs natives (network.rs, windows_update.rs)
-- [ ] Logging structuré avec `#[instrument]`
+### [0.4.0] - Prévu
 - [ ] Module `bios.rs` (TPM, Secure Boot via WMI)
-- [ ] Module `defender.rs` (exclusions ciblées)
-- [ ] Trait `SyncOperation` pour polymorphisme
-- [ ] Async runtime (tokio) pour opérations parallèles
+- [ ] Module `defender.rs` (exclusions ciblées et hardening étendu)
+- [ ] Logging structuré avec `#[instrument]` pour debug noyau
+- [ ] Interface graphique (GUI) ultra-légère en Rust (egui/slint)

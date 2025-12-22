@@ -66,25 +66,25 @@ pieuvre-cli
 
 ### pieuvre-audit
 
-- Hardware detection (CPU, RAM, GPU)
-- Service enumeration
-- Telemetry level detection
+- Hardware detection (CPU, RAM, GPU via DXGI)
+- Service enumeration (Native API)
+- Telemetry level detection (40+ keys)
 - AppX package inventory
-- Network configuration auditing
+- **ETW Engine**: Real-time DPC/ISR monitoring with `DriverResolver`
 - **Read-only**: never modifies system state
 
 ### pieuvre-sync
 
-20 modification modules (SOTA 2025):
-- `services.rs` - Service state management
-- `timer.rs` - Timer resolution control
-- `power.rs` - Power plan configuration
-- `firewall.rs` - Firewall rule injection
+30+ modification modules (SOTA 2026):
+- `services.rs` - Service state management (Native API)
+- `timer.rs` - `NtSetTimerResolution` (0.5ms)
+- `power.rs` - Power plan configuration (Native API)
+- `firewall.rs` - Firewall rule injection (Native API)
 - `msi.rs` - MSI Mode detection/enabling
 - `registry.rs` - Atomic registry writes
 - `appx.rs` - AppX package removal
 - `hosts.rs` - Hosts file blocking
-- `scheduled_tasks.rs` - Task disabling
+- `scheduled_tasks.rs` - Task disabling (Native API)
 - `onedrive.rs` - OneDrive removal
 - `context_menu.rs` - Context menu cleanup
 - `widgets.rs` - Widget disabling
@@ -93,9 +93,12 @@ pieuvre-cli
 - `explorer.rs` - Explorer tweaks
 - `game_mode.rs` - Game mode configuration
 - `network.rs` - Network optimizations
-- `security.rs` - **VBS/HVCI/Memory Integrity** (NEW)
-- `dpc.rs` - **DPC latency optimizations** (NEW)
-- `cpu.rs` - **Core Parking/Memory** (NEW)
+- `security.rs` - VBS/HVCI/Memory Integrity
+- `dpc.rs` - DPC latency optimizations
+- `cpu.rs` - Core Parking/Memory
+- `hardening.rs` - **System Hardening & IFEO Protection** (NEW)
+- `interrupts.rs` - **Dynamic Interrupt Affinity Steering** (NEW)
+- `sentinel/` - **Event-Driven Self-Healing Engine** (NEW)
 
 ### pieuvre-persist
 

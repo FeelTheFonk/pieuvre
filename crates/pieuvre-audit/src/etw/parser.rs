@@ -71,7 +71,8 @@ impl EtwParser {
                 let latency_ticks = end_time - initial_time;
                 let latency_us = latency_ticks / 10; 
                 
-                super::monitor::LatencyMonitor::global().update_dpc(routine, latency_us);
+                let driver_name = super::resolver::DriverResolver::global().read().unwrap().resolve(routine as usize);
+                super::monitor::LatencyMonitor::global().update_dpc(driver_name, latency_us);
                 tracing::trace!("DPC detected: routine={:x}, latency={}us", routine, latency_us);
             }
         }
@@ -93,7 +94,8 @@ impl EtwParser {
 
             if end_time > initial_time {
                 let latency_us = (end_time - initial_time) / 10;
-                super::monitor::LatencyMonitor::global().update_isr(routine, latency_us);
+                let driver_name = super::resolver::DriverResolver::global().read().unwrap().resolve(routine as usize);
+                super::monitor::LatencyMonitor::global().update_isr(driver_name, latency_us);
                 tracing::trace!("ISR detected: routine={:x}, latency={}us", routine, latency_us);
             }
         }

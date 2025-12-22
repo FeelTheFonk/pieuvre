@@ -136,30 +136,40 @@ impl OptExecutor for PrivacyExecutor {
 
         match id {
             "telemetry_level" => {
+                capture_registry_state(r"SOFTWARE\Policies\Microsoft\Windows\DataCollection", "AllowTelemetry", _changes);
+                capture_registry_state(r"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection", "AllowTelemetry", _changes);
                 tokio::task::spawn_blocking(|| registry::set_telemetry_level(0)).await??;
                 Ok(ExecutionResult::ok("Telemetry level 0"))
             }
             "advertising_id" => {
+                capture_registry_state(r"SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo", "Enabled", _changes);
                 tokio::task::spawn_blocking(registry::disable_advertising_id).await??;
                 Ok(ExecutionResult::ok("Advertising ID disabled"))
             }
             "location" => {
+                capture_registry_state(r"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location", "Value", _changes);
                 tokio::task::spawn_blocking(registry::disable_location).await??;
                 Ok(ExecutionResult::ok("Location disabled"))
             }
             "activity_history" => {
+                capture_registry_state(r"SOFTWARE\Policies\Microsoft\Windows\System", "EnableActivityFeed", _changes);
+                capture_registry_state(r"SOFTWARE\Policies\Microsoft\Windows\System", "PublishUserActivities", _changes);
+                capture_registry_state(r"SOFTWARE\Policies\Microsoft\Windows\System", "UploadUserActivities", _changes);
                 tokio::task::spawn_blocking(registry::disable_activity_history).await??;
                 Ok(ExecutionResult::ok("Activity history disabled"))
             }
             "cortana" => {
+                capture_registry_state(r"SOFTWARE\Policies\Microsoft\Windows\Windows Search", "AllowCortana", _changes);
                 tokio::task::spawn_blocking(registry::disable_cortana).await??;
                 Ok(ExecutionResult::ok("Cortana disabled"))
             }
             "context_menu" => {
+                // TODO: Capture context menu state if possible
                 let n = tokio::task::spawn_blocking(context_menu::remove_context_menu_clutter).await??;
                 Ok(ExecutionResult::ok_count(n as usize, format!("{} items removed", n)))
             }
             "widgets" => {
+                capture_registry_state(r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "TaskbarDa", _changes);
                 tokio::task::spawn_blocking(widgets::disable_widgets).await??;
                 Ok(ExecutionResult::ok("Widgets disabled"))
             }
@@ -168,14 +178,18 @@ impl OptExecutor for PrivacyExecutor {
                 Ok(ExecutionResult::ok("Updates paused 35 days"))
             }
             "driver_updates" => {
+                capture_registry_state(r"SOFTWARE\Policies\Microsoft\Windows\DeviceInstall\Settings", "InstallEveryElement", _changes);
                 tokio::task::spawn_blocking(windows_update::disable_driver_updates).await??;
                 Ok(ExecutionResult::ok("Driver updates disabled"))
             }
             "recall" => {
+                capture_registry_state(r"SOFTWARE\Policies\Microsoft\Windows\WindowsAI", "DisableAIDataAnalysis", _changes);
+                capture_registry_state(r"SOFTWARE\Policies\Microsoft\Windows\WindowsAI", "TurnOffSavingSnapshots", _changes);
                 tokio::task::spawn_blocking(registry::disable_recall).await??;
                 Ok(ExecutionResult::ok("Windows Recall blocked"))
             }
             "group_policy_telem" => {
+                capture_registry_state(r"SOFTWARE\Policies\Microsoft\Windows\DataCollection", "AllowTelemetry", _changes);
                 tokio::task::spawn_blocking(|| registry::set_group_policy_telemetry(0)).await??;
                 Ok(ExecutionResult::ok("Group Policy telemetry Security"))
             }
@@ -542,6 +556,27 @@ fn capture_service_state(service_name: &str, changes: &mut Vec<ChangeRecord>) {
             original_start_type: original,
         });
     }
+}
+
+/// Capture l'état original d'une valeur de registre pour rollback
+fn capture_registry_state(subkey: &str, value_name: &str, changes: &mut Vec<ChangeRecord>) {
+    if let Ok(original) = pieuvre_sync::registry::read_dword_value(subkey, value_name) {
+        changes.push(ChangeRecord::Registry {
+            key: subkey.to_string(),
+            value_name: value_name.to_string(),
+            value_type: "REG_DWORD".to_string(),
+            original_data: original.to_le_bytes().to_vec(),
+        });
+    }
+}
+
+/// Capture l'état original d'un package AppX pour rollback
+#[allow(dead_code)]
+fn capture_appx_state(package_name: &str, changes: &mut Vec<ChangeRecord>) {
+    // Note: Pour AppX, on stocke juste le nom pour réinstallation si possible
+    changes.push(ChangeRecord::AppX {
+        package_full_name: package_name.to_string(),
+    });
 }
 
 /// Dispatcher: sélectionne le bon executor selon la catégorie
