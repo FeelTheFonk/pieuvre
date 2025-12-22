@@ -1,4 +1,4 @@
-# Pieuvre Configuration - Profil Privacy
+# pieuvre Configuration - Profil Privacy
 name = "Privacy Maximum"
 description = "Télémétrie zéro, vie privée maximale"
 risk_level = "medium"

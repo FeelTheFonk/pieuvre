@@ -1,10 +1,10 @@
-# Configuration par défaut Pieuvre SOTA 2026
+# Configuration par défaut pieuvre SOTA 2026
 
 [general]
 # Niveau de log: trace, debug, info, warn, error
 log_level = "info"
 # Répertoire des snapshots
-snapshot_dir = "C:\\ProgramData\\Pieuvre\\snapshots"
+snapshot_dir = "C:\\ProgramData\\pieuvre\\snapshots"
 # Mode dry-run par défaut
 dry_run = false
 

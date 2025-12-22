@@ -1,4 +1,4 @@
-//! Pieuvre - Outil d'alignement système Windows 11
+//! pieuvre - Outil d'alignement système Windows 11
 //!
 //! Interface CLI principale SOTA 2026.
 
@@ -13,7 +13,7 @@ use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 #[derive(Parser)]
 #[command(name = "pieuvre")]
-#[command(author = "Pieuvre Contributors")]
+#[command(author = "pieuvre Contributors")]
 #[command(version)]
 #[command(about = "Outil SOTA d'alignement systeme Windows 11")]
 #[command(

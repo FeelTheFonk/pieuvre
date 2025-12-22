@@ -1,6 +1,6 @@
 # pieuvre-cli
 
-Command-line interface for Pieuvre Windows optimization tool.
+Command-line interface for pieuvre Windows optimization tool.
 
 [![SOTA 2026](https://img.shields.io/badge/SOTA-2026-brightgreen)]()
 [![Tests](https://img.shields.io/badge/tests-12%20passed-success)]()
@@ -50,7 +50,7 @@ pieuvre audit [OPTIONS]
 **Example:**
 ```powershell
 pieuvre audit --full
-# Output: C:\ProgramData\Pieuvre\reports\audit_2025-12-22.json
+# Output: C:\ProgramData\pieuvre\reports\audit_2025-12-22.json
 ```
 
 ---

@@ -1,6 +1,6 @@
 # Technical Documentation
 
-Detailed technical documentation for Pieuvre's Windows integration layer.
+Detailed technical documentation for pieuvre's Windows integration layer.
 
 ---
 
@@ -27,7 +27,7 @@ NtSetTimerResolution(5000, TRUE, &actual);  // 0.5ms (5000 * 100ns)
 
 ### Native API Usage
 
-Pieuvre bypasses `powercfg.exe` and uses `PowrProf.dll` directly:
+pieuvre bypasses `powercfg.exe` and uses `PowrProf.dll` directly:
 
 ```rust
 PowerGetActiveScheme(None, &mut scheme_guid);

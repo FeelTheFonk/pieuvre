@@ -1,6 +1,6 @@
 # pieuvre-common
 
-Shared types and error handling for Pieuvre.
+Shared types and error handling for pieuvre.
 
 ---
 

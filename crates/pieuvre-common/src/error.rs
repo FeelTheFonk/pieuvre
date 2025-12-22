@@ -1,8 +1,8 @@
-//! Types d'erreur Pieuvre
+//! Types d'erreur pieuvre
 
 use thiserror::Error;
 
-/// Erreur principale Pieuvre
+/// Erreur principale pieuvre
 #[derive(Error, Debug)]
 pub enum PieuvreError {
     #[error("Erreur d'accès au registre: {0}")]

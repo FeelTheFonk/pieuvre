@@ -1,0 +1,18 @@
+    Checking serde_core v1.0.228
+    Checking thiserror v2.0.17
+    Checking serde v1.0.228
+    Checking serde_json v1.0.145
+    Checking uuid v1.19.0
+    Checking serde_spanned v0.6.9
+    Checking chrono v0.4.42
+    Checking toml_datetime v0.6.11
+    Checking toml_edit v0.22.27
+    Checking winstructs v0.3.2
+    Checking nt_hive2 v4.2.4
+    Checking toml v0.8.23
+    Checking pieuvre-common v0.3.0 (C:\Users\CleS\Desktop\pieuvre\crates\pieuvre-common)
+    Checking pieuvre-audit v0.3.0 (C:\Users\CleS\Desktop\pieuvre\crates\pieuvre-audit)
+    Checking pieuvre-sync v0.3.0 (C:\Users\CleS\Desktop\pieuvre\crates\pieuvre-sync)
+    Checking pieuvre-persist v0.3.0 (C:\Users\CleS\Desktop\pieuvre\crates\pieuvre-persist)
+    Checking pieuvre-cli v0.3.0 (C:\Users\CleS\Desktop\pieuvre\crates\pieuvre-cli)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.24s

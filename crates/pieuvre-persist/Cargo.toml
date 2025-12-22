@@ -3,7 +3,7 @@ name = "pieuvre-persist"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Module de persistance et rollback pour Pieuvre"
+description = "Module de persistance et rollback pour pieuvre"
 
 [dependencies]
 pieuvre-common = { path = "../pieuvre-common" }

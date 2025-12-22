@@ -3,7 +3,7 @@ name = "pieuvre-common"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Types partagés et configuration pour Pieuvre"
+description = "Types partagés et configuration pour pieuvre"
 
 [dependencies]
 serde.workspace = true

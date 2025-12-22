@@ -3,7 +3,7 @@ name = "pieuvre-audit"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Module d'audit système pour Pieuvre"
+description = "Module d'audit système pour pieuvre"
 
 [dependencies]
 pieuvre-common = { path = "../pieuvre-common" }

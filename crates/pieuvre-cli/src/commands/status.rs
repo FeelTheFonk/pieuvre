@@ -138,8 +138,8 @@ fn render_dashboard() -> Result<()> {
     // 4. NETWORK & SYNC
     println!("  {}", style("NETWORK & SYNC").bold().underlined());
     match pieuvre_sync::firewall::list_pieuvre_rules() {
-        Ok(rules) => println!("    Pieuvre Rules:     {}", style(rules.len()).green()),
-        Err(_) => println!("    Pieuvre Rules:     0"),
+        Ok(rules) => println!("    pieuvre Rules:     {}", style(rules.len()).green()),
+        Err(_) => println!("    pieuvre Rules:     0"),
     }
     match pieuvre_sync::power::get_active_power_plan() {
         Ok(plan) => println!("    Power Profile:     {}", style(plan).cyan()),

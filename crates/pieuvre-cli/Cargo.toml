@@ -3,7 +3,7 @@ name = "pieuvre-cli"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Interface CLI pour Pieuvre"
+description = "Interface CLI pour pieuvre"
 
 [[bin]]
 name = "pieuvre"

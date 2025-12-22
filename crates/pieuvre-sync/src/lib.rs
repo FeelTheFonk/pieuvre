@@ -1,4 +1,4 @@
-//! Pieuvre Sync Engine
+//! pieuvre Sync Engine
 //!
 //! Module de synchronisation: application des optimisations.
 

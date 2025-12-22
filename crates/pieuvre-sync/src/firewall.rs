@@ -94,7 +94,7 @@ pub fn create_telemetry_block_rules() -> Result<Vec<String>> {
             .Rules()
             .map_err(|e| PieuvreError::Internal(format!("Failed to get FW rules: {}", e)))?;
 
-        let rule_name = "Pieuvre-BlockTelemetry";
+        let rule_name = "pieuvre-BlockTelemetry";
         let ip_list = TELEMETRY_IP_RANGES.join(",");
 
         let rule: INetFwRule = CoCreateInstance(&NetFwRule, None, CLSCTX_ALL)
@@ -103,7 +103,7 @@ pub fn create_telemetry_block_rules() -> Result<Vec<String>> {
         rule.SetName(&BSTR::from(rule_name))
             .map_err(|e| PieuvreError::Internal(e.to_string()))?;
         rule.SetDescription(&BSTR::from(
-            "Bloque les IPs de télémétrie Microsoft (Pieuvre SOTA)",
+            "Bloque les IPs de télémétrie Microsoft (pieuvre SOTA)",
         ))
         .map_err(|e| PieuvreError::Internal(e.to_string()))?;
         rule.SetDirection(NET_FW_RULE_DIR_OUT)
@@ -124,7 +124,7 @@ pub fn create_telemetry_block_rules() -> Result<Vec<String>> {
     }
 }
 
-/// Supprime les règles firewall Pieuvre via API COM
+/// Supprime les règles firewall pieuvre via API COM
 pub fn remove_pieuvre_rules() -> Result<u32> {
     unsafe {
         let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
@@ -137,7 +137,7 @@ pub fn remove_pieuvre_rules() -> Result<u32> {
             .map_err(|e| PieuvreError::Internal(format!("Failed to get FW rules: {}", e)))?;
 
         let mut removed = 0u32;
-        let rule_names = ["Pieuvre-BlockTelemetry", "Pieuvre-BlockTelemetryDomains"];
+        let rule_names = ["pieuvre-BlockTelemetry", "pieuvre-BlockTelemetryDomains"];
 
         for name in rule_names {
             if rules.Remove(&BSTR::from(name)).is_ok() {
@@ -150,7 +150,7 @@ pub fn remove_pieuvre_rules() -> Result<u32> {
     }
 }
 
-/// Liste les règles firewall Pieuvre existantes via API COM
+/// Liste les règles firewall pieuvre existantes via API COM
 pub fn list_pieuvre_rules() -> Result<Vec<FirewallRule>> {
     unsafe {
         let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
@@ -165,7 +165,7 @@ pub fn list_pieuvre_rules() -> Result<Vec<FirewallRule>> {
         let mut result = Vec::new();
 
         // COM Enumeration is complex in Rust, we check by name for now as it's our primary use case
-        let rule_name = "Pieuvre-BlockTelemetry";
+        let rule_name = "pieuvre-BlockTelemetry";
         if let Ok(rule) = rules.Item(&BSTR::from(rule_name)) {
             result.push(FirewallRule {
                 name: rule_name.to_string(),

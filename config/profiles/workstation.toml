@@ -1,4 +1,4 @@
-# Pieuvre Configuration - Profil Workstation
+# pieuvre Configuration - Profil Workstation
 name = "Workstation Optimized"
 description = "Équilibre productivité et stabilité"
 risk_level = "low"

@@ -1,4 +1,4 @@
-# Pieuvre
+# ⣠⎴⎴⎯⎯⎯⎯⟬ ⊚ ⟭⎯⎯⎯⎯⎴⎴⣄
 
 Windows system control and optimization tool. Full registry/service/network/power management with snapshot-based rollback.
 
@@ -11,9 +11,9 @@ Windows system control and optimization tool. Full registry/service/network/powe
 
 ## Overview
 
-Pieuvre is a state-of-the-art Windows optimization toolkit built in Rust, now in its **Climax (0.3.0)** phase.
+pieuvre is a state-of-the-art Windows optimization toolkit built in Rust, now in its **Climax (0.3.0)** phase.
 
-Unlike batch scripts or registry tweaks, Pieuvre:
+Unlike batch scripts or registry tweaks, pieuvre:
 
 - **100% Native API Integration** - Zero reliance on external CLI tools (`netsh`, `powercfg`, etc.)
 - **Audits before modifying** - Full system state capture with deep ETW analysis

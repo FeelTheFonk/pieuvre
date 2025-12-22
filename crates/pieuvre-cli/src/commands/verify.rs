@@ -96,7 +96,7 @@ pub fn run(repair: bool) -> Result<()> {
                 ok_count += 1;
             } else {
                 println!("WARN (aucune regle)");
-                issues.push(("Firewall", "Aucune regle Pieuvre active".to_string()));
+                issues.push(("Firewall", "Aucune regle pieuvre active".to_string()));
             }
         }
         Err(e) => {

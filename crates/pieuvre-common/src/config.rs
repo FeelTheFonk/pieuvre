@@ -1,11 +1,11 @@
-//! Configuration Pieuvre
+//! Configuration pieuvre
 //!
 //! Gestion des fichiers de configuration TOML et profils.
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 
-/// Configuration globale Pieuvre
+/// Configuration globale pieuvre
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PieuvreConfig {
     /// Profil actif
@@ -22,7 +22,7 @@ impl Default for PieuvreConfig {
     fn default() -> Self {
         Self {
             profile: "balanced".into(),
-            snapshot_dir: PathBuf::from(r"C:\ProgramData\Pieuvre\snapshots"),
+            snapshot_dir: PathBuf::from(r"C:\ProgramData\pieuvre\snapshots"),
             log_level: "info".into(),
             dry_run: false,
         }

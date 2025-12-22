@@ -1,6 +1,6 @@
 # Configuration
 
-Pieuvre configuration files and profiles documentation.
+pieuvre configuration files and profiles documentation.
 
 ---
 
@@ -23,7 +23,7 @@ config/
 ```toml
 [general]
 log_level = "info"
-snapshot_dir = "C:\\ProgramData\\Pieuvre\\snapshots"
+snapshot_dir = "C:\\ProgramData\\pieuvre\\snapshots"
 default_profile = "gaming"
 
 [audit]

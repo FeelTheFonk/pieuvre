@@ -1,4 +1,4 @@
-//! Pieuvre Audit Engine SOTA
+//! pieuvre Audit Engine SOTA
 //!
 //! Module d'audit système bas-niveau pour Windows 11.
 //! Fournit l'introspection du registre, la détection matérielle,

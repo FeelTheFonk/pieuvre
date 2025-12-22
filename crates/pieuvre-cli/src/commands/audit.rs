@@ -7,7 +7,7 @@ use chrono::Local;
 use std::fs;
 use std::path::PathBuf;
 
-const OUTPUT_DIR: &str = r"C:\ProgramData\Pieuvre\reports";
+const OUTPUT_DIR: &str = r"C:\ProgramData\pieuvre\reports";
 
 pub fn run(full: bool, output: Option<String>) -> Result<()> {
     println!("\n╔══════════════════════════════════════════════════════════════════╗");

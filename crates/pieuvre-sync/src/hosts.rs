@@ -98,12 +98,12 @@ pub fn add_telemetry_blocks() -> Result<u32> {
     Ok(TELEMETRY_HOSTS.len() as u32)
 }
 
-/// Remove Pieuvre entries from hosts file
+/// Remove pieuvre entries from hosts file
 pub fn remove_telemetry_blocks() -> Result<()> {
     let hosts_content = fs::read_to_string(HOSTS_PATH).map_err(PieuvreError::Io)?;
 
     if !hosts_content.contains(PIEUVRE_MARKER_START) {
-        tracing::info!("No Pieuvre hosts block found");
+        tracing::info!("No pieuvre hosts block found");
         return Ok(());
     }
 
@@ -118,7 +118,7 @@ pub fn remove_telemetry_blocks() -> Result<()> {
 
         fs::write(HOSTS_PATH, new_content).map_err(PieuvreError::Io)?;
 
-        tracing::info!("Removed Pieuvre hosts block");
+        tracing::info!("Removed pieuvre hosts block");
     }
 
     Ok(())

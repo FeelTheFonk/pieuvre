@@ -1,6 +1,6 @@
 # Architecture
 
-Pieuvre workspace architecture and data flow.
+pieuvre workspace architecture and data flow.
 
 ---
 

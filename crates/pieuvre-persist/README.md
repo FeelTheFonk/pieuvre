@@ -81,7 +81,7 @@ snapshot::restore(&latest.id)?;
 ## Storage Location
 
 ```
-C:\ProgramData\Pieuvre\snapshots\
+C:\ProgramData\pieuvre\snapshots\
 ├── 7be4b13b-051a-4cb2-afb2-257c7a3aff2c.json.zst
 ├── a1b2c3d4-e5f6-7890-abcd-ef1234567890.json.zst
 └── ...

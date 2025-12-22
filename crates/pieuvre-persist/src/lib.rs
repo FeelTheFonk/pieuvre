@@ -1,4 +1,4 @@
-//! Pieuvre Persistence Engine
+//! pieuvre Persistence Engine
 //!
 //! Gestion des snapshots et rollback.
 

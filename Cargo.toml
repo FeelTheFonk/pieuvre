@@ -9,11 +9,11 @@ members = [
 ]
 
 [workspace.package]
-version = "0.2.1"
+version = "0.3.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/pieuvre/pieuvre"
-authors = ["Pieuvre Contributors"]
+authors = ["pieuvre Contributors"]
 description = "Outil SOTA d'alignement système Windows 11"
 readme = "README.md"
 keywords = ["windows", "optimization", "system", "gaming", "privacy"]

@@ -1,0 +1,22 @@
+    Checking pieuvre-common v0.3.0 (C:\Users\CleS\Desktop\pieuvre\crates\pieuvre-common)
+warning: type `pieuvreConfig` should have an upper camel case name
+  --> crates\pieuvre-common\src\config.rs:10:12
+   |
+10 | pub struct pieuvreConfig {
+   |            ^^^^^^^^^^^^^ help: convert the identifier to upper camel case: `PieuvreConfig`
+   |
+   = note: `#[warn(non_camel_case_types)]` (part of `#[warn(nonstandard_style)]`) on by default
+
+warning: type `pieuvreError` should have an upper camel case name
+ --> crates\pieuvre-common\src\error.rs:7:10
+  |
+7 | pub enum pieuvreError {
+  |          ^^^^^^^^^^^^ help: convert the identifier to upper camel case: `PieuvreError`
+
+warning: `pieuvre-common` (lib test) generated 2 warnings
+warning: `pieuvre-common` (lib) generated 2 warnings (2 duplicates)
+    Checking pieuvre-audit v0.3.0 (C:\Users\CleS\Desktop\pieuvre\crates\pieuvre-audit)
+    Checking pieuvre-sync v0.3.0 (C:\Users\CleS\Desktop\pieuvre\crates\pieuvre-sync)
+    Checking pieuvre-persist v0.3.0 (C:\Users\CleS\Desktop\pieuvre\crates\pieuvre-persist)
+    Checking pieuvre-cli v0.3.0 (C:\Users\CleS\Desktop\pieuvre\crates\pieuvre-cli)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.60s

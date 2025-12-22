@@ -8,7 +8,7 @@ use pieuvre_audit::full_audit;
 use std::fs;
 use std::path::PathBuf;
 
-const OUTPUT_DIR: &str = r"C:\ProgramData\Pieuvre\reports";
+const OUTPUT_DIR: &str = r"C:\ProgramData\pieuvre\reports";
 
 pub fn run(profile: &str) -> Result<()> {
     println!("\n╔══════════════════════════════════════════════════════════════════╗");

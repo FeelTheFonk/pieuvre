@@ -10,7 +10,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
-const SNAPSHOT_DIR: &str = r"C:\ProgramData\Pieuvre\snapshots";
+const SNAPSHOT_DIR: &str = r"C:\ProgramData\pieuvre\snapshots";
 const DEFAULT_MAX_SNAPSHOTS: usize = 10;
 
 // ============================================

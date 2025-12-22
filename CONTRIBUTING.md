@@ -1,4 +1,4 @@
-# Contributing to Pieuvre
+# Contributing to pieuvre
 
 Thank you for your interest in contributing.
 

@@ -72,11 +72,11 @@ fn test_change_record_service() {
 #[test]
 fn test_change_record_firewall() {
     let change = ChangeRecord::FirewallRule {
-        name: "Pieuvre-Block-Telemetry".to_string(),
+        name: "pieuvre-Block-Telemetry".to_string(),
     };
 
     if let ChangeRecord::FirewallRule { name } = change {
-        assert!(name.starts_with("Pieuvre"));
+        assert!(name.starts_with("pieuvre"));
     } else {
         panic!("Expected FirewallRule change record");
     }
@@ -120,7 +120,7 @@ fn test_list_all_snapshots_sorted_by_date() {
 
 #[test]
 fn test_snapshot_dir_path_valid() {
-    let expected_dir = r"C:\ProgramData\Pieuvre\snapshots";
+    let expected_dir = r"C:\ProgramData\pieuvre\snapshots";
     assert!(!expected_dir.is_empty());
     assert!(expected_dir.contains("ProgramData"));
 }
