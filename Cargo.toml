@@ -15,6 +15,9 @@ license = "MIT OR Apache-2.0"
 repository = "https://github.com/pieuvre/pieuvre"
 authors = ["Pieuvre Contributors"]
 description = "Outil SOTA d'alignement système Windows 11"
+readme = "README.md"
+keywords = ["windows", "optimization", "system", "gaming", "privacy"]
+categories = ["os::windows-apis", "config"]
 
 [workspace.dependencies]
 # Core

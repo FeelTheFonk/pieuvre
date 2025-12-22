@@ -23,6 +23,9 @@ pub mod timer;
 pub mod widgets;
 pub mod windows_update;
 
+#[cfg(test)]
+mod tests;
+
 
 use pieuvre_common::Result;
 use std::path::Path;

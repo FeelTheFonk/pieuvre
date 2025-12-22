@@ -10,6 +10,7 @@ use tracing::{info, warn, instrument};
 #[derive(Debug)]
 pub struct ExecutionResult {
     /// Nombre d'éléments affectés (services, apps, etc.)
+    #[allow(dead_code)]
     pub affected_count: usize,
     /// Message de succès
     pub message: String,

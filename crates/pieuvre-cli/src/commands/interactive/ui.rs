@@ -83,6 +83,7 @@ pub fn create_progress_bar(total: u64, multi: &MultiProgress) -> ProgressBar {
 }
 
 /// Crée un spinner pour une opération
+#[allow(dead_code)]
 pub fn create_spinner(multi: &MultiProgress, message: &str) -> ProgressBar {
     let sp = multi.add(ProgressBar::new_spinner());
     sp.set_style(

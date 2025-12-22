@@ -4,6 +4,9 @@
 
 pub mod snapshot;
 
+#[cfg(test)]
+mod tests;
+
 use pieuvre_common::Result;
 
 /// Liste tous les snapshots disponibles
