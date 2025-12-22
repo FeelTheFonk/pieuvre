@@ -1,0 +1,46 @@
+# cargo-deny configuration
+# See https://embarkstudios.github.io/cargo-deny/index.html for more information.
+
+[graph]
+# The target(s) we are building for
+targets = [
+    { triple = "x86_64-pc-windows-msvc" },
+]
+
+[licenses]
+# Disallow unlicensed crates
+unlicensed = "deny"
+# We want to allow these licenses
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "Unlicense",
+    "Unicode-DFS-2016",
+]
+# We don't want to allow copyleft licenses
+copyleft = "deny"
+# Allow OSI/FSF free licenses
+allow-osi-fsf-free = "either"
+# The confidence threshold for license detection
+confidence-threshold = 0.8
+
+[advisories]
+# The database of advisories is at https://github.com/rustsec/advisory-db
+db-url = "https://github.com/rustsec/advisory-db"
+db-path = "~/.cargo/advisory-db"
+# Ignore specific advisories
+ignore = [
+    "RUSTSEC-2025-0119", # number_prefix is unmaintained, transitive via indicatif
+]
+
+[bans]
+# Multiple versions of the same crate are allowed but warned
+multiple-versions = "warn"
+# We can skip certain crates from the multiple versions check
+skip = []
+# We can skip certain crates from being banned
+skip-tree = []

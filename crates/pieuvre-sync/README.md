@@ -1,6 +1,6 @@
 # pieuvre-sync
 
-System modification engine with **22 specialized modules** (SOTA 2026).
+System modification engine with **24 specialized modules** (SOTA 2026).
 
 ---
 
