@@ -43,7 +43,11 @@ pub fn run_default() -> Result<()> {
             ui::print_goodbye();
             Ok(())
         }
-    }
+    }?;
+
+    // Pause finale pour éviter la fermeture de la console
+    ui::wait_for_exit();
+    Ok(())
 }
 
 /// Application rapide d'un profil sans sélection granulaire
@@ -64,6 +68,7 @@ pub fn run_quick_apply(profile: &str) -> Result<()> {
     println!("       Redemarrage recommande pour certaines modifications.");
     println!();
     
+    ui::wait_for_exit();
     Ok(())
 }
 

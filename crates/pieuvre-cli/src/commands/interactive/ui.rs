@@ -177,6 +177,14 @@ pub fn print_goodbye() {
     println!();
 }
 
+/// Attend que l'utilisateur appuie sur Entrée avant de quitter
+pub fn wait_for_exit() {
+    println!();
+    println!("  {}", style("Appuyez sur ENTREE pour quitter...").dim());
+    let mut input = String::new();
+    let _ = std::io::stdin().read_line(&mut input);
+}
+
 /// Vérifie si le processus a des privilèges élevés (Windows)
 fn is_elevated() -> bool {
     use std::process::Command;
