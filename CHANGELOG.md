@@ -23,6 +23,12 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Live Dashboard** : Commande `pieuvre status --live` avec rafraîchissement 500ms.
 - **Dashboard SOTA** : Refonte visuelle complète couvrant les 9 sections d'optimisation.
 
+#### Alignement Profils & Architecture (SOTA 2026)
+- **Architecture Data-Driven** : Refonte totale du moteur de synchronisation piloté par les fichiers TOML.
+- **Alignement Total** : Synchronisation parfaite entre `@config/profiles` et les capacités des crates.
+- **Opérations Atomiques** : Nouveaux exécuteurs pour `MsiOperation`, `AppxOperation` et `PowerPlanOperation`.
+- **Registry Config Exhaustif** : Support complet de toutes les clés de confidentialité et télémétrie définies en TOML.
+
 ### Technical
 - **Migration Native API (100%)** : Élimination totale des dépendances aux outils CLI (`netsh`, `powercfg`, `schtasks`).
 - **Async Runtime** : Intégration complète de `tokio` pour le monitoring parallèle.

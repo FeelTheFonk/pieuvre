@@ -36,7 +36,7 @@ mod tests;
 
 use pieuvre_common::Result;
 use tracing::instrument;
-use std::path::Path;
+use crate::operation::{SyncOperation, ServiceOperation, RegistryDwordOperation};
 
 /// Applique un profil d'optimisation
 pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
@@ -44,23 +44,164 @@ pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
     
     // Charger le profil TOML
     let profile_path = format!("config/profiles/{}.toml", profile_name);
+    let content = std::fs::read_to_string(&profile_path)
+        .map_err(|e| pieuvre_common::PieuvreError::Internal(format!("Erreur lecture profil {}: {}", profile_name, e)))?;
     
-    if !Path::new(&profile_path).exists() {
-        tracing::warn!("Profil {} non trouvé, utilisation des defaults", profile_name);
-    }
-    
+    let profile: pieuvre_common::Profile = ::toml::from_str(&content)
+        .map_err(|e| pieuvre_common::PieuvreError::Internal(format!("Erreur parsing profil {}: {}", profile_name, e)))?;
+
     if dry_run {
-        tracing::info!("[DRY-RUN] Aucune modification appliquée");
-        return Ok(());
+        tracing::info!("[DRY-RUN] Simulation de l'application du profil {}", profile.name);
     }
-    
-    // Appliquer selon le type de profil
-    match profile_name {
-        "gaming" => apply_gaming_profile().await?,
-        "privacy" => apply_privacy_profile().await?,
-        "workstation" => apply_workstation_profile().await?,
-        _ => {
-            tracing::warn!("Profil inconnu: {}", profile_name);
+
+    // 0. Sondage matériel SOTA
+    let hw = tokio::task::spawn_blocking(pieuvre_audit::hardware::probe_hardware).await
+        .map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))??;
+
+    let mut operations: Vec<Box<dyn SyncOperation>> = Vec::new();
+
+    // 1. Timer & Scheduler
+    if let Some(timer) = &profile.timer {
+        operations.push(Box::new(RegistryDwordOperation {
+            key: r"SYSTEM\CurrentControlSet\Control\Session Manager\kernel".to_string(),
+            value: "GlobalTimerResolutionRequests".to_string(),
+            target_data: if timer.force_high_precision { 1 } else { 0 },
+        }));
+    }
+
+    if let Some(scheduler) = &profile.scheduler {
+        operations.push(Box::new(RegistryDwordOperation {
+            key: r"SYSTEM\CurrentControlSet\Control\PriorityControl".to_string(),
+            value: "Win32PrioritySeparation".to_string(),
+            target_data: scheduler.win32_priority_separation,
+        }));
+    }
+
+    // 2. Services
+    if let Some(services) = &profile.services {
+        for name in &services.disable {
+            operations.push(Box::new(ServiceOperation { name: name.clone(), target_start_type: 4 }));
+        }
+        for name in &services.manual {
+            operations.push(Box::new(ServiceOperation { name: name.clone(), target_start_type: 3 }));
+        }
+    }
+
+    // 3. Telemetry & Registry
+    if let Some(telemetry) = &profile.telemetry {
+        operations.push(Box::new(RegistryDwordOperation {
+            key: r"SOFTWARE\Policies\Microsoft\Windows\DataCollection".to_string(),
+            value: "AllowTelemetry".to_string(),
+            target_data: telemetry.level,
+        }));
+    }
+
+    if let Some(reg) = &profile.registry {
+        let mut add_reg = |key: &str, value: &str, val: Option<bool>| {
+            if let Some(v) = val {
+                operations.push(Box::new(RegistryDwordOperation {
+                    key: key.to_string(),
+                    value: value.to_string(),
+                    target_data: if v { 1 } else { 0 },
+                }));
+            }
+        };
+
+        add_reg(r"SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo", "Enabled", reg.advertising_id);
+        add_reg(r"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location", "Value", reg.location_tracking);
+        add_reg(r"SOFTWARE\Policies\Microsoft\Windows\System", "PublishUserActivities", reg.activity_history);
+        add_reg(r"SOFTWARE\Microsoft\Windows\CurrentVersion\Search", "CanCortanaBeEnabled", reg.cortana);
+        add_reg(r"SOFTWARE\Policies\Microsoft\Windows\Explorer", "DisableSearchBoxSuggestions", reg.web_search.map(|v| !v));
+        add_reg(r"SOFTWARE\Policies\Microsoft\Windows\CloudContent", "DisableTailoredExperiences", reg.tailored_experiences.map(|v| !v));
+        add_reg(r"SOFTWARE\Policies\Microsoft\Windows\DataCollection", "AllowDiagnosticDataViewer", reg.diagnostic_data_viewer);
+        add_reg(r"SOFTWARE\Policies\Microsoft\Windows\AppCompat", "DisableInventory", reg.app_launch_tracking.map(|v| !v));
+        add_reg(r"SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager", "SystemPaneSuggestionsEnabled", reg.suggested_content.map(|v| v));
+        add_reg(r"SOFTWARE\Policies\Microsoft\Windows\System", "EnableActivityFeed", reg.timeline);
+        add_reg(r"SOFTWARE\Microsoft\InputPersonalization", "RestrictImplicitTextCollection", reg.input_personalization.map(|v| !v));
+        add_reg(r"SOFTWARE\Microsoft\InputPersonalization", "RestrictImplicitInkCollection", reg.input_personalization.map(|v| !v));
+        
+        if let Some(freq) = reg.feedback_frequency {
+            operations.push(Box::new(RegistryDwordOperation {
+                key: r"SOFTWARE\Policies\Microsoft\Windows\DataCollection".to_string(),
+                value: "DoNotShowFeedbackNotifications".to_string(),
+                target_data: if freq == 0 { 1 } else { 0 },
+            }));
+        }
+    }
+
+    // 4. MSI
+    if let Some(msi) = &profile.msi {
+        operations.push(Box::new(crate::operation::MsiOperation {
+            devices: msi.enable_for.clone(),
+            priority: msi.priority.clone(),
+        }));
+    }
+
+    // 5. AppX
+    if let Some(appx) = &profile.appx {
+        operations.push(Box::new(crate::operation::AppxOperation {
+            packages_to_remove: appx.remove.clone(),
+        }));
+    }
+
+    // 6. GPU
+    if let Some(gpu) = &profile.gpu {
+        operations.push(Box::new(RegistryDwordOperation {
+            key: r"SYSTEM\CurrentControlSet\Control\GraphicsDrivers".to_string(),
+            value: "HwSchMode".to_string(),
+            target_data: if gpu.hardware_accelerated_gpu_scheduling { 2 } else { 1 },
+        }));
+    }
+
+    // --- ADAPTATION DYNAMIQUE (SOTA 2026) ---
+    // A. Optimisation NVIDIA
+    if hw.gpu.iter().any(|g| g.vendor == "NVIDIA") {
+        tracing::info!("GPU NVIDIA détecté : application des tweaks spécifiques");
+        operations.push(Box::new(RegistryDwordOperation {
+            key: r"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000".to_string(),
+            value: "PowerMizerEnable".to_string(),
+            target_data: 1,
+        }));
+    }
+
+    // B. Optimisation CPU Hybride
+    if hw.cpu.is_hybrid {
+        tracing::info!("CPU Hybride détecté : optimisation du scheduling P-Cores");
+        operations.push(Box::new(RegistryDwordOperation {
+            key: r"SYSTEM\CurrentControlSet\Control\Session Manager\Kernel".to_string(),
+            value: "DistributeTimers".to_string(),
+            target_data: 1,
+        }));
+    }
+
+    // Exécution des opérations
+    let mut set = tokio::task::JoinSet::new();
+    for op in operations {
+        if dry_run {
+            tracing::info!("[DRY-RUN] Opération: {}", op.name());
+            continue;
+        }
+        set.spawn(async move { op.apply().await });
+    }
+
+    let mut all_changes = Vec::new();
+    while let Some(res) = set.join_next().await {
+        if let Ok(Ok(changes)) = res {
+            all_changes.extend(changes);
+        }
+    }
+
+    // 4. Power plan
+    if let Some(power_cfg) = &profile.power {
+        if !dry_run {
+            let plan_name = power_cfg.plan.clone();
+            let _ = tokio::task::spawn_blocking(move || {
+                match plan_name.as_str() {
+                    "ultimate_performance" => crate::power::apply_gaming_power_config(),
+                    "high_performance" => crate::power::set_power_plan(crate::power::PowerPlan::HighPerformance),
+                    _ => crate::power::set_power_plan(crate::power::PowerPlan::Balanced),
+                }
+            }).await;
         }
     }
 
@@ -72,171 +213,7 @@ pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
         }
     }
     
-    Ok(())
-}
-
-async fn apply_gaming_profile() -> Result<()> {
-    tracing::info!("Application profil Gaming (Polymorphe & Contextuel)...");
-    
-    use crate::operation::{SyncOperation, ServiceOperation, RegistryDwordOperation};
-    use tokio::task::JoinSet;
-
-    // 0. Sondage matériel SOTA
-    let hw = tokio::task::spawn_blocking(pieuvre_audit::hardware::probe_hardware).await
-        .map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))??;
-
-    let mut operations: Vec<Box<dyn SyncOperation>> = vec![
-        // 1. Timer & Priority (Registre)
-        Box::new(RegistryDwordOperation {
-            key: r"SYSTEM\CurrentControlSet\Control\PriorityControl".to_string(),
-            value: "Win32PrioritySeparation".to_string(),
-            target_data: 0x26,
-        }),
-        // 2. Services Télémétrie
-        Box::new(ServiceOperation { name: "DiagTrack".to_string(), target_start_type: 4 }),
-        Box::new(ServiceOperation { name: "dmwappushservice".to_string(), target_start_type: 4 }),
-        Box::new(ServiceOperation { name: "WerSvc".to_string(), target_start_type: 4 }),
-        // 3. Services Performance
-        Box::new(ServiceOperation { name: "SysMain".to_string(), target_start_type: 4 }),
-        Box::new(ServiceOperation { name: "WSearch".to_string(), target_start_type: 4 }),
-    ];
-
-    // --- ADAPTATION DYNAMIQUE (SOTA 2026) ---
-
-    // A. Optimisation NVIDIA
-    if hw.gpu.iter().any(|g| g.vendor == "NVIDIA") {
-        tracing::info!("GPU NVIDIA détecté : application des tweaks spécifiques");
-        operations.push(Box::new(RegistryDwordOperation {
-            key: r"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000".to_string(),
-            value: "PowerMizerEnable".to_string(),
-            target_data: 1,
-        }));
-    }
-
-    // B. Optimisation CPU Hybride (Intel 12th+)
-    if hw.cpu.is_hybrid {
-        tracing::info!("CPU Hybride détecté : optimisation du scheduling P-Cores");
-        operations.push(Box::new(RegistryDwordOperation {
-            key: r"SYSTEM\CurrentControlSet\Control\Session Manager\Kernel".to_string(),
-            value: "DistributeTimers".to_string(),
-            target_data: 1,
-        }));
-    }
-
-    // C. Optimisation NVMe
-    if hw.storage.iter().any(|s| s.is_nvme) {
-        tracing::info!("Stockage NVMe détecté : optimisation des files d'attente");
-        operations.push(Box::new(RegistryDwordOperation {
-            key: r"SYSTEM\CurrentControlSet\Control\FileSystem".to_string(),
-            value: "NtfsDisableLastAccessUpdate".to_string(),
-            target_data: 1,
-        }));
-    }
-
-    let mut set = JoinSet::new();
-    for op in operations {
-        set.spawn(async move {
-            op.apply().await
-        });
-    }
-
-    let mut all_changes = Vec::new();
-    while let Some(res) = set.join_next().await {
-        if let Ok(Ok(changes)) = res {
-            all_changes.extend(changes);
-        }
-    }
-
-    // 4. Power plan (Encore spécifique car complexe)
-    let _ = tokio::task::spawn_blocking(power::apply_gaming_power_config).await;
-    
-    tracing::info!("Profil Gaming applique ({} changements contextuels)", all_changes.len());
-    Ok(())
-}
-
-#[instrument]
-async fn apply_privacy_profile() -> Result<()> {
-    tracing::info!("Application profil Privacy (Polymorphe)...");
-    
-    use crate::operation::{SyncOperation, ServiceOperation, RegistryDwordOperation};
-    use tokio::task::JoinSet;
-
-    let operations: Vec<Box<dyn SyncOperation>> = vec![
-        // 1. Services Télémétrie (Complet)
-        Box::new(ServiceOperation { name: "DiagTrack".to_string(), target_start_type: 4 }),
-        Box::new(ServiceOperation { name: "dmwappushservice".to_string(), target_start_type: 4 }),
-        Box::new(ServiceOperation { name: "WerSvc".to_string(), target_start_type: 4 }),
-        Box::new(ServiceOperation { name: "OneSyncSvc".to_string(), target_start_type: 4 }),
-        Box::new(ServiceOperation { name: "MessagingService".to_string(), target_start_type: 4 }),
-        Box::new(ServiceOperation { name: "PhoneSvc".to_string(), target_start_type: 4 }),
-        // 2. Registre Privacy
-        Box::new(RegistryDwordOperation {
-            key: r"SOFTWARE\Policies\Microsoft\Windows\DataCollection".to_string(),
-            value: "AllowTelemetry".to_string(),
-            target_data: 0,
-        }),
-        Box::new(RegistryDwordOperation {
-            key: r"SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo".to_string(),
-            value: "Enabled".to_string(),
-            target_data: 0,
-        }),
-    ];
-
-    let mut set = JoinSet::new();
-    for op in operations {
-        set.spawn(async move { op.apply().await });
-    }
-
-    let mut all_changes = Vec::new();
-    while let Some(res) = set.join_next().await {
-        if let Ok(Ok(changes)) = res {
-            all_changes.extend(changes);
-        }
-    }
-
-    // 3. Hosts & Firewall (Encore spécifique)
-    let _ = tokio::task::spawn_blocking(hosts::add_telemetry_blocks).await;
-    let _ = tokio::task::spawn_blocking(firewall::create_telemetry_block_rules).await;
-    
-    tracing::info!("Profil Privacy applique ({} changements)", all_changes.len());
-    Ok(())
-}
-
-#[instrument]
-async fn apply_workstation_profile() -> Result<()> {
-    tracing::info!("Application profil Workstation (Polymorphe)...");
-    
-    use crate::operation::{SyncOperation, ServiceOperation, RegistryDwordOperation};
-    use tokio::task::JoinSet;
-
-    let operations: Vec<Box<dyn SyncOperation>> = vec![
-        // 1. Timer (1ms pour workstation)
-        Box::new(RegistryDwordOperation {
-            key: r"SYSTEM\CurrentControlSet\Control\PriorityControl".to_string(),
-            value: "Win32PrioritySeparation".to_string(),
-            target_data: 0x18,
-        }),
-        // 2. Services Télémétrie (Minimal)
-        Box::new(ServiceOperation { name: "DiagTrack".to_string(), target_start_type: 4 }),
-        Box::new(ServiceOperation { name: "dmwappushservice".to_string(), target_start_type: 4 }),
-    ];
-
-    let mut set = JoinSet::new();
-    for op in operations {
-        set.spawn(async move { op.apply().await });
-    }
-
-    let mut all_changes = Vec::new();
-    while let Some(res) = set.join_next().await {
-        if let Ok(Ok(changes)) = res {
-            all_changes.extend(changes);
-        }
-    }
-
-    // 3. Power plan High Performance
-    let _ = tokio::task::spawn_blocking(|| power::set_power_plan(power::PowerPlan::HighPerformance)).await;
-    
-    tracing::info!("Profil Workstation applique ({} changements)", all_changes.len());
+    tracing::info!("Profil {} appliqué avec succès ({} changements)", profile.name, all_changes.len());
     Ok(())
 }
 

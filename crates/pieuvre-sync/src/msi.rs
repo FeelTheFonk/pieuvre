@@ -242,3 +242,20 @@ pub fn is_msi_enabled_on_gpu() -> bool {
         Err(_) => false,
     }
 }
+/// Configure le mode MSI pour une liste de devices (par nom partiel)
+pub fn configure_msi_for_devices(device_names: &[String], _priority: &str) -> Result<()> {
+    let eligible = list_msi_eligible_devices()?;
+    
+    for device in eligible {
+        let matches = device_names.iter().any(|name| 
+            device.description.to_lowercase().contains(&name.to_lowercase()) ||
+            device.device_id.to_lowercase().contains(&name.to_lowercase())
+        );
+        
+        if matches && device.msi_supported {
+            enable_msi(&device.full_path)?;
+        }
+    }
+    
+    Ok(())
+}

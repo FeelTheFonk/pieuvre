@@ -783,6 +783,7 @@ dependencies = [
  "serde",
  "thiserror 2.0.17",
  "tokio",
+ "toml",
  "tracing",
  "windows",
  "windows-sys 0.61.2",

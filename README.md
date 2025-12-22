@@ -20,6 +20,7 @@ Unlike batch scripts or registry tweaks, Pieuvre:
 - **Creates automatic snapshots** - Every change is reversible via `zstd` compressed backups
 - **Sentinel Engine** - Real-time monitoring and self-healing of critical system settings
 - **Hardware-Aware Intelligence** - Advanced detection for optimal DPC/ISR steering
+- **Data-Driven Architecture** - Full alignment between TOML profiles and sync engine (SOTA 2026)
 
 **Target Users**: Power users, gaming enthusiasts, privacy-focused users, system administrators.
 

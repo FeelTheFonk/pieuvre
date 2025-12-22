@@ -102,3 +102,83 @@ impl SyncOperation for RegistryDwordOperation {
         }).await.map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))?
     }
 }
+
+/// Opération sur les interruptions MSI
+pub struct MsiOperation {
+    pub devices: Vec<String>,
+    pub priority: String,
+}
+
+#[async_trait]
+impl SyncOperation for MsiOperation {
+    fn name(&self) -> &str {
+        "MSI Interrupt Optimization"
+    }
+
+    async fn apply(&self) -> Result<Vec<ChangeRecord>> {
+        let devices = self.devices.clone();
+        let priority = self.priority.clone();
+        tokio::task::spawn_blocking(move || {
+            crate::msi::configure_msi_for_devices(&devices, &priority)?;
+            Ok(vec![]) // MSI rollback non supporté pour l'instant
+        }).await.map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))?
+    }
+
+    async fn is_applied(&self) -> Result<bool> {
+        Ok(false) // Toujours appliquer pour l'instant
+    }
+}
+
+/// Opération sur les packages AppX
+pub struct AppxOperation {
+    pub packages_to_remove: Vec<String>,
+}
+
+#[async_trait]
+impl SyncOperation for AppxOperation {
+    fn name(&self) -> &str {
+        "AppX Package Removal"
+    }
+
+    async fn apply(&self) -> Result<Vec<ChangeRecord>> {
+        let packages = self.packages_to_remove.clone();
+        tokio::task::spawn_blocking(move || {
+            for pkg in packages {
+                let _ = crate::appx::remove_package(&pkg);
+            }
+            Ok(vec![])
+        }).await.map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))?
+    }
+
+    async fn is_applied(&self) -> Result<bool> {
+        Ok(false)
+    }
+}
+
+/// Opération sur le plan d'alimentation
+pub struct PowerPlanOperation {
+    pub plan: String,
+}
+
+#[async_trait]
+impl SyncOperation for PowerPlanOperation {
+    fn name(&self) -> &str {
+        "Power Plan Configuration"
+    }
+
+    async fn apply(&self) -> Result<Vec<ChangeRecord>> {
+        let plan = self.plan.clone();
+        tokio::task::spawn_blocking(move || {
+            match plan.as_str() {
+                "ultimate_performance" => crate::power::apply_gaming_power_config()?,
+                "high_performance" => crate::power::set_power_plan(crate::power::PowerPlan::HighPerformance)?,
+                _ => crate::power::set_power_plan(crate::power::PowerPlan::Balanced)?,
+            }
+            Ok(vec![])
+        }).await.map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))?
+    }
+
+    async fn is_applied(&self) -> Result<bool> {
+        Ok(false)
+    }
+}
