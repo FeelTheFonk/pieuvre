@@ -74,10 +74,10 @@ jobs:
           $archive = "pieuvre-v$version-$target.zip"
           
           # On cherche l'exécutable dans le dossier de build
-          $exePath = "target/$target/release/pieuvre-cli.exe"
+          $exePath = "target/$target/release/pieuvre.exe"
           if (-not (Test-Path $exePath)) {
             # Fallback si le chemin diffère (certains workspaces mettent tout dans target/release)
-            $exePath = "target/release/pieuvre-cli.exe"
+            $exePath = "target/release/pieuvre.exe"
           }
           
           Compress-Archive -Path $exePath -DestinationPath $archive

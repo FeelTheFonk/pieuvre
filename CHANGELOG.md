@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2025-12-22 (The Ghost Refined)
+
+### Added
+
+#### UI/UX "The Ghost" SOTA 2026
+- **GhostTheme**: New ultra-minimalist theme for `dialoguer` with refined selection symbols (`●`/`○`).
+- **Layout Engine**: Implementation of a box-drawing system using fine Unicode characters (`┌─┐`, `│`, `└─┘`) for structured data.
+- **Visual Hierarchy**: Systematic use of `cyan` accents, `dim` secondary data, and `white bold` for critical information.
+- **Straight-Forward Labels**: Simplified option labels for better readability and faster decision-making.
+- **System Intelligence Block**: Centralized hardware and system status dashboard in the interactive header.
+
+### Fixed
+
+#### CICD & Release
+- **Binary Path Correction**: Fixed `release.yml` workflow to correctly target `pieuvre.exe` instead of `pieuvre-cli.exe`.
+- **Theme API Alignment**: Resolved compilation errors with `dialoguer v0.11` trait methods.
+- **String Concatenation**: Fixed layout engine string formatting bugs.
+
+---
+
 ## [0.4.0] - 2025-12-22 (The Ghost)
 
 ### Added
@@ -210,7 +230,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Roadmap
 
-### [0.4.0] - Planned
+### [0.5.0] - Planned
 - [ ] `bios.rs` module (TPM, Secure Boot via WMI).
 - [ ] `defender.rs` module (targeted exclusions and extended hardening).
 - [ ] Structured logging with `#[instrument]` for kernel debug.

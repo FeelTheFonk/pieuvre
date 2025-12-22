@@ -1,159 +1,160 @@
 use anyhow::Result;
-use console::style;
-use dialoguer::{theme::ColorfulTheme, Select};
+use console::{style, Term};
+use dialoguer::{theme::Theme, Select};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+use std::fmt;
 
 /// Actions available from the main menu
 pub enum MainAction {
-    /// Standard interactive mode with granular selection
     Interactive(String),
-    /// Quick apply of a profile (gaming, privacy, workstation)
     QuickApply(String),
-    /// Display current system status
     Status,
-    /// Snapshot management and rollback
     Rollback,
-    /// Exit the application
     Exit,
 }
 
-/// Displays the interactive mode header (The Ghost style)
+// ══════════════════════════════════════════════════════════════════════════════
+// GHOST THEME - SOTA 2026
+// ══════════════════════════════════════════════════════════════════════════════
+
+pub struct GhostTheme {
+    pub prompt_style: console::Style,
+    pub active_item_style: console::Style,
+    pub inactive_item_style: console::Style,
+    pub active_item_prefix: String,
+    pub inactive_item_prefix: String,
+}
+
+impl Default for GhostTheme {
+    fn default() -> Self {
+        Self {
+            prompt_style: console::Style::new().for_stderr().bold(),
+            active_item_style: console::Style::new().for_stderr().cyan(),
+            inactive_item_style: console::Style::new().for_stderr().dim(),
+            active_item_prefix: "  ● ".to_string(),
+            inactive_item_prefix: "  ○ ".to_string(),
+        }
+    }
+}
+
+impl Theme for GhostTheme {
+    fn format_prompt(&self, f: &mut dyn fmt::Write, prompt: &str) -> fmt::Result {
+        write!(f, "\n  {}\n", self.prompt_style.apply_to(prompt))
+    }
+
+    fn format_select_prompt_item(&self, f: &mut dyn fmt::Write, text: &str, active: bool) -> fmt::Result {
+        let prefix = if active { &self.active_item_prefix } else { &self.inactive_item_prefix };
+        let style = if active { &self.active_item_style } else { &self.inactive_item_style };
+        write!(f, "{}{}", prefix, style.apply_to(text))
+    }
+
+    fn format_multi_select_prompt_item(&self, f: &mut dyn fmt::Write, text: &str, checked: bool, active: bool) -> fmt::Result {
+        let prefix = if checked { "  ● " } else { "  ○ " };
+        let style = if active { &self.active_item_style } else { &self.inactive_item_style };
+        write!(f, "{}{}", prefix, style.apply_to(text))
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LAYOUT ENGINE
+// ══════════════════════════════════════════════════════════════════════════════
+
+pub fn print_box_top(title: &str) {
+    let width = 60;
+    let title_len = title.len();
+    let left_line = (width - title_len - 4) / 2;
+    let right_line = width - title_len - 4 - left_line;
+
+    println!(
+        "  {}{}{}{}",
+        style("┌").dim(),
+        style("─".repeat(left_line)).dim(),
+        style(format!(" {} ", title.to_uppercase())).bold(),
+        style("─".repeat(right_line) + "┐").dim()
+    );
+}
+
+pub fn print_box_bottom() {
+    println!("  {}\n", style(format!("└{}┘", "─".repeat(58))).dim());
+}
+
+pub fn print_line(content: &str) {
+    println!("  {} {:<56} {}", style("│").dim(), content, style("│").dim());
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// UI COMPONENTS
+// ══════════════════════════════════════════════════════════════════════════════
+
 pub fn print_header(is_laptop: bool, profile: &str) {
     println!();
     println!(
         "  {}  {} · {}",
-        style("⣠⟬ ⊚ ⟭⣄").cyan().dim(),
-        if is_laptop {
-            style("LAPTOP").yellow().dim()
-        } else {
-            style("DESKTOP").green().dim()
-        },
+        style("⣠⟬ ⊚ ⟭⣄").cyan(),
+        if is_laptop { style("LAPTOP").yellow().dim() } else { style("DESKTOP").green().dim() },
         style(profile.to_uppercase()).white().bold()
     );
 }
 
-/// Displays the professional welcome screen (ASCII Art)
 pub fn print_welcome_screen() {
+    let term = Term::stdout();
+    let _ = term.clear_screen();
     println!();
     println!("  {}", style("⣠⟬ ⊚ ⟭⣄").cyan().bold());
-    println!(
-        "  {}",
-        style(format!("PIEUVRE v{}", env!("CARGO_PKG_VERSION"))).dim()
-    );
+    println!("  {}", style(format!("PIEUVRE v{}", env!("CARGO_PKG_VERSION"))).dim());
     println!();
 }
 
-/// Checks administrator status and displays a warning if necessary
 pub fn check_admin_status() {
     if is_elevated() {
-        println!("  [OK] Administrator privileges detected");
+        println!("  {} Administrator privileges active", style("●").green());
     } else {
-        println!(
-            "  {} Running as standard user",
-            style("[WARN]").yellow().bold()
-        );
-        println!("       Some optimizations require elevated privileges.");
-        println!("       Right-click > Run as administrator recommended.");
+        println!("  {} Standard user - Limited mode", style("○").yellow());
+        println!("    {} Run as administrator for full control", style("└─").dim());
         println!();
     }
 }
 
-/// Displays a quick system state summary
 pub fn print_quick_status() {
-    println!();
-    println!("  {}", style("SYSTEM STATE").bold());
-
-    // Hardware
+    print_box_top("System Intelligence");
+    
     let is_laptop = pieuvre_audit::hardware::is_laptop();
-    println!(
-        "  Type:        {}",
-        if is_laptop { "Laptop" } else { "Desktop" }
-    );
+    print_line(&format!("Chassis:     {}", if is_laptop { "Mobile / Laptop" } else { "Stationary / Desktop" }));
 
     if let Ok(hw) = pieuvre_audit::hardware::probe_hardware() {
         if hw.cpu.is_hybrid {
-            println!(
-                "  CPU:         {} [Hybrid: {}P/{}E]",
-                hw.cpu.model_name,
-                style(hw.cpu.p_cores.len()).cyan(),
-                style(hw.cpu.e_cores.len()).yellow()
-            );
+            print_line(&format!("CPU:         {} ({}P/{}E)", hw.cpu.model_name, hw.cpu.p_cores.len(), hw.cpu.e_cores.len()));
         } else {
-            println!(
-                "  CPU:         {} [{} Cores]",
-                hw.cpu.model_name, hw.cpu.physical_cores
-            );
+            print_line(&format!("CPU:         {} ({} Cores)", hw.cpu.model_name, hw.cpu.physical_cores));
         }
     }
 
-    // Timer
-    match pieuvre_sync::timer::get_timer_resolution() {
-        Ok(info) => {
-            let status = if info.current_ms() <= 0.55 {
-                "[OK]"
-            } else {
-                "[--]"
-            };
-            println!("  Timer:       {:.2}ms {}", info.current_ms(), status);
-        }
-        Err(_) => println!("  Timer:       Not available"),
+    if let Ok(info) = pieuvre_sync::timer::get_timer_resolution() {
+        let status = if info.current_ms() <= 0.55 { style("OPTIMIZED").green() } else { style("STOCK").dim() };
+        print_line(&format!("Timer:       {:.2}ms ({})", info.current_ms(), status));
     }
 
-    // Power Plan
-    match pieuvre_sync::power::get_active_power_plan() {
-        Ok(plan) => {
-            let status = if plan.contains("High") || plan.contains("Ultimate") {
-                "[OK]"
-            } else {
-                "[--]"
-            };
-            println!("  Power Plan:  {} {}", plan, status);
-        }
-        Err(_) => println!("  Power Plan:  Not available"),
+    if let Ok(plan) = pieuvre_sync::power::get_active_power_plan() {
+        let status = if plan.contains("High") || plan.contains("Ultimate") { style("PERF").green() } else { style("BALANCED").dim() };
+        print_line(&format!("Power:       {} ({})", plan, status));
     }
 
-    // DiagTrack
-    match pieuvre_sync::services::get_service_start_type("DiagTrack") {
-        Ok(4) => println!("  DiagTrack:   Disabled [OK]"),
-        Ok(_) => println!("  DiagTrack:   Running [--]"),
-        Err(_) => println!("  DiagTrack:   Not found"),
-    }
-
-    // ETW Latency
-    match pieuvre_audit::etw::session::EtwSession::check_active() {
-        Ok(true) => {
-            let max_lat = pieuvre_audit::etw::monitor::LatencyMonitor::global().get_max_latency();
-            let lat_style = if max_lat < 100 {
-                style(format!("{}us", max_lat)).green()
-            } else if max_lat < 500 {
-                style(format!("{}us", max_lat)).yellow()
-            } else {
-                style(format!("{}us", max_lat)).red().bold()
-            };
-            println!("  Latency:     {} [ACTIVE]", lat_style);
-        }
-        _ => println!("  Latency:     {} [OFF]", style("Not started").dim()),
-    }
-
-    println!();
+    print_box_bottom();
 }
 
-/// Displays the main menu and returns the chosen action
 pub fn show_main_menu() -> Result<MainAction> {
     let options = &[
-        "Custom Selection     - Choose optimizations one by one",
-        "Apply GAMING Profile - Recommended gaming optimizations",
-        "Apply PRIVACY Profile- Personal data protection",
-        "Apply WORKSTATION    - Balance performance/stability",
-        "Display Full Status  - Detailed system state",
-        "Manage Snapshots     - Rollback modifications",
+        "Custom Selection     - Granular control",
+        "Apply GAMING Profile - Maximum performance",
+        "Apply PRIVACY Profile- Data protection",
+        "Apply WORKSTATION    - Stability & Speed",
+        "Display Full Status  - Deep audit",
+        "Manage Snapshots     - Rollback",
         "Exit",
     ];
 
-    println!("  {}", style("WHAT DO YOU WANT TO DO?").bold());
-    println!();
-
-    let selection = Select::with_theme(&ColorfulTheme::default())
+    let selection = Select::with_theme(&GhostTheme::default())
+        .with_prompt("SELECT OPERATION")
         .items(options)
         .default(0)
         .interact()?;
@@ -172,20 +173,10 @@ pub fn show_main_menu() -> Result<MainAction> {
     }
 }
 
-/// Base profile selection for customization
 fn select_profile() -> Result<String> {
-    let profiles = &[
-        "GAMING      - Minimum latency, maximum performance",
-        "PRIVACY     - Telemetry and tracking disabled",
-        "WORKSTATION - Balance productivity/performance",
-    ];
-
-    println!();
-    println!("  {}", style("BASE PROFILE").bold());
-    println!("  The profile determines pre-checked options by default.");
-    println!();
-
-    let selection = Select::with_theme(&ColorfulTheme::default())
+    let profiles = &["GAMING", "PRIVACY", "WORKSTATION"];
+    let selection = Select::with_theme(&GhostTheme::default())
+        .with_prompt("BASE PROFILE")
         .items(profiles)
         .default(0)
         .interact()?;
@@ -194,305 +185,83 @@ fn select_profile() -> Result<String> {
         0 => "gaming",
         1 => "privacy",
         _ => "workstation",
-    }
-    .to_string())
+    }.to_string())
 }
 
-/// Goodbye message
-pub fn print_goodbye() {
-    println!();
-    println!("  Goodbye.");
-    println!();
-}
-
-/// Waits for Enter key before exiting
-pub fn wait_for_exit() {
-    println!();
-    println!("  {}", style("Press ENTER to exit...").dim());
-    let mut input = String::new();
-    let _ = std::io::stdin().read_line(&mut input);
-}
-
-/// Checks if the process has elevated privileges
-fn is_elevated() -> bool {
-    use windows::Win32::Foundation::HANDLE;
-    use windows::Win32::Security::{
-        GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY,
-    };
-    use windows::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
-
-    unsafe {
-        let mut token = HANDLE::default();
-        if OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token).is_err() {
-            return false;
-        }
-
-        let mut elevation = TOKEN_ELEVATION::default();
-        let mut size = std::mem::size_of::<TOKEN_ELEVATION>() as u32;
-
-        let result = GetTokenInformation(
-            token,
-            TokenElevation,
-            Some(&mut elevation as *mut _ as *mut _),
-            size,
-            &mut size,
-        );
-
-        let _ = windows::Win32::Foundation::CloseHandle(token);
-
-        result.is_ok() && elevation.TokenIsElevated != 0
-    }
-}
-
-/// Displays a section header
 pub fn print_section_header(number: u8, total: u8, name: &str) {
-    println!();
     println!(
-        "  {} · {}  {}",
-        style(number).cyan().bold(),
+        "\n  {} {} / {}  {}",
+        style("»").cyan(),
+        style(number).bold(),
         style(total).dim(),
         style(name).bold()
     );
 }
 
-/// Displays selection summary (simplified version, 5 sections)
-#[allow(dead_code)]
-pub fn print_selection_summary(
-    telem_count: usize,
-    privacy_count: usize,
-    perf_count: usize,
-    sched_count: usize,
-    appx_count: usize,
-) {
-    let total = telem_count + privacy_count + perf_count + sched_count + appx_count;
-
-    println!();
-    println!("  {}", style("SELECTION SUMMARY").bold());
-    println!("  Telemetry:    {}", style(telem_count).green().bold());
-    println!("  Privacy:      {}", style(privacy_count).green().bold());
-    println!("  Performance:  {}", style(perf_count).green().bold());
-    println!("  Scheduler:    {}", style(sched_count).green().bold());
-    println!("  AppX:         {}", style(appx_count).green().bold());
-    println!();
-    println!(
-        "  {}: {} optimizations selected",
-        style("Total").bold(),
-        style(total).cyan().bold()
-    );
-}
-
-/// Creates a progress bar for execution
 pub fn create_progress_bar(total: u64, multi: &MultiProgress) -> ProgressBar {
     let pb = multi.add(ProgressBar::new(total));
     pb.set_style(
-        ProgressStyle::with_template("  {spinner:.cyan} {bar:40.white/dim} {pos}/{len} {msg}")
+        ProgressStyle::with_template("  {spinner:.cyan} {msg} [{bar:30.white/dim}] {pos}/{len}")
             .unwrap()
-            .progress_chars("█ "),
+            .progress_chars("· "),
     );
     pb
 }
 
-/// Creates a spinner for an operation
-#[allow(dead_code)]
-pub fn create_spinner(multi: &MultiProgress, message: &str) -> ProgressBar {
-    let sp = multi.add(ProgressBar::new_spinner());
-    sp.set_style(ProgressStyle::with_template("  {spinner:.cyan} {msg}").unwrap());
-    sp.set_message(message.to_string());
-    sp
-}
-
-/// Displays operation result
 pub fn print_operation_result(name: &str, success: bool, message: &str) {
-    if success {
-        println!(
-            "  {} {} - {}",
-            style("[OK]").green().bold(),
-            name,
-            style(message).dim()
-        );
-    } else {
-        println!(
-            "  {} {} - {}",
-            style("[ERR]").red().bold(),
-            name,
-            style(message).red()
-        );
-    }
+    let prefix = if success { style("  ●").green() } else { style("  ○").red() };
+    println!("{} {:<20} {}", prefix, style(name).dim(), message);
 }
 
-/// Displays final result
-pub fn print_final_result(success_count: usize, error_count: usize, snapshot_id: Option<&str>) {
-    println!();
-    println!("  {}", style("RESULT").bold());
-    println!("  Success:  {}", style(success_count).green().bold());
-    println!(
-        "  Errors:   {}",
-        if error_count > 0 {
-            style(error_count).red().bold()
-        } else {
-            style(error_count).green().bold()
-        }
-    );
-
-    if let Some(id) = snapshot_id {
-        println!();
-        println!("  Snapshot: {}", style(&id[..8]).dim());
+pub fn print_final_result_with_reboot(success: usize, errors: usize, snap_id: Option<&str>, reboot: bool) {
+    println!("\n  {}", style("EXECUTION COMPLETE").bold());
+    println!("  {} Success: {}", style("●").green(), success);
+    if errors > 0 { println!("  {} Errors:  {}", style("●").red(), errors); }
+    
+    if let Some(id) = snap_id {
+        println!("  {} Snapshot: {}", style("●").dim(), &id[..8]);
     }
 
-    println!();
-
-    if error_count == 0 {
-        println!(
-            "{}",
-            style("  [OK] All modifications applied successfully.")
-                .green()
-                .bold()
-        );
-    } else {
-        println!(
-            "{}",
-            style("  [!] Some modifications failed.").yellow().bold()
-        );
-        println!("      Run as administrator if necessary.");
+    if reboot {
+        println!("\n  {} REBOOT RECOMMENDED", style("!").yellow().bold());
     }
-
-    println!();
-    println!("  To undo:   {}", style("pieuvre rollback --last").cyan());
-    println!("  To verify: {}", style("pieuvre status").cyan());
     println!();
 }
 
-/// Displays cancellation message
-pub fn print_cancelled() {
-    println!();
-    println!(
-        "{}",
-        style("  [*] Cancelled. No modifications performed.").yellow()
-    );
-    println!();
+pub fn print_goodbye() { println!("\n  Goodbye.\n"); }
+pub fn wait_for_exit() {
+    println!("  {}", style("Press ENTER to exit...").dim());
+    let mut input = String::new();
+    let _ = std::io::stdin().read_line(&mut input);
 }
 
-/// Displays message when no option selected
-pub fn print_no_selection() {
-    println!();
-    println!(
-        "{}",
-        style("  [*] No optimization selected. Done.").yellow()
-    );
-    println!();
-}
-
-/// Displays security warning for Security section
+pub fn print_cancelled() { println!("\n  {} Operation cancelled.\n", style("!").yellow()); }
+pub fn print_no_selection() { println!("\n  {} No options selected.\n", style("!").dim()); }
 pub fn print_security_warning() {
-    println!();
-    println!(
-        "  {}",
-        style("[WARN] CAUTION: High security risk options")
-            .red()
-            .bold()
-    );
-    println!(
-        "  {}",
-        style("    These options reduce system protection.").red()
-    );
-    println!(
-        "  {}",
-        style("    Use only on isolated gaming systems.").red()
-    );
-    println!();
+    println!("  {} {}", style("!").red().bold(), style("CAUTION: Security risk options ahead").red());
 }
 
-/// Displays full selection summary (9 sections)
-#[allow(clippy::too_many_arguments)]
 pub fn print_selection_summary_full(
-    telem_count: usize,
-    privacy_count: usize,
-    perf_count: usize,
-    sched_count: usize,
-    appx_count: usize,
-    cpu_count: usize,
-    dpc_count: usize,
-    security_count: usize,
-    net_adv_count: usize,
+    telem: usize, priva: usize, perf: usize, sched: usize, appx: usize,
+    cpu: usize, dpc: usize, sec: usize, net: usize
 ) {
-    let total = telem_count
-        + privacy_count
-        + perf_count
-        + sched_count
-        + appx_count
-        + cpu_count
-        + dpc_count
-        + security_count
-        + net_adv_count;
-
-    println!();
-    println!("  {}", style("SELECTION SUMMARY").bold());
-    println!("  Telemetry:       {}", style(telem_count).green().bold());
-    println!("  Privacy:         {}", style(privacy_count).green().bold());
-    println!("  Performance:     {}", style(perf_count).green().bold());
-    println!("  Scheduler:       {}", style(sched_count).green().bold());
-    println!("  AppX:            {}", style(appx_count).green().bold());
-    println!("  CPU/Memory:      {}", style(cpu_count).green().bold());
-    println!("  DPC Latency:     {}", style(dpc_count).green().bold());
-    if security_count > 0 {
-        println!("  Security:        {}", style(security_count).red().bold());
-    } else {
-        println!(
-            "  Security:        {}",
-            style(security_count).green().bold()
-        );
-    }
-    println!("  Advanced Network:{}", style(net_adv_count).green().bold());
-    println!();
-    println!(
-        "  {}: {} optimizations selected",
-        style("Total").bold(),
-        style(total).cyan().bold()
-    );
-
-    // Warning if critical options
-    if security_count > 0 {
-        println!();
-        println!(
-            "  {}",
-            style("[!] Security options selected - Reboot required")
-                .yellow()
-                .bold()
-        );
-    }
-
-    // Reboot indicator if DPC or security
-    if dpc_count > 0 || security_count > 0 {
-        println!("  {}", style("[!] Some options require a restart").dim());
-    }
+    let total = telem + priva + perf + sched + appx + cpu + dpc + sec + net;
+    println!("\n  {} SELECTION SUMMARY", style("»").cyan());
+    println!("  Total: {} optimizations", style(total).bold());
+    if sec > 0 { println!("  {} Security options selected", style("!").yellow()); }
 }
 
-/// Displays final result with reboot indication
-pub fn print_final_result_with_reboot(
-    success_count: usize,
-    error_count: usize,
-    snapshot_id: Option<&str>,
-    needs_reboot: bool,
-) {
-    print_final_result(success_count, error_count, snapshot_id);
-
-    if needs_reboot && error_count == 0 {
-        println!();
-        println!(
-            "{}",
-            style("  [!] REBOOT RECOMMENDED to apply all modifications.")
-                .yellow()
-                .bold()
-        );
-        println!();
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    // UI tests are difficult to automate, we just verify compilation
-    #[test]
-    fn test_module_compiles() {
-        // If this test compiles, the module is syntactically correct
+fn is_elevated() -> bool {
+    use windows::Win32::Foundation::HANDLE;
+    use windows::Win32::Security::{GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY};
+    use windows::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
+    unsafe {
+        let mut token = HANDLE::default();
+        if OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token).is_err() { return false; }
+        let mut elevation = TOKEN_ELEVATION::default();
+        let mut size = std::mem::size_of::<TOKEN_ELEVATION>() as u32;
+        let result = GetTokenInformation(token, TokenElevation, Some(&mut elevation as *mut _ as *mut _), size, &mut size);
+        let _ = windows::Win32::Foundation::CloseHandle(token);
+        result.is_ok() && elevation.TokenIsElevated != 0
     }
 }

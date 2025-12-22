@@ -10,7 +10,7 @@ mod sections;
 mod ui;
 
 use anyhow::Result;
-use dialoguer::{theme::ColorfulTheme, Confirm, MultiSelect};
+use dialoguer::{Confirm, MultiSelect};
 use indicatif::MultiProgress;
 use pieuvre_audit::hardware::is_laptop;
 use pieuvre_common::ChangeRecord;
@@ -174,8 +174,8 @@ pub async fn run(profile: &str) -> Result<()> {
 
     // Confirmation
     println!();
-    let confirm = Confirm::with_theme(&ColorfulTheme::default())
-        .with_prompt("Apply these modifications? (y/n)")
+    let confirm = Confirm::with_theme(&ui::GhostTheme::default())
+        .with_prompt("APPLY MODIFICATIONS?")
         .default(false)
         .interact()?;
 
@@ -333,13 +333,12 @@ fn collect_selection(opts: &[OptItem], prompt: &str) -> Result<Vec<usize>> {
     let labels: Vec<&str> = opts.iter().map(|o| o.label).collect();
     let defaults: Vec<bool> = opts.iter().map(|o| o.default).collect();
 
-    let selected = MultiSelect::with_theme(&ColorfulTheme::default())
-        .with_prompt(format!("{} (Space=check, Enter=confirm)", prompt))
+    let selected = MultiSelect::with_theme(&ui::GhostTheme::default())
+        .with_prompt(prompt)
         .items(&labels)
         .defaults(&defaults)
         .interact()?;
 
-    println!();
     Ok(selected)
 }
 

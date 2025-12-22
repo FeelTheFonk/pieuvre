@@ -101,19 +101,19 @@ impl OptItem {
 /// Returns options for the Telemetry section
 pub fn telemetry_section() -> Vec<OptItem> {
     vec![
-        OptItem::safe("diagtrack", "DiagTrack - Main Telemetry"),
-        OptItem::safe("dmwappush", "dmwappushservice - WAP Push"),
-        OptItem::safe("wersvc", "WerSvc - Windows Error Reporting"),
-        OptItem::safe("wercplsupport", "wercplsupport - Error Reports support"),
-        OptItem::safe_off("pcasvc", "PcaSvc - Program Compatibility"),
-        OptItem::safe_off("wdisystem", "WdiSystemHost - Diagnostic Host"),
-        OptItem::safe_off("wdiservice", "WdiServiceHost - Diagnostic Service"),
-        OptItem::conditional("lfsvc", "lfsvc - Geolocation", true),
-        OptItem::safe("mapsbroker", "MapsBroker - Maps download"),
-        OptItem::safe("firewall", "Firewall - Block telemetry domains"),
-        OptItem::safe("sched_tasks", "Scheduled Tasks - Disable telemetry tasks"),
-        OptItem::safe_off("hosts", "Hosts file - Block native DNS domains"),
-        OptItem::conditional("onedrive", "OneDrive - Uninstall completely", false),
+        OptItem::safe("diagtrack", "Main Telemetry (DiagTrack)"),
+        OptItem::safe("dmwappush", "WAP Push Service"),
+        OptItem::safe("wersvc", "Error Reporting (WerSvc)"),
+        OptItem::safe("wercplsupport", "Error Reports Support"),
+        OptItem::safe_off("pcasvc", "Program Compatibility"),
+        OptItem::safe_off("wdisystem", "Diagnostic Host"),
+        OptItem::safe_off("wdiservice", "Diagnostic Service"),
+        OptItem::conditional("lfsvc", "Geolocation Service", true),
+        OptItem::safe("mapsbroker", "Maps Download Broker"),
+        OptItem::safe("firewall", "Block Telemetry Domains"),
+        OptItem::safe("sched_tasks", "Disable Telemetry Tasks"),
+        OptItem::safe_off("hosts", "Hosts File Blocking"),
+        OptItem::conditional("onedrive", "Uninstall OneDrive", false),
     ]
 }
 
@@ -124,17 +124,17 @@ pub fn telemetry_section() -> Vec<OptItem> {
 /// Returns options for the Privacy section
 pub fn privacy_section() -> Vec<OptItem> {
     vec![
-        OptItem::safe("telemetry_level", "Telemetry Level 0 (Security only)"),
+        OptItem::safe("telemetry_level", "Telemetry Level: Security Only"),
         OptItem::safe("advertising_id", "Disable Advertising ID"),
-        OptItem::safe("location", "Disable Location"),
+        OptItem::safe("location", "Disable System Location"),
         OptItem::safe("activity_history", "Disable Activity History"),
-        OptItem::safe("cortana", "Disable Cortana"),
-        OptItem::safe("context_menu", "Classic context menu + clean clutter"),
+        OptItem::safe("cortana", "Disable Cortana Search"),
+        OptItem::safe("context_menu", "Classic Context Menu"),
         OptItem::safe("widgets", "Disable Win11 Widgets"),
-        OptItem::conditional("pause_updates", "Pause Windows Updates 35 days", false),
-        OptItem::conditional("driver_updates", "Disable auto driver updates", false),
-        OptItem::safe("recall", "Block Windows Recall (24H2 AI)"),
-        OptItem::safe("group_policy_telem", "Group Policy Telemetry (enterprise)"),
+        OptItem::conditional("pause_updates", "Pause Updates (35 days)", false),
+        OptItem::conditional("driver_updates", "Disable Auto Driver Updates", false),
+        OptItem::safe("recall", "Block Windows Recall (AI)"),
+        OptItem::safe("group_policy_telem", "Enterprise Telemetry Policy"),
     ]
 }
 
