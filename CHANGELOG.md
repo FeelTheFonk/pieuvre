@@ -33,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Native API Migration (100%)**: Total elimination of dependencies on CLI tools (`netsh`, `powercfg`, `schtasks`).
 - **Async Runtime**: Full integration of `tokio` for parallel monitoring.
 - **Zero Clippy Warnings**: Maintained high quality standards.
-- **CI/CD Hardening**: Improved GitHub Actions workflows, added `cargo-deny` for security auditing, migrated configuration to v0.18+ standards, and resolved license conflicts (GPL-3.0, Unicode-3.0).
+- **CI/CD Hardening**: Improved GitHub Actions workflows, added `cargo-deny` for security auditing, migrated configuration to v0.18+ standards, and resolved license conflicts (GPL-3.0 literal, Unicode-3.0).
 - **Documentation Overhaul**: All 12 `.md` files (READMEs, Architecture, Technical) updated and validated to SOTA 2026 standards for clarity, technical excellence, and zero redundancy.
 
 ---
