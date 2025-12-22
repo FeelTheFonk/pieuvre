@@ -1,6 +1,6 @@
-//! pieuvre - Outil d'alignement système Windows 11
+//! pieuvre - Windows 11 system alignment tool
 //!
-//! Interface CLI principale SOTA 2026.
+//! Main CLI interface.
 
 mod commands;
 
@@ -15,12 +15,12 @@ use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 #[command(name = "pieuvre")]
 #[command(author = "pieuvre Contributors")]
 #[command(version)]
-#[command(about = "Outil SOTA d'alignement systeme Windows 11")]
+#[command(about = "Advanced Windows 11 system alignment tool")]
 #[command(
-    long_about = "Outil SOTA d'alignement systeme Windows 11.\n\nLancez sans arguments pour le mode interactif guide."
+    long_about = "Advanced Windows 11 system alignment tool.\n\nRun without arguments for guided interactive mode."
 )]
 struct Cli {
-    /// Niveau de verbosité (-v, -vv, -vvv)
+    /// Verbosity level (-v, -vv, -vvv)
     #[arg(short, long, action = clap::ArgAction::Count)]
     verbose: u8,
 
@@ -30,74 +30,74 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Effectue un audit du système
+    /// Perform a system audit
     Audit {
-        /// Audit complet (tous les modules)
+        /// Full audit (all modules)
         #[arg(long)]
         full: bool,
 
-        /// Fichier de sortie JSON
+        /// JSON output file
         #[arg(short, long)]
         output: Option<String>,
     },
 
-    /// Affiche les recommandations d'optimisation
+    /// Display optimization recommendations
     Analyze {
-        /// Profil à utiliser (gaming, privacy, workstation)
+        /// Profile to use (gaming, privacy, workstation)
         #[arg(short, long, default_value = "gaming")]
         profile: String,
     },
 
-    /// Applique les optimisations
+    /// Apply optimizations
     Sync {
-        /// Profil à appliquer
+        /// Profile to apply
         #[arg(short, long)]
         profile: String,
 
-        /// Mode simulation (aucune modification)
+        /// Dry-run mode (no modifications)
         #[arg(long)]
         dry_run: bool,
     },
 
-    /// Affiche le statut actuel
+    /// Display current status
     Status {
-        /// Mode live (rafraîchissement continu)
+        /// Live mode (continuous refresh)
         #[arg(short, long)]
         live: bool,
     },
 
-    /// Gère les snapshots et rollbacks
+    /// Manage snapshots and rollbacks
     Rollback {
-        /// Liste les snapshots disponibles
+        /// List available snapshots
         #[arg(long)]
         list: bool,
 
-        /// Restaure le dernier snapshot
+        /// Restore the last snapshot
         #[arg(long)]
         last: bool,
 
-        /// ID du snapshot à restaurer
+        /// Snapshot ID to restore
         #[arg(long)]
         id: Option<String>,
     },
 
-    /// Verifie l'integrite des optimisations
+    /// Verify optimization integrity
     Verify {
-        /// Repare automatiquement les derives
+        /// Automatically repair drifts
         #[arg(long)]
         repair: bool,
     },
 
-    /// Mode interactif - selection granulaire des optimisations
+    /// Interactive mode - granular optimization selection
     Interactive {
-        /// Profil de base (gaming, privacy, workstation)
+        /// Base profile (gaming, privacy, workstation)
         #[arg(short, long, default_value = "gaming")]
         profile: String,
     },
 
-    /// Génère les scripts d'autocomplétion shell
+    /// Generate shell completion scripts
     Completions {
-        /// Shell cible (bash, zsh, fish, powershell, elvish)
+        /// Target shell (bash, zsh, fish, powershell, elvish)
         #[arg(value_enum)]
         shell: Shell,
     },
@@ -107,7 +107,7 @@ enum Commands {
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
-    // Configuration du logging
+    // Logging configuration
     let filter = match cli.verbose {
         0 => "warn",
         1 => "info",
@@ -121,7 +121,7 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     match cli.command {
-        // Mode interactif par defaut si aucune commande fournie
+        // Default to interactive mode if no command provided
         None => commands::interactive::run_default().await,
         Some(Commands::Audit { full, output }) => commands::audit::run(full, output),
         Some(Commands::Analyze { profile }) => commands::analyze::run(&profile),

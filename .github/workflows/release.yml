@@ -11,7 +11,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        target: [x86_64-pc-windows-msvc]
+        target: [x86_64-pc-windows-msvc, aarch64-pc-windows-msvc]
     
     steps:
       - uses: actions/checkout@v4
@@ -27,19 +27,26 @@ jobs:
       - name: Build Release
         run: cargo build --release --target ${{ matrix.target }} --workspace
         
-      - name: Package
+      - name: Package & Sign
         shell: pwsh
         run: |
           $version = "${{ github.ref_name }}"
           $archive = "pieuvre-$version-${{ matrix.target }}.zip"
           Compress-Archive -Path "target/${{ matrix.target }}/release/pieuvre-cli.exe" -DestinationPath $archive
+          
+          # Generate SHA256
+          $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLower()
+          "$hash  $archive" | Out-File -FilePath "$archive.sha256" -Encoding ascii
+          
           echo "ARCHIVE_NAME=$archive" >> $env:GITHUB_ENV
 
-      - name: Upload Artifact
+      - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.ARCHIVE_NAME }}
-          path: ${{ env.ARCHIVE_NAME }}
+          name: ${{ env.ARCHIVE_NAME }}-bundle
+          path: |
+            ${{ env.ARCHIVE_NAME }}
+            ${{ env.ARCHIVE_NAME }}.sha256
 
   publish:
     name: Create GitHub Release
@@ -53,12 +60,21 @@ jobs:
       - name: Download Artifacts
         uses: actions/download-artifact@v4
         
+      - name: Extract Changelog
+        id: changelog
+        shell: bash
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          sed -n "/## \[$VERSION\]/,/## \[/p" CHANGELOG.md | sed '$d' > release_notes.md
+          
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          body_path: release_notes.md
           files: |
-            pieuvre-*-x86_64-pc-windows-msvc.zip
-          generate_release_notes: true
+            **/*.zip
+            **/*.sha256
+          generate_release_notes: false
           draft: false
           prerelease: false
         env:

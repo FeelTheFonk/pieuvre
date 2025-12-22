@@ -99,6 +99,7 @@ pieuvre-cli
 - `hardening.rs` - **System Hardening & IFEO Protection** (NEW)
 - `interrupts.rs` - **Dynamic Interrupt Affinity Steering** (NEW)
 - `sentinel/` - **Event-Driven Self-Healing Engine** (NEW)
+- `power_plan.rs` - Atomic Power Plan operations (MsiOperation, AppxOperation)
 
 ### pieuvre-persist
 

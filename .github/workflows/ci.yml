@@ -41,6 +41,14 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         
+      - name: Cargo Chef (Prepare)
+        run: |
+          cargo install cargo-chef
+          cargo chef prepare --recipe-path recipe.json
+          
+      - name: Cargo Chef (Cook)
+        run: cargo chef cook --recipe-path recipe.json
+        
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
         
@@ -62,8 +70,8 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         
-      - name: Install Cargo Audit
-        uses: taiki-e/install-action@cargo-audit
+      - name: Install Cargo Deny
+        uses: taiki-e/install-action@cargo-deny
         
-      - name: Security Audit
-        run: cargo audit
+      - name: Cargo Deny Check
+        run: cargo deny check

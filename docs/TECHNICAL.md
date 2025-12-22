@@ -85,7 +85,8 @@ Uses `EventTrace` APIs to capture kernel events in real-time.
 
 - **DriverResolver**: Maps kernel routine addresses to `.sys` filenames using `EnumDeviceDrivers`.
 - **Metrics**: Captures DPC/ISR duration per driver.
-- **Feedback Loop**: Automatically adjusts interrupt affinity for high-latency drivers.
+- **Feedback Loop**: Automatically adjusts interrupt affinity for high-latency drivers via `interrupts.rs`.
+- **DriverResolver**: Implementation using `EnumDeviceDrivers` to map kernel addresses to real driver names.
 
 ---
 

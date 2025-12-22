@@ -1,9 +1,9 @@
-//! Mode interactif SOTA 2026
+//! Interactive mode 2026
 //!
-//! Architecture modulaire:
-//! - `sections.rs`: Définition des options par catégorie
-//! - `executor.rs`: Exécution des optimisations
-//! - `ui.rs`: Interface utilisateur avec indicatif
+//! Modular architecture:
+//! - `sections.rs`: Option definitions by category
+//! - `executor.rs`: Optimization execution
+//! - `ui.rs`: User interface with indicatif
 
 mod executor;
 mod sections;
@@ -20,18 +20,18 @@ use tracing::{info, instrument, warn};
 pub use sections::OptItem;
 use ui::MainAction;
 
-/// Point d'entrée interactif par défaut (sans arguments CLI)
+/// Default interactive entry point (without CLI arguments)
 pub async fn run_default() -> Result<()> {
-    // 1. Écran d'accueil ASCII
+    // 1. ASCII Welcome Screen
     ui::print_welcome_screen();
 
-    // 2. Vérification privilèges admin
+    // 2. Admin privilege check
     ui::check_admin_status();
 
-    // 3. Résumé rapide état système
+    // 3. Quick system state summary
     ui::print_quick_status();
 
-    // 4. Menu principal interactif
+    // 4. Interactive main menu
     let action = ui::show_main_menu()?;
 
     match action {
@@ -45,43 +45,40 @@ pub async fn run_default() -> Result<()> {
         }
     }?;
 
-    // Pause finale pour éviter la fermeture de la console
+    // Final pause to prevent console from closing
     ui::wait_for_exit();
     Ok(())
 }
 
-/// Application rapide d'un profil sans sélection granulaire
+/// Quick apply of a profile without granular selection
 pub async fn run_quick_apply(profile: &str) -> Result<()> {
     println!();
-    println!(
-        "  [*] Application rapide du profil: {}",
-        profile.to_uppercase()
-    );
+    println!("  [*] Quick applying profile: {}", profile.to_uppercase());
 
-    // Création d'un snapshot de sécurité
+    // Create a safety snapshot
     let changes = Vec::<ChangeRecord>::new();
-    let snap = snapshot::create(&format!("Avant profil rapide {}", profile), changes)?;
+    let snap = snapshot::create(&format!("Before quick profile {}", profile), changes)?;
     println!(
-        "  [OK] Snapshot de sauvegarde cree: {}",
+        "  [OK] Backup snapshot created: {}",
         &snap.id.to_string()[..8]
     );
 
-    // Application réelle via pieuvre-sync
+    // Real application via pieuvre-sync
     pieuvre_sync::apply_profile(profile, false).await?;
 
     println!();
     println!(
-        "  [OK] Profil {} applique avec succes.",
+        "  [OK] Profile {} applied successfully.",
         profile.to_uppercase()
     );
-    println!("       Redemarrage recommande pour certaines modifications.");
+    println!("       Restart recommended for some modifications.");
     println!();
 
     ui::wait_for_exit();
     Ok(())
 }
 
-/// Point d'entrée du mode interactif SOTA avec sélection granulaire
+/// Entry point for interactive mode with granular selection
 #[instrument(skip_all, fields(profile = %profile))]
 pub async fn run(profile: &str) -> Result<()> {
     let is_laptop = is_laptop();
@@ -91,22 +88,22 @@ pub async fn run(profile: &str) -> Result<()> {
         "Starting interactive mode"
     );
 
-    // Affichage header
+    // Display header
     ui::print_header(is_laptop, profile);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // COLLECTE DES SÉLECTIONS
+    // SELECTION COLLECTION
     // ═══════════════════════════════════════════════════════════════════════
 
-    // Section 1: Télémétrie
-    ui::print_section_header(1, 9, "TÉLÉMÉTRIE - Services");
+    // Section 1: Telemetry
+    ui::print_section_header(1, 9, "TELEMETRY - Services");
     let telem_opts = sections::telemetry_section();
-    let telem_selected = collect_selection(&telem_opts, "Services télémétrie")?;
+    let telem_selected = collect_selection(&telem_opts, "Telemetry services")?;
 
     // Section 2: Privacy
-    ui::print_section_header(2, 9, "PRIVACY - Registre");
+    ui::print_section_header(2, 9, "PRIVACY - Registry");
     let privacy_opts = sections::privacy_section();
-    let privacy_selected = collect_selection(&privacy_opts, "Privacy registre")?;
+    let privacy_selected = collect_selection(&privacy_opts, "Privacy registry")?;
 
     // Section 3: Performance
     ui::print_section_header(3, 9, "PERFORMANCE");
@@ -133,19 +130,19 @@ pub async fn run(profile: &str) -> Result<()> {
     let dpc_opts = sections::dpc_section();
     let dpc_selected = collect_selection(&dpc_opts, "DPC Latency")?;
 
-    // Section 8: Security (avec avertissement)
-    ui::print_section_header(8, 9, "SECURITY - ⚠️ ATTENTION RISQUE");
+    // Section 8: Security (with warning)
+    ui::print_section_header(8, 9, "SECURITY - [WARN] CAUTION RISK");
     ui::print_security_warning();
     let security_opts = sections::security_section();
     let security_selected = collect_selection(&security_opts, "Security")?;
 
-    // Section 9: Network Avancé
-    ui::print_section_header(9, 9, "NETWORK AVANCÉ");
+    // Section 9: Advanced Network
+    ui::print_section_header(9, 9, "ADVANCED NETWORK");
     let net_adv_opts = sections::network_advanced_section();
-    let net_adv_selected = collect_selection(&net_adv_opts, "Network Avancé")?;
+    let net_adv_selected = collect_selection(&net_adv_opts, "Advanced Network")?;
 
     // ═══════════════════════════════════════════════════════════════════════
-    // RÉSUMÉ ET CONFIRMATION
+    // SUMMARY AND CONFIRMATION
     // ═══════════════════════════════════════════════════════════════════════
 
     let total = telem_selected.len()
@@ -178,7 +175,7 @@ pub async fn run(profile: &str) -> Result<()> {
     // Confirmation
     println!();
     let confirm = Confirm::with_theme(&ColorfulTheme::default())
-        .with_prompt("Appliquer ces modifications? (y/n)")
+        .with_prompt("Apply these modifications? (y/n)")
         .default(false)
         .interact()?;
 
@@ -188,11 +185,11 @@ pub async fn run(profile: &str) -> Result<()> {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // EXÉCUTION AVEC PROGRESS BAR
+    // EXECUTION WITH PROGRESS BAR
     // ═══════════════════════════════════════════════════════════════════════
 
     println!();
-    println!("  Application en cours...");
+    println!("  Applying...");
     println!();
 
     let multi = MultiProgress::new();
@@ -202,7 +199,7 @@ pub async fn run(profile: &str) -> Result<()> {
     let mut success_count = 0;
     let mut error_count = 0;
 
-    // Exécuter chaque catégorie
+    // Execute each category
     execute_category(
         "telemetry",
         &telem_opts,
@@ -302,13 +299,13 @@ pub async fn run(profile: &str) -> Result<()> {
     )
     .await;
 
-    pb.finish_with_message("Terminé");
+    pb.finish_with_message("Done");
 
     // ═══════════════════════════════════════════════════════════════════════
-    // SNAPSHOT ET RÉSULTAT
+    // SNAPSHOT AND RESULT
     // ═══════════════════════════════════════════════════════════════════════
 
-    let snapshot_id = match snapshot::create("Avant mode interactif", changes) {
+    let snapshot_id = match snapshot::create("Before interactive mode", changes) {
         Ok(snap) => {
             info!(snapshot_id = %snap.id, changes = snap.changes.len(), "Snapshot created");
             Some(snap.id.to_string())
@@ -319,7 +316,7 @@ pub async fn run(profile: &str) -> Result<()> {
         }
     };
 
-    // Déterminer si reboot nécessaire (DPC ou Security sélectionnés)
+    // Determine if reboot required (DPC or Security selected)
     let needs_reboot = !dpc_selected.is_empty() || !security_selected.is_empty();
     ui::print_final_result_with_reboot(
         success_count,
@@ -331,13 +328,13 @@ pub async fn run(profile: &str) -> Result<()> {
     Ok(())
 }
 
-/// Collecte les sélections utilisateur pour une section
+/// Collects user selections for a section
 fn collect_selection(opts: &[OptItem], prompt: &str) -> Result<Vec<usize>> {
     let labels: Vec<&str> = opts.iter().map(|o| o.label).collect();
     let defaults: Vec<bool> = opts.iter().map(|o| o.default).collect();
 
     let selected = MultiSelect::with_theme(&ColorfulTheme::default())
-        .with_prompt(format!("{} (Espace=cocher, Entrée=valider)", prompt))
+        .with_prompt(format!("{} (Space=check, Enter=confirm)", prompt))
         .items(&labels)
         .defaults(&defaults)
         .interact()?;
@@ -346,7 +343,7 @@ fn collect_selection(opts: &[OptItem], prompt: &str) -> Result<Vec<usize>> {
     Ok(selected)
 }
 
-/// Exécute toutes les options sélectionnées d'une catégorie
+/// Executes all selected options from a category
 async fn execute_category(
     category: &str,
     opts: &[OptItem],
@@ -385,14 +382,14 @@ mod tests {
 
     #[test]
     fn test_collect_selection_returns_empty_on_no_opts() {
-        // Test de régression: vérifier que la structure compile
+        // Regression test: verify that the structure compiles
         let opts: Vec<OptItem> = vec![];
         assert!(opts.is_empty());
     }
 
     #[test]
     fn test_sections_exported() {
-        // Vérifier que les exports fonctionnent
+        // Verify that exports work
         let _item = OptItem::safe("test", "Test");
         assert_eq!(_item.id, "test");
     }

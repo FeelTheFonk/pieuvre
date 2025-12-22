@@ -1,4 +1,4 @@
-# ⣠⎴⎴⎯⎯⎯⎯⟬ ⊚ ⟭⎯⎯⎯⎯⎴⎴⣄
+# ⣠⟬ ⊚ ⟭⣄
 
 Windows system control and optimization tool. Full registry/service/network/power management with snapshot-based rollback.
 
@@ -11,7 +11,7 @@ Windows system control and optimization tool. Full registry/service/network/powe
 
 ## Overview
 
-pieuvre is a state-of-the-art Windows optimization toolkit built in Rust, now in its **Climax (0.3.0)** phase.
+pieuvre is an advanced Windows optimization toolkit built in Rust, currently in its **Climax (0.3.0)** phase.
 
 Unlike batch scripts or registry tweaks, pieuvre:
 
@@ -20,7 +20,7 @@ Unlike batch scripts or registry tweaks, pieuvre:
 - **Creates automatic snapshots** - Every change is reversible via `zstd` compressed backups
 - **Sentinel Engine** - Real-time monitoring and self-healing of critical system settings
 - **Hardware-Aware Intelligence** - Advanced detection for optimal DPC/ISR steering
-- **Data-Driven Architecture** - Full alignment between TOML profiles and sync engine (SOTA 2026)
+- **Data-Driven Architecture** - Full alignment between TOML profiles and sync engine
 
 **Target Users**: Power users, gaming enthusiasts, privacy-focused users, system administrators.
 
@@ -29,14 +29,15 @@ Unlike batch scripts or registry tweaks, pieuvre:
 ## Features
 
 - **Audit Engine** - Hardware (DXGI GPU, SSD), services, telemetry (40+ keys), security scoring
-- **ETW Monitoring** - Real-time Kernel DPC/ISR latency capture with `DriverResolver` (SOTA 2026)
+- **ETW Monitoring** - Real-time Kernel DPC/ISR latency capture with `DriverResolver`
 - **Security Audit** - Defender status, Firewall profiles, UAC, SecureBoot, HVCI/VBS detection
 - **Sync Engine** - 30+ optimization modules including **Interrupt Affinity Steering**
 - **Persistence Engine** - Snapshot creation & rollback (zstd compression + SHA256)
 - **Sentinel Engine** - Event-driven background monitoring & auto-restoration (Self-Healing)
+- **Hardening Engine** - Persistence vector protection and IFEO hardening
 - **Interactive Mode** - 9 sections, 80+ granular options (Default launch mode)
 
-→ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
 
 ---
 
@@ -91,7 +92,7 @@ pieuvre rollback --last
 | `status` | Display current state |
 | `verify` | Check applied changes |
 
-→ See [CLI Documentation](crates/pieuvre-cli/README.md) for full options
+See [CLI Documentation](crates/pieuvre-cli/README.md) for full options.
 
 ---
 
@@ -103,7 +104,7 @@ pieuvre rollback --last
 | **Privacy** | Minimize telemetry and data collection |
 | **Workstation** | Balance performance with stability |
 
-→ See [Configuration](config/README.md) for details
+See [Configuration](config/README.md) for details.
 
 ---
 

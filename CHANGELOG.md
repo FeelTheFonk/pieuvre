@@ -1,38 +1,40 @@
 # Changelog
 
-Toutes les modifications notables de ce projet sont documentées ici.
+All notable changes to this project will be documented in this file.
 
-Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
-et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.3.0] - 2025-12-22 (Climax)
 
 ### Added
 
-#### Sentinel Engine : Inviolabilité Réactive (SOTA 2026)
-- **Mode Event-Driven** : Migration du polling vers une surveillance événementielle via `RegNotifyChangeKeyValue`.
-- **Self-Healing Instantané** : Restauration automatique et immédiate des clés de registre critiques (IFEO, Winlogon).
-- **Hardening Suprême** : Nouveau module `hardening.rs` pour la protection des vecteurs de persistance.
+#### Sentinel Engine: Reactive Inviolability
+- **Event-Driven Mode**: Migration from polling to event-driven monitoring via `RegNotifyChangeKeyValue`.
+- **Instant Self-Healing**: Automatic and immediate restoration of critical registry keys (IFEO, Winlogon).
+- **Supreme Hardening**: New `hardening.rs` module for persistence vector protection.
 
-#### Moteur ETW & Intelligence Réactive (SOTA 2026)
-- **Driver Resolution** : Implémentation du `DriverResolver` pour mapper les adresses noyau aux noms réels des drivers.
-- **Monitoring Précis** : Capture de la latence DPC/ISR par driver via les APIs `EventTrace` natives.
-- **Interrupt Steering Automatisé** : Nouveau module `interrupts.rs` ajustant dynamiquement l'affinité CPU.
+#### ETW Engine & Reactive Intelligence
+- **Driver Resolution**: Implementation of `DriverResolver` to map kernel addresses to real driver names.
+- **Precise Monitoring**: Per-driver DPC/ISR latency capture via native `EventTrace` APIs.
+- **Automated Interrupt Steering**: New `interrupts.rs` module dynamically adjusting CPU affinity.
 
-#### Cockpit Pinacle & UX (SOTA 2026)
-- **Live Dashboard** : Commande `pieuvre status --live` avec rafraîchissement 500ms.
-- **Dashboard SOTA** : Refonte visuelle complète couvrant les 9 sections d'optimisation.
+#### Pinnacle Cockpit & UX
+- **Live Dashboard**: `pieuvre status --live` command with 500ms refresh rate.
+- **Advanced Dashboard**: Complete visual overhaul covering all 9 optimization sections.
 
-#### Alignement Profils & Architecture (SOTA 2026)
-- **Architecture Data-Driven** : Refonte totale du moteur de synchronisation piloté par les fichiers TOML.
-- **Alignement Total** : Synchronisation parfaite entre `@config/profiles` et les capacités des crates.
-- **Opérations Atomiques** : Nouveaux exécuteurs pour `MsiOperation`, `AppxOperation` et `PowerPlanOperation`.
-- **Registry Config Exhaustif** : Support complet de toutes les clés de confidentialité et télémétrie définies en TOML.
+#### Profile Alignment & Architecture
+- **Data-Driven Architecture**: Total overhaul of the sync engine driven by TOML files.
+- **Total Alignment**: Perfect synchronization between `@config/profiles` and crate capabilities.
+- **Atomic Operations**: New executors for `MsiOperation`, `AppxOperation`, and `PowerPlanOperation`.
+- **Exhaustive Registry Config**: Full support for all privacy and telemetry keys defined in TOML.
 
 ### Technical
-- **Migration Native API (100%)** : Élimination totale des dépendances aux outils CLI (`netsh`, `powercfg`, `schtasks`).
-- **Async Runtime** : Intégration complète de `tokio` pour le monitoring parallèle.
-- **0 avertissement Clippy** : Standard de qualité SOTA maintenu.
+- **Native API Migration (100%)**: Total elimination of dependencies on CLI tools (`netsh`, `powercfg`, `schtasks`).
+- **Async Runtime**: Full integration of `tokio` for parallel monitoring.
+- **Zero Clippy Warnings**: Maintained high quality standards.
+- **CI/CD Hardening**: Improved GitHub Actions workflows for automated releases and testing.
+- **Documentation Overhaul**: All `.md` files updated to SOTA 2026 standards.
 
 ---
 
@@ -40,41 +42,41 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
-#### Mode Interactif SOTA - Harmonisation Complète
-- **9 sections** (anciennement 5) pour couverture exhaustive des modules sync
-- Section 6: **CPU/Memory** (core parking, memory compression, superfetch, page file statique)
-- Section 7: **DPC Latency** (paging executive, dynamic tick, TSC sync, HPET, interrupt affinity)
-- Section 8: **Security** (HVCI, VBS, Spectre/Meltdown) avec avertissements critiques
-- Section 9: **Network Avancé** (interrupt moderation, LSO, EEE, RSS, RSC)
+#### Interactive Mode - Complete Harmonization
+- **9 sections** (previously 5) for exhaustive coverage of sync modules.
+- Section 6: **CPU/Memory** (core parking, memory compression, superfetch, static page file).
+- Section 7: **DPC Latency** (paging executive, dynamic tick, TSC sync, HPET, interrupt affinity).
+- Section 8: **Security** (HVCI, VBS, Spectre/Meltdown) with critical warnings.
+- Section 9: **Advanced Network** (interrupt moderation, LSO, EEE, RSS, RSC).
 
-#### UX & Interface - Flow Guidé SOTA 2026
-- **Mode par défaut**: Lancement automatique du mode interactif si `pieuvre.exe` est exécuté sans arguments.
-- **Écran d'accueil ASCII**: Nouvelle bannière professionnelle avec détection de version et d'architecture.
-- **Diagnostic Initial**: Affichage rapide de l'état système (Timer, Power Plan, DiagTrack) dès le lancement.
-- **Menu Principal**: Navigation centralisée entre personnalisation, application rapide, statut et snapshots.
-- **Vérification Privilèges**: Détection automatique du statut administrateur avec avertissements contextuels.
+#### UX & Interface - Guided Flow
+- **Default Mode**: Automatic launch of interactive mode if `pieuvre.exe` is executed without arguments.
+- **ASCII Welcome Screen**: New professional banner with version and architecture detection.
+- **Initial Diagnostic**: Quick system state display (Timer, Power Plan, DiagTrack) on launch.
+- **Main Menu**: Centralized navigation between customization, quick apply, status, and snapshots.
+- **Privilege Check**: Automatic detection of administrator status with contextual warnings.
 
-#### Performance - Options GPU Enrichies
-- `enable_game_mode` - Windows Game Mode hardware
-- `prerendered_frames` - Pre-Rendered Frames = 1 (input lag minimal)
-- `vrr_opt` - VRR Scheduling optimizations
-- `shader_cache` - DirectX Shader Cache 256MB
+#### Performance - Enhanced GPU Options
+- `enable_game_mode` - Windows hardware Game Mode.
+- `prerendered_frames` - Pre-Rendered Frames = 1 (minimal input lag).
+- `vrr_opt` - VRR Scheduling optimizations.
+- `shader_cache` - DirectX Shader Cache 256MB.
 
-#### Interface Utilisateur
-- **Style "NO EMOJI"**: Refactorisation complète de l'interface pour un rendu pro, expert et sobre.
-- `RiskLevel::Critical` - Niveau de risque pour options de sécurité critiques.
-- `print_security_warning()` - Avertissement visuel section Security.
-- `print_selection_summary_full()` - Résumé 9 sections avec indicateurs reboot.
-- `print_final_result_with_reboot()` - Notification reboot si DPC/Security sélectionnés.
+#### User Interface
+- **"NO EMOJI" Style**: Complete interface refactoring for a professional, expert, and sober rendering.
+- `RiskLevel::Critical` - Risk level for critical security options.
+- `print_security_warning()` - Visual warning for Security section.
+- `print_selection_summary_full()` - 9-section summary with reboot indicators.
+- `print_final_result_with_reboot()` - Reboot notification if DPC/Security selected.
 
 #### Executors
 - `CPUExecutor`, `DPCExecutor`, `SecurityExecutor`, `NetworkAdvancedExecutor`.
 
 ### Technical
-- **103 tests unitaires** - 100% passent (+4 nouveaux tests sections).
-- **0 warnings clippy** (correction `redundant_guards`).
-- Détection automatique laptop pour options risquées.
-- Indicateur reboot automatique selon options sélectionnées.
+- **103 unit tests** - 100% passing (+4 new section tests).
+- **Zero clippy warnings** (fixed `redundant_guards`).
+- Automatic laptop detection for risky options.
+- Automatic reboot indicator based on selected options.
 
 ---
 
@@ -82,47 +84,47 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
-#### SOTA 2026 - Dépendances
-- `windows` crate 0.58 → **0.62.2** (APIs natives modernes)
-- `windows-sys` 0.59 → **0.61.0**
-- `clap` précisé **4.5.23**
-- `zstd` **0.13.3** - Compression snapshots
-- `sha2` **0.10.9** - Checksums intégrité
-- `clap_complete` **4.5.62** - Shell completions
+#### Dependencies Update
+- `windows` crate 0.58 → **0.62.2** (modern native APIs).
+- `windows-sys` 0.59 → **0.61.0**.
+- `clap` pinned to **4.5.23**.
+- `zstd` **0.13.3** - Snapshot compression.
+- `sha2` **0.10.9** - Integrity checksums.
+- `clap_complete` **4.5.62** - Shell completions.
 
 #### Shell Completions
-- Commande `pieuvre completions <shell>`
-- Support: Bash, Zsh, Fish, PowerShell, Elvish
-- Génération stdout, redirection vers fichier config shell
+- `pieuvre completions <shell>` command.
+- Support: Bash, Zsh, Fish, PowerShell, Elvish.
+- Stdout generation, redirection to shell config file.
 
-#### Snapshots SOTA
-- Compression **zstd** automatique (ratio 3-10x)
-- Checksums **SHA256** avec validation au restore
-- Rotation automatique (max 10 snapshots)
-- Rétro-compatibilité fichiers .json ancients
+#### Snapshots
+- Automatic **zstd** compression (3-10x ratio).
+- **SHA256** checksums with validation on restore.
+- Automatic rotation (max 10 snapshots).
+- Backward compatibility with legacy .json files.
 
 #### Configuration
-- Fichier `telemetry-domains.txt` externalisé
-- Harmonisation `default` → `default_profile`
-- Compression activée par défaut
+- Externalized `telemetry-domains.txt` file.
+- Harmonized `default` → `default_profile`.
+- Compression enabled by default.
 
 ### Changed
 
-#### APIs Windows Natives
-- `power.rs`: Migration vers `PowerGetActiveScheme` / `PowerSetActiveScheme`
-- `security.rs`: Migration vers `set_dword_value` natif (HVCI, VBS, Spectre)
-- Réduction significative appels `Command::new`
+#### Native Windows APIs
+- `power.rs`: Migration to `PowerGetActiveScheme` / `PowerSetActiveScheme`.
+- `security.rs`: Migration to native `set_dword_value` (HVCI, VBS, Spectre).
+- Significant reduction in `Command::new` calls.
 
 #### Code Quality
-- **0 warnings clippy** (11 corrections)
-- Types `&PathBuf` → `&Path` (clippy::ptr_arg)
-- Closures redondantes supprimées
-- Initialisation tardive corrigée
+- **Zero clippy warnings** (11 fixes).
+- Types `&PathBuf` → `&Path` (clippy::ptr_arg).
+- Removed redundant closures.
+- Fixed late initialization.
 
 ### Technical
-- **97 tests unitaires** - 100% passent
-- Breaking changes `windows` 0.62 corrigés (6 fichiers)
-- Documentation inline améliorée
+- **97 unit tests** - 100% passing.
+- Fixed `windows` 0.62 breaking changes (6 files).
+- Improved inline documentation.
 
 ---
 
@@ -130,68 +132,68 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
-#### Tests SOTA 2026
-- **pieuvre-sync**: 25 tests unitaires (timer, services, power, dpc, cpu, security, game_mode, network)
-- **pieuvre-persist**: 14 tests unitaires (snapshot structure, sérialisation JSON, restore/delete validation)
-- **pieuvre-cli**: 30 tests unitaires (commandes, parsing, verbose levels, modules interactive)
-- **pieuvre-audit**: 28 tests existants validés
+#### Unit Testing
+- **pieuvre-sync**: 25 unit tests (timer, services, power, dpc, cpu, security, game_mode, network).
+- **pieuvre-persist**: 14 unit tests (snapshot structure, JSON serialization, restore/delete validation).
+- **pieuvre-cli**: 30 unit tests (commands, parsing, verbose levels, interactive modules).
+- **pieuvre-audit**: 28 existing tests validated.
 
 #### Architecture
-- Workspace Rust 2021 avec 5 crates modulaires
-- `pieuvre-common`: Types partagés, erreurs (thiserror), configuration
-- `pieuvre-audit`: Audit système read-only (hardware, registry, services, security)
-- `pieuvre-sync`: 20 modules de synchronisation (SOTA 24H2/25H2)
-- `pieuvre-persist`: Snapshots JSON avec rollback service/registry/firewall
-- `pieuvre-cli`: Interface CLI clap 4.5 avec mode interactif
+- Rust 2021 Workspace with 5 modular crates.
+- `pieuvre-common`: Shared types, errors (thiserror), configuration.
+- `pieuvre-audit`: Read-only system audit (hardware, registry, services, security).
+- `pieuvre-sync`: 20 synchronization modules.
+- `pieuvre-persist`: JSON snapshots with service/registry/firewall rollback.
+- `pieuvre-cli`: clap 4.5 CLI interface with interactive mode.
 
-#### Modules Sync (20 modules)
-- `services.rs`: Gestion services via APIs Windows natives
-- `timer.rs`: NtSetTimerResolution (0.5ms)
-- `power.rs`: Plans d'alimentation (Ultimate Performance)
-- `registry.rs`: Écritures atomiques HKLM
-- `firewall.rs`: Règles Windows Firewall
-- `game_mode.rs`: Game Bar, HAGS, pre-rendered frames
-- `network.rs`: Nagle, Interrupt Moderation, LSO, RSS
-- `cpu.rs`: Core Parking, Memory Compression
-- `dpc.rs`: DisablePagingExecutive, Dynamic Tick, TSC Sync
-- `security.rs`: VBS, HVCI, Spectre/Meltdown
-- `appx.rs`: Suppression bloatware (47 packages)
-- `hosts.rs`: Blocage domaines télémétrie
-- `scheduled_tasks.rs`: Désactivation tâches planifiées
-- `onedrive.rs`: Suppression OneDrive
-- `context_menu.rs`: Menu contextuel classique
-- `widgets.rs`: Désactivation widgets Win11
-- `windows_update.rs`: Contrôle updates
-- `edge.rs`: Gestion Edge
-- `explorer.rs`: Tweaks Explorer
-- `msi.rs`: MSI Mode GPU/NIC
+#### Sync Modules (20 modules)
+- `services.rs`: Service management via native Windows APIs.
+- `timer.rs`: NtSetTimerResolution (0.5ms).
+- `power.rs`: Power plans (Ultimate Performance).
+- `registry.rs`: Atomic HKLM writes.
+- `firewall.rs`: Windows Firewall rules.
+- `game_mode.rs`: Game Bar, HAGS, pre-rendered frames.
+- `network.rs`: Nagle, Interrupt Moderation, LSO, RSS.
+- `cpu.rs`: Core Parking, Memory Compression.
+- `dpc.rs`: DisablePagingExecutive, Dynamic Tick, TSC Sync.
+- `security.rs`: VBS, HVCI, Spectre/Meltdown.
+- `appx.rs`: Bloatware removal (47 packages).
+- `hosts.rs`: Telemetry domain blocking.
+- `scheduled_tasks.rs`: Scheduled task deactivation.
+- `onedrive.rs`: OneDrive removal.
+- `context_menu.rs`: Classic context menu.
+- `widgets.rs`: Win11 widgets deactivation.
+- `windows_update.rs`: Update control.
+- `edge.rs`: Edge management.
+- `explorer.rs`: Explorer tweaks.
+- `msi.rs`: GPU/NIC MSI Mode.
 
-#### Profils
-- `gaming`: Timer 0.5ms, Ultimate Performance, services télémétrie/perf
-- `privacy`: Services télémétrie complets 24H2, règles firewall
-- `workstation`: Timer 1ms, High Performance, télémétrie minimale
+#### Profiles
+- `gaming`: 0.5ms Timer, Ultimate Performance, telemetry/perf services.
+- `privacy`: Full telemetry services, firewall rules.
+- `workstation`: 1ms Timer, High Performance, minimal telemetry.
 
-#### Mode Interactif
-- Interface dialoguer + indicatif
-- 5 sections: Télémétrie, Privacy, Performance, Scheduler, AppX
-- Progress bars colorées, confirmation avant application
-- Snapshot automatique pré-modification
+#### Interactive Mode
+- dialoguer + indicatif interface.
+- 5 sections: Telemetry, Privacy, Performance, Scheduler, AppX.
+- Colored progress bars, confirmation before application.
+- Automatic pre-modification snapshot.
 
 ### Fixed
-- Suppression import `std::fs` inutilisé dans tests persist
-- Annotation `#[allow(dead_code)]` sur `create_spinner` (réservé extensions futures)
+- Removed unused `std::fs` import in persist tests.
+- `#[allow(dead_code)]` annotation on `create_spinner` (reserved for future extensions).
 
 ### Security
-- Services API via `windows` crate (pas shell injection)
-- Timer API via `ntdll` native
-- Snapshots pour rollback complet
+- Service API via `windows` crate (no shell injection).
+- Timer API via native `ntdll`.
+- Snapshots for full rollback.
 
 ---
 
 ## Roadmap
 
-### [0.4.0] - Prévu
-- [ ] Module `bios.rs` (TPM, Secure Boot via WMI)
-- [ ] Module `defender.rs` (exclusions ciblées et hardening étendu)
-- [ ] Logging structuré avec `#[instrument]` pour debug noyau
-- [ ] Interface graphique (GUI) ultra-légère en Rust (egui/slint)
+### [0.4.0] - Planned
+- [ ] `bios.rs` module (TPM, Secure Boot via WMI).
+- [ ] `defender.rs` module (targeted exclusions and extended hardening).
+- [ ] Structured logging with `#[instrument]` for kernel debug.
+- [ ] Ultra-lightweight Rust GUI (egui/slint).

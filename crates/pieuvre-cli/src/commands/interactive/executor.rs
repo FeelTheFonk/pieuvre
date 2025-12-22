@@ -1,6 +1,6 @@
-//! Exécuteurs d'optimisations pour le mode interactif
+//! Optimization executors for interactive mode
 //!
-//! Module SOTA 2026: Trait pattern pour exécution polymorphe des optimisations.
+//! Trait pattern for polymorphic execution of optimizations.
 
 use anyhow::Result;
 use async_trait::async_trait;
@@ -33,15 +33,15 @@ impl ExecutionResult {
     }
 }
 
-/// Trait pour exécuter une optimisation
+/// Trait to execute an optimization
 #[async_trait]
 pub trait OptExecutor {
-    /// Exécute l'optimisation et retourne le résultat
+    /// Executes the optimization and returns the result
     async fn execute(&self, id: &str, changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult>;
 }
 
 // ============================================================================
-// TÉLÉMÉTRIE EXECUTOR
+// TELEMETRY EXECUTOR
 // ============================================================================
 
 pub struct TelemetryExecutor;
@@ -684,7 +684,7 @@ impl OptExecutor for NetworkAdvancedExecutor {
 // HELPER FUNCTIONS
 // ============================================================================
 
-/// Capture l'état original d'un service pour rollback
+/// Captures the original state of a service for rollback
 fn capture_service_state(service_name: &str, changes: &mut Vec<ChangeRecord>) {
     if let Ok(original) = pieuvre_sync::services::get_service_start_type(service_name) {
         changes.push(ChangeRecord::Service {
@@ -694,7 +694,7 @@ fn capture_service_state(service_name: &str, changes: &mut Vec<ChangeRecord>) {
     }
 }
 
-/// Capture l'état original d'une valeur de registre pour rollback
+/// Captures the original state of a registry value for rollback
 fn capture_registry_state(subkey: &str, value_name: &str, changes: &mut Vec<ChangeRecord>) {
     if let Ok(original) = pieuvre_sync::registry::read_dword_value(subkey, value_name) {
         changes.push(ChangeRecord::Registry {
@@ -706,16 +706,16 @@ fn capture_registry_state(subkey: &str, value_name: &str, changes: &mut Vec<Chan
     }
 }
 
-/// Capture l'état original d'un package AppX pour rollback
+/// Captures the original state of an AppX package for rollback
 #[allow(dead_code)]
 fn capture_appx_state(package_name: &str, changes: &mut Vec<ChangeRecord>) {
-    // Note: Pour AppX, on stocke juste le nom pour réinstallation si possible
+    // Note: For AppX, we just store the name for reinstallation if possible
     changes.push(ChangeRecord::AppX {
         package_full_name: package_name.to_string(),
     });
 }
 
-/// Dispatcher: sélectionne le bon executor selon la catégorie
+/// Dispatcher: selects the correct executor based on category
 pub fn get_executor(category: &str) -> Box<dyn OptExecutor> {
     match category {
         "telemetry" => Box::new(TelemetryExecutor),

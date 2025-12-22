@@ -50,6 +50,8 @@ cargo fmt
 - Document public APIs with `///` comments
 - Use `tracing` for logging (not `println!`)
 - Handle errors with `anyhow::Result` in CLI, `PieuvreError` in libraries
+- **Zero Clippy Warnings**: All PRs must pass `cargo clippy` without warnings.
+- **Async First**: Use `tokio` for any I/O or monitoring tasks.
 
 ## Commit Messages
 

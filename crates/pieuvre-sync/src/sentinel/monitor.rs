@@ -1,7 +1,7 @@
-//! Sentinel Engine (SOTA 2026)
+//! Sentinel Engine
 //!
-//! Surveillance active des clés de registre et services critiques.
-//! Restauration instantanée en cas de détection de dérive (drift).
+//! Active monitoring of critical registry keys and services.
+//! Instant restoration upon drift detection.
 
 use crate::hardening::CRITICAL_KEYS;
 use pieuvre_common::Result;
@@ -16,14 +16,14 @@ use windows::Win32::System::Threading::{CreateEventW, WaitForSingleObject, INFIN
 pub struct Sentinel;
 
 impl Sentinel {
-    /// Lance la surveillance en arrière-plan (Event-Driven SOTA)
+    /// Starts background monitoring (Event-Driven)
     pub fn start_monitoring() -> Result<()> {
-        tracing::info!("Sentinel Engine démarré - Mode Event-Driven (SOTA 2026)");
+        tracing::info!("Sentinel Engine started - Event-Driven mode");
 
-        // On effectue une restauration initiale pour partir d'une base saine
+        // Perform initial restoration to start from a clean state
         let _ = Self::check_and_restore();
 
-        // Surveillance des clés de registre via notifications natives
+        // Monitor registry keys via native notifications
         for key_path in CRITICAL_KEYS {
             let key_path = key_path.to_string();
             std::thread::spawn(move || {
@@ -33,7 +33,7 @@ impl Sentinel {
             });
         }
 
-        // TODO: Ajouter la surveillance des services via NotifyServiceStatusChange (Phase 1.2)
+        // TODO: Add service monitoring via NotifyServiceStatusChange
 
         Ok(())
     }
@@ -66,7 +66,7 @@ impl Sentinel {
             })?;
 
             loop {
-                // S'enregistrer pour la notification
+                // Register for notification
                 let res = RegNotifyChangeKeyValue(
                     hkey,
                     true, // Watch subtree
@@ -84,15 +84,15 @@ impl Sentinel {
                     )));
                 }
 
-                // Attendre l'événement (bloquant pour ce thread dédié)
+                // Wait for event (blocking for this dedicated thread)
                 let wait_res = WaitForSingleObject(event, INFINITE);
 
                 if wait_res == WAIT_OBJECT_0 {
                     tracing::warn!(
-                        "Sentinel: Modification détectée sur {}, restauration immédiate...",
+                        "Sentinel: Modification detected on {}, immediate restoration...",
                         key_path
                     );
-                    // Restauration instantanée (Self-Healing)
+                    // Instant restoration (Self-Healing)
                     if let Err(e) = crate::hardening::lock_registry_key(key_path) {
                         tracing::error!("Sentinel failed to restore {}: {:?}", key_path, e);
                     }

@@ -3,21 +3,21 @@ use console::style;
 use dialoguer::{theme::ColorfulTheme, Select};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 
-/// Actions disponibles depuis le menu principal
+/// Actions available from the main menu
 pub enum MainAction {
-    /// Mode interactif standard avec sélection granulaire
+    /// Standard interactive mode with granular selection
     Interactive(String),
-    /// Application rapide d'un profil (gaming, privacy, workstation)
+    /// Quick apply of a profile (gaming, privacy, workstation)
     QuickApply(String),
-    /// Afficher le statut actuel du système
+    /// Display current system status
     Status,
-    /// Gestion des snapshots et rollback
+    /// Snapshot management and rollback
     Rollback,
-    /// Quitter l'application
+    /// Exit the application
     Exit,
 }
 
-/// Affiche le header du mode interactif (style pro, sans emoji)
+/// Displays the interactive mode header (professional style, no emoji)
 pub fn print_header(is_laptop: bool, profile: &str) {
     println!();
     println!(
@@ -26,7 +26,7 @@ pub fn print_header(is_laptop: bool, profile: &str) {
     );
     println!(
         "{}",
-        style("│           PIEUVRE - Selection des Optimisations                  │")
+        style("│           ⣠⟬ ⊚ ⟭⣄  - Optimization Selection                     │")
             .cyan()
             .bold()
     );
@@ -36,31 +36,31 @@ pub fn print_header(is_laptop: bool, profile: &str) {
     );
     println!();
     println!("  {}", style("NAVIGATION:").bold());
-    println!("    Fleches   Haut/Bas pour naviguer");
-    println!("    Espace    Cocher/Decocher une option");
-    println!("    Entree    Valider la selection");
+    println!("    Arrows    Up/Down to navigate");
+    println!("    Space     Check/Uncheck an option");
+    println!("    Enter     Confirm selection");
     println!();
     println!(
-        "  Systeme: {}",
+        "  System:  {}",
         if is_laptop {
             style("LAPTOP").yellow()
         } else {
             style("DESKTOP").green()
         }
     );
-    println!("  Profil:  {}", style(profile.to_uppercase()).cyan().bold());
+    println!("  Profile: {}", style(profile.to_uppercase()).cyan().bold());
     println!();
 
     if is_laptop {
         println!(
-            "  {} Options [WARN][LAPTOP] deconseillees sur batterie",
+            "  {} [WARN][LAPTOP] Options not recommended on battery",
             style("[!]").yellow().bold()
         );
         println!();
     }
 }
 
-/// Affiche l'écran d'accueil professionnel (ASCII Art SOTA)
+/// Displays the professional welcome screen (ASCII Art)
 pub fn print_welcome_screen() {
     println!();
     println!(
@@ -69,7 +69,7 @@ pub fn print_welcome_screen() {
     );
     println!("│                                                                  │");
     println!(
-        "│    pieuvre. - v{}                                         │",
+        "│    ⣠⟬ ⊚ ⟭⣄  - v{}                                         │",
         env!("CARGO_PKG_VERSION")
     );
     println!("│                                                                  │");
@@ -80,25 +80,25 @@ pub fn print_welcome_screen() {
     println!();
 }
 
-/// Vérifie le statut administrateur et affiche un avertissement si nécessaire
+/// Checks administrator status and displays a warning if necessary
 pub fn check_admin_status() {
     if is_elevated() {
-        println!("  [OK] Privileges administrateur detectes");
+        println!("  [OK] Administrator privileges detected");
     } else {
         println!(
-            "  {} Execution en tant qu'utilisateur standard",
+            "  {} Running as standard user",
             style("[WARN]").yellow().bold()
         );
-        println!("       Certaines optimisations necessitent des privileges eleves.");
-        println!("       Clic droit > Executer en tant qu'administrateur recommande.");
+        println!("       Some optimizations require elevated privileges.");
+        println!("       Right-click > Run as administrator recommended.");
         println!();
     }
 }
 
-/// Affiche un résumé rapide de l'état du système
+/// Displays a quick system state summary
 pub fn print_quick_status() {
     println!();
-    println!("  {}", style("ETAT SYSTEME").bold());
+    println!("  {}", style("SYSTEM STATE").bold());
     println!("  {}", style("─".repeat(60)).dim());
 
     // Hardware
@@ -134,7 +134,7 @@ pub fn print_quick_status() {
             };
             println!("  Timer:       {:.2}ms {}", info.current_ms(), status);
         }
-        Err(_) => println!("  Timer:       Non disponible"),
+        Err(_) => println!("  Timer:       Not available"),
     }
 
     // Power Plan
@@ -147,17 +147,17 @@ pub fn print_quick_status() {
             };
             println!("  Power Plan:  {} {}", plan, status);
         }
-        Err(_) => println!("  Power Plan:  Non disponible"),
+        Err(_) => println!("  Power Plan:  Not available"),
     }
 
     // DiagTrack
     match pieuvre_sync::services::get_service_start_type("DiagTrack") {
         Ok(4) => println!("  DiagTrack:   Disabled [OK]"),
         Ok(_) => println!("  DiagTrack:   Running [--]"),
-        Err(_) => println!("  DiagTrack:   Non trouve"),
+        Err(_) => println!("  DiagTrack:   Not found"),
     }
 
-    // ETW Latency (SOTA 2026)
+    // ETW Latency
     match pieuvre_audit::etw::session::EtwSession::check_active() {
         Ok(true) => {
             let max_lat = pieuvre_audit::etw::monitor::LatencyMonitor::global().get_max_latency();
@@ -168,27 +168,27 @@ pub fn print_quick_status() {
             } else {
                 style(format!("{}us", max_lat)).red().bold()
             };
-            println!("  Latency:     {} [SOTA]", lat_style);
+            println!("  Latency:     {} [ACTIVE]", lat_style);
         }
-        _ => println!("  Latency:     {} [OFF]", style("Non demarre").dim()),
+        _ => println!("  Latency:     {} [OFF]", style("Not started").dim()),
     }
 
     println!();
 }
 
-/// Affiche le menu principal et retourne l'action choisie
+/// Displays the main menu and returns the chosen action
 pub fn show_main_menu() -> Result<MainAction> {
     let options = &[
-        "Selection personnalisee   - Choisir les optimisations une par une",
-        "Appliquer profil GAMING   - Optimisations recommandees gaming",
-        "Appliquer profil PRIVACY  - Protection donnees personnelles",
-        "Appliquer profil WORKSTATION - Equilibre performance/stabilite",
-        "Afficher statut complet   - Etat detaille du systeme",
-        "Gerer les snapshots       - Rollback des modifications",
-        "Quitter",
+        "Custom Selection     - Choose optimizations one by one",
+        "Apply GAMING Profile - Recommended gaming optimizations",
+        "Apply PRIVACY Profile- Personal data protection",
+        "Apply WORKSTATION    - Balance performance/stability",
+        "Display Full Status  - Detailed system state",
+        "Manage Snapshots     - Rollback modifications",
+        "Exit",
     ];
 
-    println!("  {}", style("QUE VOULEZ-VOUS FAIRE ?").bold());
+    println!("  {}", style("WHAT DO YOU WANT TO DO?").bold());
     println!();
 
     let selection = Select::with_theme(&ColorfulTheme::default())
@@ -210,17 +210,17 @@ pub fn show_main_menu() -> Result<MainAction> {
     }
 }
 
-/// Sélection du profil de base pour la personnalisation
+/// Base profile selection for customization
 fn select_profile() -> Result<String> {
     let profiles = &[
-        "GAMING      - Latence minimale, performance maximale",
-        "PRIVACY     - Telemetrie et tracking desactives",
-        "WORKSTATION - Equilibre productivite/performance",
+        "GAMING      - Minimum latency, maximum performance",
+        "PRIVACY     - Telemetry and tracking disabled",
+        "WORKSTATION - Balance productivity/performance",
     ];
 
     println!();
-    println!("  {}", style("PROFIL DE BASE").bold());
-    println!("  Le profil determine les options pre-cochees par defaut.");
+    println!("  {}", style("BASE PROFILE").bold());
+    println!("  The profile determines pre-checked options by default.");
     println!();
 
     let selection = Select::with_theme(&ColorfulTheme::default())
@@ -236,22 +236,22 @@ fn select_profile() -> Result<String> {
     .to_string())
 }
 
-/// Message de fin
+/// Goodbye message
 pub fn print_goodbye() {
     println!();
-    println!("  A bientot.");
+    println!("  Goodbye.");
     println!();
 }
 
-/// Attend que l'utilisateur appuie sur Entrée avant de quitter
+/// Waits for Enter key before exiting
 pub fn wait_for_exit() {
     println!();
-    println!("  {}", style("Appuyez sur ENTREE pour quitter...").dim());
+    println!("  {}", style("Press ENTER to exit...").dim());
     let mut input = String::new();
     let _ = std::io::stdin().read_line(&mut input);
 }
 
-/// Vérifie si le processus a des privilèges élevés (SOTA Native)
+/// Checks if the process has elevated privileges
 fn is_elevated() -> bool {
     use windows::Win32::Foundation::HANDLE;
     use windows::Win32::Security::{
@@ -282,7 +282,7 @@ fn is_elevated() -> bool {
     }
 }
 
-/// Affiche le header d'une section
+/// Displays a section header
 pub fn print_section_header(number: u8, total: u8, name: &str) {
     println!("{}", style("─".repeat(68)).dim());
     println!(
@@ -294,8 +294,7 @@ pub fn print_section_header(number: u8, total: u8, name: &str) {
     println!("{}", style("─".repeat(68)).dim());
 }
 
-/// Affiche le résumé des sélections (version simplifiée, 5 sections)
-/// Conservée pour rétro-compatibilité
+/// Displays selection summary (simplified version, 5 sections)
 #[allow(dead_code)]
 pub fn print_selection_summary(
     telem_count: usize,
@@ -313,7 +312,7 @@ pub fn print_selection_summary(
     );
     println!(
         "{}",
-        style("│                    RÉSUMÉ SÉLECTION                              │")
+        style("│                    SELECTION SUMMARY                             │")
             .cyan()
             .bold()
     );
@@ -322,20 +321,20 @@ pub fn print_selection_summary(
         style("└──────────────────────────────────────────────────────────────────┘").cyan()
     );
     println!();
-    println!("  Télémétrie:   {}", style(telem_count).green().bold());
+    println!("  Telemetry:    {}", style(telem_count).green().bold());
     println!("  Privacy:      {}", style(privacy_count).green().bold());
     println!("  Performance:  {}", style(perf_count).green().bold());
     println!("  Scheduler:    {}", style(sched_count).green().bold());
     println!("  AppX:         {}", style(appx_count).green().bold());
     println!();
     println!(
-        "  {}: {} optimisations sélectionnées",
+        "  {}: {} optimizations selected",
         style("Total").bold(),
         style(total).cyan().bold()
     );
 }
 
-/// Crée une barre de progression pour l'exécution
+/// Creates a progress bar for execution
 pub fn create_progress_bar(total: u64, multi: &MultiProgress) -> ProgressBar {
     let pb = multi.add(ProgressBar::new(total));
     pb.set_style(
@@ -346,7 +345,7 @@ pub fn create_progress_bar(total: u64, multi: &MultiProgress) -> ProgressBar {
     pb
 }
 
-/// Crée un spinner pour une opération
+/// Creates a spinner for an operation
 #[allow(dead_code)]
 pub fn create_spinner(multi: &MultiProgress, message: &str) -> ProgressBar {
     let sp = multi.add(ProgressBar::new_spinner());
@@ -355,7 +354,7 @@ pub fn create_spinner(multi: &MultiProgress, message: &str) -> ProgressBar {
     sp
 }
 
-/// Affiche le résultat d'une opération
+/// Displays operation result
 pub fn print_operation_result(name: &str, success: bool, message: &str) {
     if success {
         println!(
@@ -374,7 +373,7 @@ pub fn print_operation_result(name: &str, success: bool, message: &str) {
     }
 }
 
-/// Affiche le résultat final
+/// Displays final result
 pub fn print_final_result(success_count: usize, error_count: usize, snapshot_id: Option<&str>) {
     println!();
     println!(
@@ -383,7 +382,7 @@ pub fn print_final_result(success_count: usize, error_count: usize, snapshot_id:
     );
     println!(
         "{}",
-        style("│                      RÉSULTAT                                    │")
+        style("│                      RESULT                                      │")
             .cyan()
             .bold()
     );
@@ -392,9 +391,9 @@ pub fn print_final_result(success_count: usize, error_count: usize, snapshot_id:
         style("└──────────────────────────────────────────────────────────────────┘").cyan()
     );
     println!();
-    println!("  Succès:  {}", style(success_count).green().bold());
+    println!("  Success:  {}", style(success_count).green().bold());
     println!(
-        "  Erreurs: {}",
+        "  Errors:   {}",
         if error_count > 0 {
             style(error_count).red().bold()
         } else {
@@ -412,70 +411,65 @@ pub fn print_final_result(success_count: usize, error_count: usize, snapshot_id:
     if error_count == 0 {
         println!(
             "{}",
-            style("  [OK] Toutes les modifications appliquées avec succès.")
+            style("  [OK] All modifications applied successfully.")
                 .green()
                 .bold()
         );
     } else {
         println!(
             "{}",
-            style("  [!] Certaines modifications ont échoué.")
-                .yellow()
-                .bold()
+            style("  [!] Some modifications failed.").yellow().bold()
         );
-        println!("      Exécutez en tant qu'administrateur si nécessaire.");
+        println!("      Run as administrator if necessary.");
     }
 
     println!();
-    println!(
-        "  Pour annuler: {}",
-        style("pieuvre rollback --last").cyan()
-    );
-    println!("  Pour vérifier: {}", style("pieuvre status").cyan());
+    println!("  To undo:   {}", style("pieuvre rollback --last").cyan());
+    println!("  To verify: {}", style("pieuvre status").cyan());
     println!();
 }
 
-/// Affiche un message d'annulation
+/// Displays cancellation message
 pub fn print_cancelled() {
     println!();
     println!(
         "{}",
-        style("  [*] Annulé. Aucune modification effectuée.").yellow()
+        style("  [*] Cancelled. No modifications performed.").yellow()
     );
     println!();
 }
 
-/// Affiche un message quand aucune option sélectionnée
+/// Displays message when no option selected
 pub fn print_no_selection() {
     println!();
     println!(
         "{}",
-        style("  [*] Aucune optimisation sélectionnée. Fin.").yellow()
+        style("  [*] No optimization selected. Done.").yellow()
     );
     println!();
 }
 
-/// Affiche un avertissement de sécurité pour la section Security
+/// Displays security warning for Security section
 pub fn print_security_warning() {
     println!();
     println!(
         "  {}",
-        style("⚠️  ATTENTION: Options à risque de sécurité élevé")
+        style("[WARN] CAUTION: High security risk options")
             .red()
             .bold()
     );
     println!(
         "  {}",
-        style("    Ces options réduisent la protection système.").red()
+        style("    These options reduce system protection.").red()
     );
     println!(
         "  {}",
-        style("    À utiliser uniquement sur systèmes de gaming isolés.").red()
+        style("    Use only on isolated gaming systems.").red()
     );
     println!();
 }
 
-/// Affiche le résumé complet des sélections (9 sections)
+/// Displays full selection summary (9 sections)
 #[allow(clippy::too_many_arguments)]
 pub fn print_selection_summary_full(
     telem_count: usize,
@@ -505,7 +499,7 @@ pub fn print_selection_summary_full(
     );
     println!(
         "{}",
-        style("│                    RÉSUMÉ SÉLECTION                              │")
+        style("│                    SELECTION SUMMARY                             │")
             .cyan()
             .bold()
     );
@@ -514,7 +508,7 @@ pub fn print_selection_summary_full(
         style("└──────────────────────────────────────────────────────────────────┘").cyan()
     );
     println!();
-    println!("  Télémétrie:      {}", style(telem_count).green().bold());
+    println!("  Telemetry:       {}", style(telem_count).green().bold());
     println!("  Privacy:         {}", style(privacy_count).green().bold());
     println!("  Performance:     {}", style(perf_count).green().bold());
     println!("  Scheduler:       {}", style(sched_count).green().bold());
@@ -529,35 +523,32 @@ pub fn print_selection_summary_full(
             style(security_count).green().bold()
         );
     }
-    println!("  Network Avancé:  {}", style(net_adv_count).green().bold());
+    println!("  Advanced Network:{}", style(net_adv_count).green().bold());
     println!();
     println!(
-        "  {}: {} optimisations sélectionnées",
+        "  {}: {} optimizations selected",
         style("Total").bold(),
         style(total).cyan().bold()
     );
 
-    // Avertissement si options critiques
+    // Warning if critical options
     if security_count > 0 {
         println!();
         println!(
             "  {}",
-            style("[!] Options de sécurité sélectionnées - Reboot requis")
+            style("[!] Security options selected - Reboot required")
                 .yellow()
                 .bold()
         );
     }
 
-    // Indicateur reboot si DPC ou security
+    // Reboot indicator if DPC or security
     if dpc_count > 0 || security_count > 0 {
-        println!(
-            "  {}",
-            style("[!] Certaines options nécessitent un redémarrage").dim()
-        );
+        println!("  {}", style("[!] Some options require a restart").dim());
     }
 }
 
-/// Affiche le résumé final avec indication des modifications nécessitant reboot
+/// Displays final result with reboot indication
 pub fn print_final_result_with_reboot(
     success_count: usize,
     error_count: usize,
@@ -570,7 +561,7 @@ pub fn print_final_result_with_reboot(
         println!();
         println!(
             "{}",
-            style("  [!] REDÉMARRAGE RECOMMANDÉ pour appliquer toutes les modifications.")
+            style("  [!] REBOOT RECOMMENDED to apply all modifications.")
                 .yellow()
                 .bold()
         );
@@ -580,9 +571,9 @@ pub fn print_final_result_with_reboot(
 
 #[cfg(test)]
 mod tests {
-    // Tests UI sont difficiles à automatiser, on vérifie juste la compilation
+    // UI tests are difficult to automate, we just verify compilation
     #[test]
     fn test_module_compiles() {
-        // Si ce test compile, le module est syntaxiquement correct
+        // If this test compiles, the module is syntactically correct
     }
 }

@@ -1,6 +1,6 @@
 //! pieuvre Sync Engine
 //!
-//! Module de synchronisation: application des optimisations.
+//! Synchronization module: applying optimizations.
 
 pub mod interrupts;
 pub mod sentinel {
@@ -37,19 +37,15 @@ use crate::operation::{RegistryDwordOperation, ServiceOperation, SyncOperation};
 use pieuvre_common::Result;
 use tracing::instrument;
 
-/// Applique un profil d'optimisation
+/// Applies an optimization profile
 pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
-    tracing::info!(
-        "Application profil: {} (dry_run: {})",
-        profile_name,
-        dry_run
-    );
+    tracing::info!("Applying profile: {} (dry_run: {})", profile_name, dry_run);
 
-    // Charger le profil TOML
+    // Load TOML profile
     let mut profile_path =
         std::path::PathBuf::from(format!("config/profiles/{}.toml", profile_name));
 
-    // Si on est dans un sous-crate (ex: tests), on remonte d'un niveau
+    // If we are in a sub-crate (e.g. tests), go up one level
     if !profile_path.exists() {
         let alt_path =
             std::path::PathBuf::from(format!("../../config/profiles/{}.toml", profile_name));
@@ -62,14 +58,14 @@ pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
         Ok(c) => c,
         Err(e) if dry_run && e.kind() == std::io::ErrorKind::NotFound => {
             tracing::warn!(
-                "Profil {} non trouvé en mode dry-run, continuation...",
+                "Profile {} not found in dry-run mode, continuing...",
                 profile_name
             );
             return Ok(());
         }
         Err(e) => {
             return Err(pieuvre_common::PieuvreError::Internal(format!(
-                "Erreur lecture profil {} ({:?}): {}",
+                "Error reading profile {} ({:?}): {}",
                 profile_name, profile_path, e
             )));
         }
@@ -77,19 +73,19 @@ pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
 
     let profile: pieuvre_common::Profile = ::toml::from_str(&content).map_err(|e| {
         pieuvre_common::PieuvreError::Internal(format!(
-            "Erreur parsing profil {}: {}",
+            "Error parsing profile {}: {}",
             profile_name, e
         ))
     })?;
 
     if dry_run {
         tracing::info!(
-            "[DRY-RUN] Simulation de l'application du profil {}",
+            "[DRY-RUN] Simulating application of profile {}",
             profile.name
         );
     }
 
-    // 0. Sondage matériel SOTA
+    // 0. Hardware probing
     let hw = tokio::task::spawn_blocking(pieuvre_audit::hardware::probe_hardware)
         .await
         .map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))??;
@@ -247,7 +243,7 @@ pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
         }));
     }
 
-    // --- ADAPTATION DYNAMIQUE (SOTA 2026) ---
+    // --- DYNAMIC ADAPTATION ---
     // A. Optimisation NVIDIA
     if hw.gpu.iter().any(|g| g.vendor == "NVIDIA") {
         tracing::info!("GPU NVIDIA détecté : application des tweaks spécifiques");
@@ -258,9 +254,9 @@ pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
         }));
     }
 
-    // B. Optimisation CPU Hybride
+    // B. Hybrid CPU Optimization
     if hw.cpu.is_hybrid {
-        tracing::info!("CPU Hybride détecté : optimisation du scheduling P-Cores");
+        tracing::info!("Hybrid CPU detected: optimizing P-Cores scheduling");
         operations.push(Box::new(RegistryDwordOperation {
             key: r"SYSTEM\CurrentControlSet\Control\Session Manager\Kernel".to_string(),
             value: "DistributeTimers".to_string(),
@@ -268,11 +264,11 @@ pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
         }));
     }
 
-    // Exécution des opérations
+    // Execute operations
     let mut set = tokio::task::JoinSet::new();
     for op in operations {
         if dry_run {
-            tracing::info!("[DRY-RUN] Opération: {}", op.name());
+            tracing::info!("[DRY-RUN] Operation: {}", op.name());
             continue;
         }
         set.spawn(async move { op.apply().await });
@@ -300,16 +296,16 @@ pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
         }
     }
 
-    // Hardening SOTA (Phase 11)
+    // Hardening
     if !dry_run {
-        tracing::info!("Application du Hardening SOTA...");
+        tracing::info!("Applying Hardening...");
         for key in crate::hardening::CRITICAL_KEYS {
             let _ = crate::hardening::lock_registry_key(key);
         }
     }
 
     tracing::info!(
-        "Profil {} appliqué avec succès ({} changements)",
+        "Profile {} applied successfully ({} changes)",
         profile.name,
         all_changes.len()
     );
@@ -318,13 +314,13 @@ pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
 
 #[instrument]
 pub async fn reset_to_defaults() -> Result<()> {
-    tracing::info!("Reinitialisation aux valeurs par defaut (Polymorphe)...");
+    tracing::info!("Resetting to defaults...");
 
     use crate::operation::{RegistryDwordOperation, ServiceOperation, SyncOperation};
     use tokio::task::JoinSet;
 
     let operations: Vec<Box<dyn SyncOperation>> = vec![
-        // 1. Services en mode automatique (ou manuel selon le service)
+        // 1. Services in automatic mode (or manual depending on service)
         Box::new(ServiceOperation {
             name: "DiagTrack".to_string(),
             target_start_type: 2,
@@ -345,7 +341,7 @@ pub async fn reset_to_defaults() -> Result<()> {
             name: "WSearch".to_string(),
             target_start_type: 2,
         }),
-        // 2. Registre par défaut
+        // 2. Default registry
         Box::new(RegistryDwordOperation {
             key: r"SYSTEM\CurrentControlSet\Control\PriorityControl".to_string(),
             value: "Win32PrioritySeparation".to_string(),
@@ -368,9 +364,6 @@ pub async fn reset_to_defaults() -> Result<()> {
     // 3. Power plan Balanced
     let _ = tokio::task::spawn_blocking(|| power::set_power_plan(power::PowerPlan::Balanced)).await;
 
-    tracing::info!(
-        "Reinitialisation terminee ({} changements)",
-        all_changes.len()
-    );
+    tracing::info!("Reset completed ({} changes)", all_changes.len());
     Ok(())
 }
