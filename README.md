@@ -1,4 +1,9 @@
-# .⣠⟬ ⊚ ⟭⣄.
+<p align="center">
+  <img src="crates/pieuvre-cli/logo.svg" width="256" alt="pieuvre logo">
+</p>
+
+<h1 align="center">pieuvre</h1>
+
 
 Windows system control and optimization tool. Full registry/service/network/power management with snapshot-based rollback.
 

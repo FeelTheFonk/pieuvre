@@ -263,6 +263,17 @@ pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
     operations.push(Box::new(crate::cleanup::CleanupWinSxSOperation));
     operations.push(Box::new(crate::cleanup::CleanupEdgeCacheOperation));
 
+    // 10. CPU & Memory SOTA 2026
+    operations.push(Box::new(crate::operation::CpuOptimizationOperation {
+        disable_core_parking: true,
+        disable_memory_compression: true,
+        disable_superfetch: true,
+    }));
+    operations.push(Box::new(crate::operation::MemoryOptimizationOperation {
+        enable_large_system_cache: true,
+        io_page_lock_limit_mb: Some(512),
+    }));
+
     // --- DYNAMIC ADAPTATION ---
     // A. Optimisation NVIDIA
     if hw.gpu.iter().any(|g| g.vendor == "NVIDIA") {

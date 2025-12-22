@@ -27,9 +27,13 @@ fn render_dashboard() -> Result<()> {
             .dim()
     );
     println!(
-        "  {}                 {}                       {}",
+        "  {}                      .⣠⠶⠚⠙⠳⠶⣄                       {}",
         style("│").cyan().dim(),
-        style(".⣠⟬ dashb⊚ard ⟭⣄.").cyan().bold(),
+        style("│").cyan().dim()
+    );
+    println!(
+        "  {}                    P I E U V R E                    {}",
+        style("│").cyan().dim(),
         style("│").cyan().dim()
     );
     println!(
@@ -42,23 +46,31 @@ fn render_dashboard() -> Result<()> {
 
     // 1. HARDWARE & KERNEL
     println!("  {}", style("KERNEL & LATENCY").bold().underlined());
+
+    // Timer SOTA Check (Persistence)
+    let sota_timer = pieuvre_sync::registry::read_dword_value(
+        r"SYSTEM\CurrentControlSet\Control\Session Manager\kernel",
+        "GlobalTimerResolutionRequests",
+    )
+    .unwrap_or(0)
+        == 1;
+
     match timer::get_timer_resolution() {
         Ok(info) => {
             let res = info.current_ms();
-            let color = if res <= 0.55 {
-                "green"
+            let (status_text, color_code) = if sota_timer {
+                (format!("{:.4}ms (SOTA / Persistent)", res), 10) // Green
+            } else if res <= 0.55 {
+                (format!("{:.4}ms (Active)", res), 10) // Green
             } else if res <= 1.0 {
-                "yellow"
+                (format!("{:.4}ms (Stock)", res), 11) // Yellow
             } else {
-                "red"
+                (format!("{:.4}ms (Slow)", res), 9) // Red
             };
+
             println!(
                 "    Timer Resolution:  {}",
-                style(format!("{:.4}ms", res)).color256(match color {
-                    "green" => 10,
-                    "yellow" => 11,
-                    _ => 9,
-                })
+                style(status_text).color256(color_code)
             );
         }
         Err(_) => println!("    Timer Resolution:  {}", style("Unknown").red()),

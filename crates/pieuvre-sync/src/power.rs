@@ -135,6 +135,7 @@ pub fn get_active_power_plan() -> Result<String> {
             s if s == PowerPlan::UltimatePerformance.guid() => {
                 PowerPlan::UltimatePerformance.name().to_string()
             }
+            "bd0b9fdc-5b4f-49d2-b2d0-76c179101054" => "Bitsum Highest Performance".to_string(),
             _ => guid_str,
         };
 

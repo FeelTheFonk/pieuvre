@@ -4,10 +4,6 @@
 
 use pieuvre_common::Result;
 use std::process::Command;
-use windows::Win32::System::Threading::{
-    GetCurrentProcess, SetProcessInformation, PROCESS_INFORMATION_CLASS,
-};
-
 
 /// Disable CPU Core Parking - keeps all cores active
 /// Prevents latency from core wake-up
@@ -126,26 +122,18 @@ pub fn disable_superfetch_registry() -> Result<()> {
 pub fn set_static_page_file(size_mb: u32) -> Result<()> {
     let size_str = size_mb.to_string();
 
-    // Disable automatic management
-    let _ = Command::new("wmic")
-        .args([
-            "computersystem",
-            "where",
-            "name=\"%computername%\"",
-            "set",
-            "AutomaticManagedPagefile=False",
-        ])
-        .output();
+    // Disable automatic management and set static size via PowerShell (WMI replacement)
+    let script = format!(
+        "$pc = Get-CimInstance Win32_ComputerSystem -ErrorAction SilentlyContinue; \
+         if ($pc.AutomaticManagedPagefile) {{ $pc | Set-CimInstance -Property @{{AutomaticManagedPagefile=$False}} -ErrorAction SilentlyContinue }}; \
+         $pagefile = Get-CimInstance Win32_PageFileSetting -Filter \"Name='C:\\\\pagefile.sys'\" -ErrorAction SilentlyContinue; \
+         if ($pagefile) {{ $pagefile | Set-CimInstance -Property @{{InitialSize={0},MaximumSize={0}}} -ErrorAction SilentlyContinue }} \
+         else {{ New-CimInstance -ClassName Win32_PageFileSetting -Property @{{Name='C:\\\\pagefile.sys',InitialSize={0},MaximumSize={0}}} -ErrorAction SilentlyContinue }}",
+        size_str
+    );
 
-    // Set static size on C:
-    let _ = Command::new("wmic")
-        .args([
-            "pagefileset",
-            "where",
-            "name=\"C:\\\\pagefile.sys\"",
-            "set",
-            &format!("InitialSize={},MaximumSize={}", size_str, size_str),
-        ])
+    let _ = Command::new("powershell")
+        .args(["-NoProfile", "-Command", &script])
         .output();
 
     tracing::info!("Page file set to static {}MB", size_mb);
@@ -154,14 +142,10 @@ pub fn set_static_page_file(size_mb: u32) -> Result<()> {
 
 /// Reset Page File to automatic management
 pub fn reset_page_file() -> Result<()> {
-    let _ = Command::new("wmic")
-        .args([
-            "computersystem",
-            "where",
-            "name=\"%computername%\"",
-            "set",
-            "AutomaticManagedPagefile=True",
-        ])
+    let script = "Get-CimInstance Win32_ComputerSystem | Set-CimInstance -Property @{AutomaticManagedPagefile=$True} -ErrorAction SilentlyContinue";
+
+    let _ = Command::new("powershell")
+        .args(["-NoProfile", "-Command", script])
         .output();
 
     tracing::info!("Page file reset to automatic");
@@ -173,38 +157,6 @@ pub fn reset_page_file() -> Result<()> {
 pub fn set_cpu_quantum(value: u32) -> Result<()> {
     crate::registry::set_priority_separation(value)?;
     tracing::info!("Win32PrioritySeparation set to 0x{:X}", value);
-    Ok(())
-}
-
-/// Set I/O Priority for the current process to High
-/// This ensures the tool itself has priority during sync/audit
-pub fn set_current_process_io_priority_high() -> Result<()> {
-    unsafe {
-        let mut io_priority = 3i32; // IoPriorityHigh
-
-        let result = SetProcessInformation(
-            GetCurrentProcess(),
-            PROCESS_INFORMATION_CLASS(9), // ProcessIoPriority
-            &mut io_priority as *mut _ as *mut _,
-            std::mem::size_of::<i32>() as u32,
-        );
-
-        if result.is_err() {
-            tracing::warn!("Failed to set I/O priority: {:?}", result);
-        } else {
-            tracing::debug!("Current process I/O priority set to High");
-        }
-    }
-    Ok(())
-}
-
-/// Apply all CPU optimizations for gaming
-pub fn apply_gaming_cpu_optimizations() -> Result<()> {
-    disable_core_parking()?;
-    disable_memory_compression()?;
-    disable_superfetch_registry()?;
-
-    tracing::info!("All CPU gaming optimizations applied");
     Ok(())
 }
 

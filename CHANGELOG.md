@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.8] - 2025-12-22 (SOTA 2026 Climax)
+
+### Added
+
+#### Visual Identity SOTA 2026
+- **Radical Minimalism**: Implementation of the new "Pieuvre" identity (Single continuous line, geometric head, organic waves).
+- **SVG Documentation**: Integration of the pixel-perfect SVG logo in `README.md` for high-DPI rendering.
+- **SOTA ASCII Art**: Refined CLI dashboard with the radical minimalist signature.
+- **ICO Alignment**: Multi-resolution Windows icon synchronization with the premium design.
+
+#### Codebase Purity (Lean & Mean)
+- **Dead Code Eradication**: Complete removal of redundant functions in `cpu.rs` and `memory.rs`.
+- **Import Optimization**: Systematic cleaning of unused imports across the workspace.
+- **Version Ascension**: Global migration to v0.4.8 SOTA standards.
+
+### Fixed
+- **Build System**: Resolved `winres` dependency resolution issues in `pieuvre-cli`.
+- **Documentation**: Fixed broken visual assets and aligned README with the new identity.
+
 ## [0.4.4] - 2025-12-22 (SOTA Open Source Apex)
 
 ### Added

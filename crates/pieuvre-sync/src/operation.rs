@@ -198,3 +198,97 @@ impl SyncOperation for PowerPlanOperation {
         Ok(false)
     }
 }
+
+/// Opération d'optimisation CPU
+pub struct CpuOptimizationOperation {
+    pub disable_core_parking: bool,
+    pub disable_memory_compression: bool,
+    pub disable_superfetch: bool,
+}
+
+#[async_trait]
+impl SyncOperation for CpuOptimizationOperation {
+    fn name(&self) -> &str {
+        "CPU SOTA Optimization"
+    }
+
+    async fn apply(&self) -> Result<Vec<ChangeRecord>> {
+        tokio::task::spawn_blocking({
+            let cp = self.disable_core_parking;
+            let mc = self.disable_memory_compression;
+            let sf = self.disable_superfetch;
+            move || {
+                if cp {
+                    crate::cpu::disable_core_parking()?;
+                }
+                if mc {
+                    crate::cpu::disable_memory_compression()?;
+                }
+                if sf {
+                    crate::cpu::disable_superfetch_registry()?;
+                }
+                Ok(vec![])
+            }
+        })
+        .await
+        .map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))?
+    }
+
+    async fn is_applied(&self) -> Result<bool> {
+        tokio::task::spawn_blocking({
+            let cp = self.disable_core_parking;
+            let mc = self.disable_memory_compression;
+            move || {
+                let cp_ok = if cp {
+                    crate::cpu::is_core_parking_disabled()
+                } else {
+                    true
+                };
+                let mc_ok = if mc {
+                    !crate::cpu::is_memory_compression_enabled()
+                } else {
+                    true
+                };
+                Ok(cp_ok && mc_ok)
+            }
+        })
+        .await
+        .map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))?
+    }
+}
+
+/// Opération d'optimisation Mémoire
+pub struct MemoryOptimizationOperation {
+    pub enable_large_system_cache: bool,
+    pub io_page_lock_limit_mb: Option<u32>,
+}
+
+#[async_trait]
+impl SyncOperation for MemoryOptimizationOperation {
+    fn name(&self) -> &str {
+        "Memory SOTA Optimization"
+    }
+
+    async fn apply(&self) -> Result<Vec<ChangeRecord>> {
+        tokio::task::spawn_blocking({
+            let lsc = self.enable_large_system_cache;
+            let iopl = self.io_page_lock_limit_mb;
+            move || {
+                if lsc {
+                    crate::memory::enable_large_system_cache()?;
+                }
+                if let Some(mb) = iopl {
+                    crate::memory::set_io_page_lock_limit(mb * 1024 * 1024)?;
+                }
+                crate::memory::trim_current_working_set()?;
+                Ok(vec![])
+            }
+        })
+        .await
+        .map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))?
+    }
+
+    async fn is_applied(&self) -> Result<bool> {
+        Ok(false) // Toujours appliquer le trim
+    }
+}

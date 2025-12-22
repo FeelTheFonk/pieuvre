@@ -54,12 +54,3 @@ pub fn set_io_page_lock_limit(max_bytes: u32) -> Result<()> {
     tracing::info!("IoPageLockLimit set to {} bytes", max_bytes);
     Ok(())
 }
-
-/// Apply all SOTA memory optimizations
-pub fn apply_sota_memory_optimizations() -> Result<()> {
-    enable_large_system_cache()?;
-    // 512MB for IoPageLockLimit (example SOTA value for high-end systems)
-    set_io_page_lock_limit(512 * 1024 * 1024)?;
-    trim_current_working_set()?;
-    Ok(())
-}
