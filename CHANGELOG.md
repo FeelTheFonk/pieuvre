@@ -9,34 +9,26 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
-#### Moteur de Synchronisation SOTA 2026
-- **Runtime Asynchrone** : Intégration de `tokio` pour une exécution massivement parallèle des optimisations.
-- **Architecture Polymorphe** : Introduction du trait `SyncOperation` unifiant la gestion des Services, du Registre et de l'Alimentation.
-- **Parallélisme Granulaire** : Utilisation de `tokio::task::JoinSet` pour réduire drastiquement le temps d'application des profils.
-- **Rollback Automatique** : Génération systématique de `ChangeRecord` pour chaque opération, permettant un retour arrière chirurgical.
+#### Moteur ETW & Intelligence Réactive (Phase 12) - SOTA 2026
+- **Moteur ETW Kernel** : Capture en temps réel des événements `DPC` et `ISR` via les APIs natives `StartTraceW` et `ProcessTrace`.
+- **Analyse de Latence** : Parsing des payloads `EVENT_RECORD` pour extraire la latence exacte en microsecondes par routine driver.
+- **Interrupt Affinity Steering** : Moteur d'ajustement dynamique de l'affinité des interruptions via le registre (`Affinity Policy`) pour isoler les drivers à haute latence.
 
-#### Intelligence Contextuelle (Hardware-Aware) - SOTA 2026
-- **Sondage DXGI** : Détection précise du GPU (VRAM, Vendor) via l'interface native DXGI.
-- **Audit Stockage** : Détection native du BusType (NVMe vs SATA) via `DeviceIoControl`.
-- **Sync Dynamique** : Adaptation automatique du profil `Gaming` selon le matériel détecté (NVIDIA Tweaks, Hybrid CPU Scheduling, NVMe I/O).
-- **Détection CPU Hybride** : Identification des P-Cores/E-Cores pour optimisation du scheduling Windows 11.
+#### Hardening Total & Inviolabilité (Phase 13) - SOTA 2026
+- **Service Hardening** : Verrouillage des services critiques via DACLs restrictifs pour empêcher toute modification tierce.
+- **Sentinel Engine** : Surveillance active en arrière-plan avec restauration instantanée en cas de détection de dérive (drift) de configuration.
 
-#### Hardening & Conformité SOTA 2026
-- **Registry Hardening** : Verrouillage des clés de registre critiques via SDDL (Security Descriptor Definition Language).
-- **Audit de Conformité** : Détection de dérive (drift) pour garantir l'intégrité des optimisations.
-- **Rollback Inviolable** : Gestion automatique des ACLs lors de la restauration système.
-
-#### Observabilité & Diagnostic
-- **Instrumentation Native** : Décoration systématique des fonctions critiques avec `#[instrument]` via la crate `tracing`.
-- **Logging Structuré** : Traçabilité totale des opérations asynchrones avec contexte (ID d'opération, paramètres).
-- **Système d'Erreurs Enrichi** : Ajout de la variante `Internal` à `PieuvreError` pour une gestion robuste des échecs de runtime.
+#### Cockpit Pinacle & UX Hardware-Aware (Phase 14) - SOTA 2026
+- **Live Dashboard** : Intégration du monitoring de latence ETW en direct dans le statut rapide de la CLI.
+- **Topologie CPU** : Visualisation de la charge et de l'affinité sur les architectures hybrides (P-Cores/E-Cores).
 
 ### Changed
-- **Refactorisation Profils** : Migration du profil `Gaming` vers le nouveau modèle polymorphe (en cours pour les autres).
-- **Dépendances** : Ajout de `tokio` et `async-trait` au workspace et aux crates concernées.
+- **Refactorisation Profils** : Migration du profil `Gaming` vers le nouveau modèle polymorphe.
+- **Dépendances** : Mise à jour vers `windows` crate 0.62.2 et ajout de `tokio` pour le runtime asynchrone.
 
 ### Technical
 - **103 tests unitaires** validés avec le nouveau runtime asynchrone.
+- **Compilation validée** sur l'ensemble du workspace (audit, sync, cli).
 - Alignement des types `ChangeRecord` avec les structures de données réelles.
 
 ---

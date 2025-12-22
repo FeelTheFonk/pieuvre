@@ -30,6 +30,8 @@ System modification engine with **22 specialized modules** (SOTA 2026).
 | CPU | `cpu.rs` | Core Parking/Memory Compression |
 | BIOS | `bios.rs` | TPM/SecureBoot status (WMI) |
 | Defender | `defender.rs` | Real-time protection & exclusions |
+| Interrupts | `interrupts.rs` | Dynamic interrupt affinity steering |
+| Sentinel | `sentinel/` | Background monitoring & restoration |
 
 ---
 

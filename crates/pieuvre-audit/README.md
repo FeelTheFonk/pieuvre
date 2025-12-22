@@ -7,6 +7,7 @@ Read-only system inspection engine SOTA.
 ## Features
 
 - **Hardware Detection**: CPU (hybrid P/E cores), RAM, GPU (DXGI VRAM), Storage (SSD/NVMe)
+- **ETW Monitoring**: Real-time Kernel DPC/ISR latency capture via native Windows APIs
 - **Service Enumeration**: Real start_type via QueryServiceConfigW, 10 categories, PID tracking
 - **Telemetry Audit**: 30+ registry keys, data collection level, advertising, location
 - **Security Audit**: Defender status, Firewall profiles, UAC, SecureBoot, Credential Guard

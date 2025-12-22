@@ -4,7 +4,6 @@
 //! Utilise SDDL (Security Descriptor Definition Language) pour une précision maximale.
 
 use pieuvre_common::{PieuvreError, Result};
-use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HANDLE, LUID, LocalFree, HLOCAL};
 use windows::Win32::Security::{
     DACL_SECURITY_INFORMATION, PROTECTED_DACL_SECURITY_INFORMATION,
@@ -14,9 +13,10 @@ use windows::Win32::Security::{
     AdjustTokenPrivileges,
 };
 use windows::Win32::Security::Authorization::{
-    SetNamedSecurityInfoW, SE_REGISTRY_KEY,
+    SetNamedSecurityInfoW, SE_REGISTRY_KEY, SE_SERVICE,
     ConvertStringSecurityDescriptorToSecurityDescriptorW,
 };
+use windows::core::PCWSTR;
 use windows::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
 
 const SDDL_REVISION_1: u32 = 1;
@@ -29,8 +29,63 @@ pub fn lock_registry_key(key_path: &str) -> Result<()> {
 
 /// Déverrouille une clé (Contrôle total pour tout le monde - Temporaire pour modif)
 /// SDDL: D:P(A;;KA;;;WD)(A;;KA;;;SY) -> Allow All (KA) to Everyone (WD), Full Control (KA) to SYSTEM (SY)
+/// Déverrouille une clé (Contrôle total pour tout le monde - Temporaire pour modif)
+/// SDDL: D:P(A;;KA;;;WD)(A;;KA;;;SY) -> Allow All (KA) to Everyone (WD), Full Control (KA) to SYSTEM (SY)
 pub fn unlock_registry_key(key_path: &str) -> Result<()> {
     apply_sddl(key_path, "D:P(A;;KA;;;WD)(A;;KA;;;SY)")
+}
+
+/// Verrouille un service (SOTA)
+/// Empêche l'arrêt et la modification par tout le monde sauf SYSTEM
+pub fn lock_service(service_name: &str) -> Result<()> {
+    apply_sddl_service(service_name, "D:P(A;;LCRP;;;WD)(A;;KA;;;SY)")
+}
+
+fn apply_sddl_service(service_name: &str, sddl: &str) -> Result<()> {
+    unsafe {
+        let _ = enable_privilege("SeTakeOwnershipPrivilege");
+        let _ = enable_privilege("SeRestorePrivilege");
+
+        let service_name_wide: Vec<u16> = service_name.encode_utf16().chain(std::iter::once(0)).collect();
+        let sddl_wide: Vec<u16> = sddl.encode_utf16().chain(std::iter::once(0)).collect();
+
+        let mut sd: PSECURITY_DESCRIPTOR = PSECURITY_DESCRIPTOR::default();
+        ConvertStringSecurityDescriptorToSecurityDescriptorW(
+            PCWSTR(sddl_wide.as_ptr()),
+            SDDL_REVISION_1,
+            &mut sd,
+            None,
+        ).map_err(|e| PieuvreError::Internal(format!("SDDL conversion failed: {}", e)))?;
+
+        let mut dacl = std::ptr::null_mut() as *mut windows::Win32::Security::ACL;
+        let mut dacl_present = 0i32;
+        let mut dacl_defaulted = 0i32;
+
+        let _ = windows::Win32::Security::GetSecurityDescriptorDacl(
+            sd,
+            &mut dacl_present as *mut i32 as *mut _,
+            &mut dacl,
+            &mut dacl_defaulted as *mut i32 as *mut _,
+        );
+
+        let result = SetNamedSecurityInfoW(
+            PCWSTR(service_name_wide.as_ptr()),
+            SE_SERVICE,
+            DACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION,
+            None,
+            None,
+            Some(dacl),
+            None,
+        );
+
+        let _ = LocalFree(Some(HLOCAL(sd.0 as *mut _)));
+        if result.is_err() {
+            return Err(PieuvreError::Internal(format!("Failed to lock service {}: {:?}", service_name, result)));
+        }
+
+        tracing::info!(service = %service_name, "Service verrouillé avec succès");
+        Ok(())
+    }
 }
 
 fn apply_sddl(key_path: &str, sddl: &str) -> Result<()> {

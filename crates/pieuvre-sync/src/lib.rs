@@ -2,6 +2,10 @@
 //!
 //! Module de synchronisation: application des optimisations.
 
+pub mod interrupts;
+pub mod sentinel {
+    pub mod monitor;
+}
 pub mod appx;
 pub mod context_menu;
 pub mod cpu;

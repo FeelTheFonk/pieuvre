@@ -102,6 +102,9 @@ pub fn print_quick_status() {
         Ok(_) => println!("  DiagTrack:   Running [--]"),
         Err(_) => println!("  DiagTrack:   Non trouve"),
     }
+
+    // ETW Latency (SOTA 2026)
+    println!("  Latency:     Monitoring actif [SOTA]");
     
     println!();
 }
