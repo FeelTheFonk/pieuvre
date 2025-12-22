@@ -4,7 +4,9 @@
 //! GPU via DXGI pour VRAM précis, Storage via DeviceIoControl pour NVMe/SSD.
 
 use pieuvre_common::{CpuInfo, GpuInfo, HardwareInfo, MemoryInfo, Result, StorageInfo};
+#[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::__cpuid;
+
 use windows::core::{HSTRING, PCWSTR};
 use windows::Win32::Graphics::Dxgi::{
     CreateDXGIFactory1, IDXGIAdapter1, IDXGIFactory1, DXGI_ADAPTER_DESC1,
