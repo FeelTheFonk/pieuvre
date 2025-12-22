@@ -263,6 +263,23 @@ impl OptExecutor for PerformanceExecutor {
                 registry::disable_power_throttling()?;
                 Ok(ExecutionResult::ok("Power throttling disabled"))
             }
+            // GPU avancé - input lag minimal
+            "enable_game_mode" => {
+                game_mode::enable_game_mode()?;
+                Ok(ExecutionResult::ok("Windows Game Mode enabled"))
+            }
+            "prerendered_frames" => {
+                game_mode::set_prerendered_frames(1)?;
+                Ok(ExecutionResult::ok("Pre-rendered frames set to 1"))
+            }
+            "vrr_opt" => {
+                game_mode::disable_vrr_optimizations()?;
+                Ok(ExecutionResult::ok("VRR optimizations disabled"))
+            }
+            "shader_cache" => {
+                game_mode::set_shader_cache_size(256)?;
+                Ok(ExecutionResult::ok("Shader cache set to 256MB"))
+            }
             _ => anyhow::bail!("Unknown performance option: {}", id),
         }
     }
@@ -367,6 +384,144 @@ impl OptExecutor for AppxExecutor {
 }
 
 // ============================================================================
+// CPU EXECUTOR
+// ============================================================================
+
+pub struct CPUExecutor;
+
+impl OptExecutor for CPUExecutor {
+    #[instrument(skip(self, _changes), fields(category = "cpu"))]
+    fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
+        use pieuvre_sync::cpu;
+
+        match id {
+            "core_parking" => {
+                cpu::disable_core_parking()?;
+                Ok(ExecutionResult::ok("Core Parking disabled - all cores active"))
+            }
+            "memory_compression" => {
+                cpu::disable_memory_compression()?;
+                Ok(ExecutionResult::ok("Memory Compression disabled"))
+            }
+            "superfetch_registry" => {
+                cpu::disable_superfetch_registry()?;
+                Ok(ExecutionResult::ok("Superfetch disabled via registry"))
+            }
+            "static_pagefile" => {
+                // Calcul automatique: 1.5x RAM ou 16GB min
+                cpu::set_static_page_file(16384)?;
+                Ok(ExecutionResult::ok("Page file set to 16GB static"))
+            }
+            _ => anyhow::bail!("Unknown CPU option: {}", id),
+        }
+    }
+}
+
+// ============================================================================
+// DPC EXECUTOR
+// ============================================================================
+
+pub struct DPCExecutor;
+
+impl OptExecutor for DPCExecutor {
+    #[instrument(skip(self, _changes), fields(category = "dpc"))]
+    fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
+        use pieuvre_sync::dpc;
+
+        match id {
+            "paging_executive" => {
+                dpc::disable_paging_executive()?;
+                Ok(ExecutionResult::ok("DisablePagingExecutive enabled"))
+            }
+            "dynamic_tick" => {
+                dpc::disable_dynamic_tick()?;
+                Ok(ExecutionResult::ok("Dynamic tick disabled - reboot required"))
+            }
+            "tsc_sync" => {
+                dpc::set_tsc_sync_enhanced()?;
+                Ok(ExecutionResult::ok("TSC sync set to enhanced"))
+            }
+            "hpet" => {
+                dpc::disable_hpet()?;
+                Ok(ExecutionResult::ok("HPET disabled"))
+            }
+            "interrupt_affinity" => {
+                dpc::set_interrupt_affinity_spread()?;
+                Ok(ExecutionResult::ok("Interrupt affinity spread across cores"))
+            }
+            _ => anyhow::bail!("Unknown DPC option: {}", id),
+        }
+    }
+}
+
+// ============================================================================
+// SECURITY EXECUTOR
+// ============================================================================
+
+pub struct SecurityExecutor;
+
+impl OptExecutor for SecurityExecutor {
+    #[instrument(skip(self, _changes), fields(category = "security"))]
+    fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
+        use pieuvre_sync::security;
+
+        match id {
+            "hvci" => {
+                security::disable_memory_integrity()?;
+                Ok(ExecutionResult::ok("HVCI disabled - reboot required"))
+            }
+            "vbs" => {
+                security::disable_vbs()?;
+                Ok(ExecutionResult::ok("VBS disabled - reboot required"))
+            }
+            "spectre" => {
+                security::disable_spectre_meltdown()?;
+                warn!("CRITICAL: Spectre/Meltdown mitigations disabled!");
+                Ok(ExecutionResult::ok("Spectre/Meltdown disabled - CRITICAL SECURITY RISK"))
+            }
+            _ => anyhow::bail!("Unknown security option: {}", id),
+        }
+    }
+}
+
+// ============================================================================
+// NETWORK ADVANCED EXECUTOR
+// ============================================================================
+
+pub struct NetworkAdvancedExecutor;
+
+impl OptExecutor for NetworkAdvancedExecutor {
+    #[instrument(skip(self, _changes), fields(category = "network_advanced"))]
+    fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
+        use pieuvre_sync::network;
+
+        match id {
+            "interrupt_moderation" => {
+                let n = network::disable_interrupt_moderation()?;
+                Ok(ExecutionResult::ok_count(n as usize, "Interrupt moderation disabled"))
+            }
+            "lso" => {
+                network::disable_lso()?;
+                Ok(ExecutionResult::ok("Large Send Offload disabled"))
+            }
+            "eee" => {
+                network::disable_eee()?;
+                Ok(ExecutionResult::ok("Energy Efficient Ethernet disabled"))
+            }
+            "rss" => {
+                network::enable_rss()?;
+                Ok(ExecutionResult::ok("Receive Side Scaling enabled"))
+            }
+            "rsc" => {
+                network::disable_rsc()?;
+                Ok(ExecutionResult::ok("Receive Segment Coalescing disabled"))
+            }
+            _ => anyhow::bail!("Unknown network_advanced option: {}", id),
+        }
+    }
+}
+
+// ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
 
@@ -388,6 +543,10 @@ pub fn get_executor(category: &str) -> Box<dyn OptExecutor> {
         "performance" => Box::new(PerformanceExecutor),
         "scheduler" => Box::new(SchedulerExecutor),
         "appx" => Box::new(AppxExecutor),
+        "cpu" => Box::new(CPUExecutor),
+        "dpc" => Box::new(DPCExecutor),
+        "security" => Box::new(SecurityExecutor),
+        "network_advanced" => Box::new(NetworkAdvancedExecutor),
         _ => Box::new(TelemetryExecutor), // Fallback
     }
 }
@@ -417,5 +576,9 @@ mod tests {
         let _exec = get_executor("performance");
         let _exec = get_executor("scheduler");
         let _exec = get_executor("appx");
+        let _exec = get_executor("cpu");
+        let _exec = get_executor("dpc");
+        let _exec = get_executor("security");
+        let _exec = get_executor("network_advanced");
     }
 }

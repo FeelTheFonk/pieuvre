@@ -28,6 +28,8 @@ pub enum RiskLevel {
     Performance,
     /// Attention requise
     Warning,
+    /// Risque critique - sécurité système compromise
+    Critical,
 }
 
 impl OptItem {
@@ -54,6 +56,11 @@ impl OptItem {
     /// Crée une option warning (laptop)
     pub const fn warning(id: &'static str, label: &'static str) -> Self {
         Self { id, label, default: false, risk: RiskLevel::Warning }
+    }
+
+    /// Crée une option critique (sécurité système)
+    pub const fn critical(id: &'static str, label: &'static str) -> Self {
+        Self { id, label, default: false, risk: RiskLevel::Critical }
     }
 }
 
@@ -141,6 +148,14 @@ pub fn performance_section(is_laptop: bool) -> Vec<OptItem> {
         OptItem::perf("power_throttle", "[PERF] Désactiver CPU Power Throttling"),
     ]);
 
+    // GPU avancé - input lag minimal
+    opts.extend([
+        OptItem::safe("enable_game_mode", "[SAFE] Activer Windows Game Mode (hardware opt)"),
+        OptItem::perf("prerendered_frames", "[PERF] Pre-Rendered Frames = 1 (input lag minimal)"),
+        OptItem::conditional("vrr_opt", "[COND] Désactiver VRR Scheduling (certains écrans)", false),
+        OptItem::safe_off("shader_cache", "[SAFE] Shader Cache DirectX 256MB"),
+    ]);
+
     opts
 }
 
@@ -177,6 +192,75 @@ pub fn appx_section() -> Vec<OptItem> {
         OptItem::conditional("copilot", "[COND] Microsoft Copilot - Désactiver AI intégrée", false),
         OptItem::safe("cortana_app", "[SAFE] Cortana"),
         OptItem::conditional("xbox", "[COND] Xbox apps (attention Game Pass)", false),
+    ]
+}
+
+// ============================================================================
+// SECTION 6: CPU / MEMORY
+// ============================================================================
+
+/// Retourne les options de la section CPU/Memory
+/// `is_laptop` adapte les options pour batterie
+pub fn cpu_section(is_laptop: bool) -> Vec<OptItem> {
+    let mut opts = Vec::with_capacity(5);
+
+    // Core Parking - agressif sur batterie
+    if is_laptop {
+        opts.push(OptItem::warning("core_parking", "[WARN][LAPTOP] Désactiver Core Parking - Usure batterie"));
+    } else {
+        opts.push(OptItem::safe("core_parking", "[SAFE] Désactiver Core Parking - Tous cores actifs"));
+    }
+
+    opts.extend([
+        OptItem::safe_off("memory_compression", "[SAFE] Désactiver Memory Compression (16GB+ RAM recommandé)"),
+        OptItem::safe_off("superfetch_registry", "[SAFE] Désactiver Superfetch/Prefetch via registre"),
+        OptItem::conditional("static_pagefile", "[COND] Page File statique (1.5x RAM, réduit fragmentation)", false),
+    ]);
+
+    opts
+}
+
+// ============================================================================
+// SECTION 7: DPC LATENCY
+// ============================================================================
+
+/// Retourne les options de la section DPC Latency (micro-stuttering)
+pub fn dpc_section() -> Vec<OptItem> {
+    vec![
+        OptItem::perf("paging_executive", "[PERF] DisablePagingExecutive - Kernel en RAM"),
+        OptItem::conditional("dynamic_tick", "[COND] Désactiver Dynamic Tick - Reboot requis", false),
+        OptItem::perf("tsc_sync", "[PERF] TSC Sync Enhanced - Précision timer"),
+        OptItem::conditional("hpet", "[COND] Désactiver HPET - Tester avec LatencyMon", false),
+        OptItem::safe_off("interrupt_affinity", "[SAFE] Interrupt Affinity Spread - Distribution cores"),
+    ]
+}
+
+// ============================================================================
+// SECTION 8: SECURITY (CAUTION)
+// ============================================================================
+
+/// Retourne les options de la section Security
+/// WARNING: Options à risque de sécurité - systèmes gaming isolés uniquement
+pub fn security_section() -> Vec<OptItem> {
+    vec![
+        OptItem::warning("hvci", "[WARN] Désactiver Memory Integrity (HVCI) - +5-10% gaming, reboot"),
+        OptItem::warning("vbs", "[WARN] Désactiver VBS - Virtualisation sécurité, reboot"),
+        OptItem::critical("spectre", "[CRITICAL] Désactiver Spectre/Meltdown - RISQUE SÉCURITÉ MAJEUR"),
+    ]
+}
+
+// ============================================================================
+// SECTION 9: NETWORK AVANCÉ
+// ============================================================================
+
+/// Retourne les options de la section Network Avancé
+pub fn network_advanced_section() -> Vec<OptItem> {
+    vec![
+        OptItem::perf("interrupt_moderation", "[PERF] Désactiver Interrupt Moderation - Latence réseau"),
+        OptItem::safe_off("lso", "[SAFE] Désactiver Large Send Offload (LSO)"),
+        OptItem::safe_off("eee", "[SAFE] Désactiver Energy Efficient Ethernet"),
+        OptItem::safe("rss", "[SAFE] Activer Receive Side Scaling (RSS)"),
+        OptItem::safe_off("rsc", "[SAFE] Désactiver Receive Segment Coalescing"),
     ]
 }
 
@@ -217,6 +301,10 @@ mod tests {
         all_ids.extend(performance_section(false).iter().map(|o| o.id));
         all_ids.extend(scheduler_section().iter().map(|o| o.id));
         all_ids.extend(appx_section().iter().map(|o| o.id));
+        all_ids.extend(cpu_section(false).iter().map(|o| o.id));
+        all_ids.extend(dpc_section().iter().map(|o| o.id));
+        all_ids.extend(security_section().iter().map(|o| o.id));
+        all_ids.extend(network_advanced_section().iter().map(|o| o.id));
         
         let unique_count = {
             let mut sorted = all_ids.clone();
@@ -226,5 +314,29 @@ mod tests {
         };
         
         assert_eq!(all_ids.len(), unique_count, "Duplicate IDs found in sections");
+    }
+
+    #[test]
+    fn test_cpu_section_laptop_warning() {
+        let section = cpu_section(true);
+        assert!(section.iter().any(|o| o.id == "core_parking" && o.risk == RiskLevel::Warning));
+    }
+
+    #[test]
+    fn test_security_section_has_critical() {
+        let section = security_section();
+        assert!(section.iter().any(|o| o.risk == RiskLevel::Critical));
+    }
+
+    #[test]
+    fn test_dpc_section_not_empty() {
+        let section = dpc_section();
+        assert!(section.len() >= 4);
+    }
+
+    #[test]
+    fn test_network_advanced_section_not_empty() {
+        let section = network_advanced_section();
+        assert!(section.len() >= 5);
     }
 }

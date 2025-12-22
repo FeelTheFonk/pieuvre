@@ -33,43 +33,70 @@ pub fn run(profile: &str) -> Result<()> {
     // ═══════════════════════════════════════════════════════════════════════
 
     // Section 1: Télémétrie
-    ui::print_section_header(1, 5, "TÉLÉMÉTRIE - Services");
+    ui::print_section_header(1, 9, "TÉLÉMÉTRIE - Services");
     let telem_opts = sections::telemetry_section();
     let telem_selected = collect_selection(&telem_opts, "Services télémétrie")?;
 
     // Section 2: Privacy
-    ui::print_section_header(2, 5, "PRIVACY - Registre");
+    ui::print_section_header(2, 9, "PRIVACY - Registre");
     let privacy_opts = sections::privacy_section();
     let privacy_selected = collect_selection(&privacy_opts, "Privacy registre")?;
 
     // Section 3: Performance
-    ui::print_section_header(3, 5, "PERFORMANCE");
+    ui::print_section_header(3, 9, "PERFORMANCE");
     let perf_opts = sections::performance_section(is_laptop);
     let perf_selected = collect_selection(&perf_opts, "Performance")?;
 
     // Section 4: Scheduler
-    ui::print_section_header(4, 5, "SCHEDULER");
+    ui::print_section_header(4, 9, "SCHEDULER");
     let sched_opts = sections::scheduler_section();
     let sched_selected = collect_selection(&sched_opts, "Scheduler")?;
 
     // Section 5: AppX
-    ui::print_section_header(5, 5, "APPX - Bloatware");
+    ui::print_section_header(5, 9, "APPX - Bloatware");
     let appx_opts = sections::appx_section();
     let appx_selected = collect_selection(&appx_opts, "AppX Bloatware")?;
+
+    // Section 6: CPU/Memory
+    ui::print_section_header(6, 9, "CPU / MEMORY");
+    let cpu_opts = sections::cpu_section(is_laptop);
+    let cpu_selected = collect_selection(&cpu_opts, "CPU/Memory")?;
+
+    // Section 7: DPC Latency
+    ui::print_section_header(7, 9, "DPC LATENCY - Micro-stuttering");
+    let dpc_opts = sections::dpc_section();
+    let dpc_selected = collect_selection(&dpc_opts, "DPC Latency")?;
+
+    // Section 8: Security (avec avertissement)
+    ui::print_section_header(8, 9, "SECURITY - ⚠️ ATTENTION RISQUE");
+    ui::print_security_warning();
+    let security_opts = sections::security_section();
+    let security_selected = collect_selection(&security_opts, "Security")?;
+
+    // Section 9: Network Avancé
+    ui::print_section_header(9, 9, "NETWORK AVANCÉ");
+    let net_adv_opts = sections::network_advanced_section();
+    let net_adv_selected = collect_selection(&net_adv_opts, "Network Avancé")?;
 
     // ═══════════════════════════════════════════════════════════════════════
     // RÉSUMÉ ET CONFIRMATION
     // ═══════════════════════════════════════════════════════════════════════
 
     let total = telem_selected.len() + privacy_selected.len() + perf_selected.len()
-        + sched_selected.len() + appx_selected.len();
+        + sched_selected.len() + appx_selected.len()
+        + cpu_selected.len() + dpc_selected.len() + security_selected.len()
+        + net_adv_selected.len();
 
-    ui::print_selection_summary(
+    ui::print_selection_summary_full(
         telem_selected.len(),
         privacy_selected.len(),
         perf_selected.len(),
         sched_selected.len(),
         appx_selected.len(),
+        cpu_selected.len(),
+        dpc_selected.len(),
+        security_selected.len(),
+        net_adv_selected.len(),
     );
 
     if total == 0 {
@@ -155,6 +182,46 @@ pub fn run(profile: &str) -> Result<()> {
         &pb,
     );
 
+    execute_category(
+        "cpu",
+        &cpu_opts,
+        &cpu_selected,
+        &mut changes,
+        &mut success_count,
+        &mut error_count,
+        &pb,
+    );
+
+    execute_category(
+        "dpc",
+        &dpc_opts,
+        &dpc_selected,
+        &mut changes,
+        &mut success_count,
+        &mut error_count,
+        &pb,
+    );
+
+    execute_category(
+        "security",
+        &security_opts,
+        &security_selected,
+        &mut changes,
+        &mut success_count,
+        &mut error_count,
+        &pb,
+    );
+
+    execute_category(
+        "network_advanced",
+        &net_adv_opts,
+        &net_adv_selected,
+        &mut changes,
+        &mut success_count,
+        &mut error_count,
+        &pb,
+    );
+
     pb.finish_with_message("Terminé");
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -172,7 +239,9 @@ pub fn run(profile: &str) -> Result<()> {
         }
     };
 
-    ui::print_final_result(success_count, error_count, snapshot_id.as_deref());
+    // Déterminer si reboot nécessaire (DPC ou Security sélectionnés)
+    let needs_reboot = !dpc_selected.is_empty() || !security_selected.is_empty();
+    ui::print_final_result_with_reboot(success_count, error_count, snapshot_id.as_deref(), needs_reboot);
 
     Ok(())
 }

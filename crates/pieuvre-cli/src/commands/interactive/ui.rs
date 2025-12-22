@@ -42,7 +42,9 @@ pub fn print_section_header(number: u8, total: u8, name: &str) {
     println!("{}", style("─".repeat(68)).dim());
 }
 
-/// Affiche le résumé des sélections
+/// Affiche le résumé des sélections (version simplifiée, 5 sections)
+/// Conservée pour rétro-compatibilité
+#[allow(dead_code)]
 pub fn print_selection_summary(
     telem_count: usize,
     privacy_count: usize,
@@ -157,6 +159,83 @@ pub fn print_no_selection() {
     println!();
     println!("{}", style("  [*] Aucune optimisation sélectionnée. Fin.").yellow());
     println!();
+}
+
+/// Affiche un avertissement de sécurité pour la section Security
+pub fn print_security_warning() {
+    println!();
+    println!("  {}", style("⚠️  ATTENTION: Options à risque de sécurité élevé").red().bold());
+    println!("  {}", style("    Ces options réduisent la protection système.").red());
+    println!("  {}", style("    À utiliser uniquement sur systèmes de gaming isolés.").red());
+    println!();
+}
+
+/// Affiche le résumé complet des sélections (9 sections)
+#[allow(clippy::too_many_arguments)]
+pub fn print_selection_summary_full(
+    telem_count: usize,
+    privacy_count: usize,
+    perf_count: usize,
+    sched_count: usize,
+    appx_count: usize,
+    cpu_count: usize,
+    dpc_count: usize,
+    security_count: usize,
+    net_adv_count: usize,
+) {
+    let total = telem_count + privacy_count + perf_count + sched_count + appx_count
+        + cpu_count + dpc_count + security_count + net_adv_count;
+    
+    println!();
+    println!("{}", style("═".repeat(68)).cyan());
+    println!("{}", style("                    RÉSUMÉ SÉLECTION").cyan().bold());
+    println!("{}", style("═".repeat(68)).cyan());
+    println!();
+    println!("  Télémétrie:      {}", style(telem_count).green().bold());
+    println!("  Privacy:         {}", style(privacy_count).green().bold());
+    println!("  Performance:     {}", style(perf_count).green().bold());
+    println!("  Scheduler:       {}", style(sched_count).green().bold());
+    println!("  AppX:            {}", style(appx_count).green().bold());
+    println!("  CPU/Memory:      {}", style(cpu_count).green().bold());
+    println!("  DPC Latency:     {}", style(dpc_count).green().bold());
+    if security_count > 0 {
+        println!("  Security:        {}", style(security_count).red().bold());
+    } else {
+        println!("  Security:        {}", style(security_count).green().bold());
+    }
+    println!("  Network Avancé:  {}", style(net_adv_count).green().bold());
+    println!();
+    println!("  {}: {} optimisations sélectionnées", 
+        style("Total").bold(), 
+        style(total).cyan().bold()
+    );
+    
+    // Avertissement si options critiques
+    if security_count > 0 {
+        println!();
+        println!("  {}", style("[!] Options de sécurité sélectionnées - Reboot requis").yellow().bold());
+    }
+    
+    // Indicateur reboot si DPC ou security
+    if dpc_count > 0 || security_count > 0 {
+        println!("  {}", style("[!] Certaines options nécessitent un redémarrage").dim());
+    }
+}
+
+/// Affiche le résumé final avec indication des modifications nécessitant reboot
+pub fn print_final_result_with_reboot(
+    success_count: usize, 
+    error_count: usize, 
+    snapshot_id: Option<&str>,
+    needs_reboot: bool,
+) {
+    print_final_result(success_count, error_count, snapshot_id);
+    
+    if needs_reboot && error_count == 0 {
+        println!();
+        println!("{}", style("  [!] REDÉMARRAGE RECOMMANDÉ pour appliquer toutes les modifications.").yellow().bold());
+        println!();
+    }
 }
 
 #[cfg(test)]

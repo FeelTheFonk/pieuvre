@@ -5,6 +5,43 @@ Toutes les modifications notables de ce projet sont documentées ici.
 Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2025-12-22
+
+### Added
+
+#### Mode Interactif SOTA - Harmonisation Complète
+- **9 sections** (anciennement 5) pour couverture exhaustive des modules sync
+- Section 6: **CPU/Memory** (core parking, memory compression, superfetch, page file statique)
+- Section 7: **DPC Latency** (paging executive, dynamic tick, TSC sync, HPET, interrupt affinity)
+- Section 8: **Security** (HVCI, VBS, Spectre/Meltdown) avec avertissements critiques
+- Section 9: **Network Avancé** (interrupt moderation, LSO, EEE, RSS, RSC)
+
+#### Performance - Options GPU Enrichies
+- `enable_game_mode` - Windows Game Mode hardware
+- `prerendered_frames` - Pre-Rendered Frames = 1 (input lag minimal)
+- `vrr_opt` - VRR Scheduling optimizations
+- `shader_cache` - DirectX Shader Cache 256MB
+
+#### Interface Utilisateur
+- `RiskLevel::Critical` - Niveau de risque pour options de sécurité
+- `print_security_warning()` - Avertissement visuel section Security
+- `print_selection_summary_full()` - Résumé 9 sections avec indicateurs reboot
+- `print_final_result_with_reboot()` - Notification reboot si DPC/Security sélectionnés
+
+#### Executors
+- `CPUExecutor` - Exécution optimisations CPU/Memory
+- `DPCExecutor` - Exécution optimisations latence DPC
+- `SecurityExecutor` - Exécution désactivation protections (avec warnings)
+- `NetworkAdvancedExecutor` - Exécution optimisations réseau avancées
+
+### Technical
+- **103 tests unitaires** - 100% passent (+4 nouveaux tests sections)
+- **0 warnings clippy**
+- Détection automatique laptop pour options risquées (core_parking warning)
+- Indicateur reboot automatique selon options sélectionnées
+
+---
+
 ## [0.2.0] - 2025-12-22
 
 ### Added
