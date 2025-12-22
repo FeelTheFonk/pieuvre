@@ -9,26 +9,9 @@ Windows system control and optimization tool. Full registry/service/network/powe
 
 ---
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Features](#features)
-- [Architecture](#architecture)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Commands](#commands)
-- [Profiles](#profiles)
-- [Configuration](#configuration)
-- [Safety](#safety)
-- [Technical Details](#technical-details)
-- [Contributing](#contributing)
-- [License](#license)
-
----
-
 ## Overview
 
-Pieuvre is a state-of-the-art Windows optimization toolkit built in Rust. It provides fine-grained control over system telemetry, services, power management, timer resolution, and registry settings.
+Pieuvre is a state-of-the-art Windows optimization toolkit built in Rust.
 
 Unlike batch scripts or registry tweaks, Pieuvre:
 
@@ -37,96 +20,18 @@ Unlike batch scripts or registry tweaks, Pieuvre:
 - **Validates sources** - Optimizations based on documented Windows internals
 - **Detects hardware** - Laptop/desktop-aware recommendations
 
-### Target Users
-
-- Power users seeking granular system control
-- Gaming enthusiasts optimizing for latency
-- Privacy-focused users disabling telemetry
-- System administrators managing Windows configurations
+**Target Users**: Power users, gaming enthusiasts, privacy-focused users, system administrators.
 
 ---
 
 ## Features
 
-### Audit Engine
-- Hardware detection (CPU hybrid architecture, RAM, vendor)
-- Service enumeration with status analysis
-- Telemetry level detection (DiagTrack, data collection)
-- AppX package inventory
-- Network configuration auditing
+- **Audit Engine** - Hardware, services, telemetry, AppX detection
+- **Sync Engine** - 17 optimization modules
+- **Persistence Engine** - Snapshot creation & rollback
+- **Interactive Mode** - 45 granular options
 
-### Sync Engine (17 modules)
-- Service state management (disable/manual/automatic)
-- Timer resolution control (0.5ms minimum)
-- Power plan configuration (Ultimate Performance)
-- Windows Firewall rule injection (47 domains, 17 IP ranges)
-- MSI Mode detection for GPU/NVMe
-- Registry atomic writes
-- **MMCSS Gaming**: SystemResponsiveness 10%, NetworkThrottling OFF
-- **Games Priority**: GPU Priority 8, Task Priority 6
-- **Startup/Shutdown optimization**: 0ms delay, 2s timeout
-- **Scheduled Tasks**: Disable 25 telemetry tasks
-- **Hosts File**: Block 50+ domains via native DNS
-- **OneDrive**: Complete removal with rollback
-- **Context Menu**: Classic menu + remove 7 clutter items
-- **Widgets**: Disable Win11 widget board + service
-- **Windows Update**: Pause 35 days + disable driver auto-updates
-- **Edge Management**: Disable sidebar, shopping, collections, PDF handler
-- **Explorer Tweaks**: Show extensions, This PC default, hide recent files
-- **Game Mode**: Disable Game Bar/DVR, Fullscreen Optimizations, HAGS control
-- **Network Optimizations**: Disable Nagle Algorithm (TcpNoDelay)
-- **CPU Power Throttling**: Disable PowerThrottlingOff registry
-- **Windows Recall Block**: Block 24H2 AI feature via Group Policy
-
-### Persistence Engine
-- Snapshot creation before any modification
-- Rollback to any previous state
-- Change record tracking with timestamps (9 services + registry)
-- JSON export for external analysis
-
-### Interactive Mode (45 options)
-- Terminal-based selection interface
-- Category-based optimization grouping
-- Pre-selection based on hardware type
-- **13 telemetry options** (services + hosts + tasks + onedrive)
-- **11 privacy options** (registry + context menu + widgets + recall)
-- **14 performance options** (timer, power, MSI, nagle, edge, explorer, game mode)
-- **10 bloatware categories** (Bing, Media, Copilot, etc.)
-- Real-time application feedback
-
----
-
-## Architecture
-
-```
-pieuvre/
-  crates/
-    pieuvre-common/     Error types, shared structures
-    pieuvre-audit/      System state collection
-    pieuvre-sync/       Modification application
-    pieuvre-persist/    Snapshot and rollback management
-    pieuvre-cli/        Command-line interface
-  config/
-    default.toml        Default configuration
-    telemetry-domains.txt
-    profiles/           gaming.toml, privacy.toml, workstation.toml
-```
-
-### Data Flow
-
-
-```
-[User Command] --> [CLI Parser] --> [Audit Engine]
-                                         |
-                                         v
-                                  [System Report]
-                                         |
-                                         v
-                               [Intelligence Layer]
-                                         |
-                                         v
-                                [Sync Engine] --> [Snapshot] --> [Apply Changes]
-```
+→ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details
 
 ---
 
@@ -135,10 +40,10 @@ pieuvre/
 ### Prerequisites
 
 - Windows 10/11 (64-bit)
-- Rust 1.75+ (for building from source)
-- Administrator privileges (for system modifications)
+- Rust 1.75+ (for building)
+- Administrator privileges
 
-### Build from Source
+### Build
 
 ```powershell
 git clone https://github.com/username/pieuvre.git
@@ -146,56 +51,24 @@ cd pieuvre
 cargo build --release
 ```
 
-Binary available at `target/release/pieuvre.exe`.
-
-### Pre-built Binary
-
-Download from [Releases](https://github.com/username/pieuvre/releases).
+Binary: `target/release/pieuvre.exe`
 
 ---
 
 ## Quick Start
 
-### 1. Audit Current State
-
 ```powershell
+# 1. Audit current state
 pieuvre audit --full
-```
 
-Generates a complete system report saved to `C:\ProgramData\Pieuvre\reports\`.
-
-### 2. Analyze with Profile
-
-```powershell
-pieuvre analyze --profile gaming
-```
-
-Displays hardware-aware recommendations for the selected profile.
-
-### 3. Interactive Mode (Recommended)
-
-```powershell
+# 2. Interactive mode (recommended)
 pieuvre interactive --profile gaming
-```
 
-Step-by-step selection of optimizations with confirmation.
-
-### 4. Apply Profile
-
-```powershell
+# 3. Or apply profile directly
 pieuvre sync --profile gaming --dry-run   # Preview
-pieuvre sync --profile gaming             # Execute
-```
+pieuvre sync --profile gaming             # Apply
 
-### 5. Verify State
-
-```powershell
-pieuvre status
-```
-
-### 6. Rollback if Needed
-
-```powershell
+# 4. Rollback if needed
 pieuvre rollback --last
 ```
 
@@ -205,220 +78,47 @@ pieuvre rollback --last
 
 | Command | Description |
 |---------|-------------|
-| `audit` | Collect system state (services, hardware, telemetry) |
-| `analyze` | Generate profile-based recommendations |
-| `sync` | Apply profile optimizations |
-| `status` | Display current optimization state |
-| `interactive` | Granular selection interface |
-| `rollback` | Restore previous system state |
-| `verify` | Check integrity of applied changes |
+| `audit` | Collect system state |
+| `analyze` | Generate recommendations |
+| `sync` | Apply optimizations |
+| `interactive` | Granular selection |
+| `rollback` | Restore previous state |
+| `status` | Display current state |
+| `verify` | Check applied changes |
 
-### Command Options
-
-```
-pieuvre audit [OPTIONS]
-  --full              Complete audit including AppX packages
-  --output <PATH>     Custom output path
-
-pieuvre analyze --profile <PROFILE>
-  --profile           gaming | privacy | workstation
-
-pieuvre sync --profile <PROFILE> [OPTIONS]
-  --dry-run           Preview without applying
-  --force             Skip confirmation
-
-pieuvre interactive --profile <PROFILE>
-  --profile           Base profile for pre-selection
-
-pieuvre rollback [OPTIONS]
-  --last              Restore most recent snapshot
-  --id <UUID>         Restore specific snapshot
-  --list              List available snapshots
-
-pieuvre status
-  (no options)
-
-pieuvre verify
-  --strict            Fail on any mismatch
-```
+→ See [CLI Documentation](crates/pieuvre-cli/README.md) for full options
 
 ---
 
 ## Profiles
 
-### Gaming
+| Profile | Focus |
+|---------|-------|
+| **Gaming** | Minimum latency, maximum performance |
+| **Privacy** | Minimize telemetry and data collection |
+| **Workstation** | Balance performance with stability |
 
-Optimizes for minimum latency and maximum performance.
-
-| Optimization | Value | Risk |
-|-------------|-------|------|
-| Timer Resolution | 0.5ms | Low (power) |
-| Power Plan | Ultimate Performance | Low |
-| DiagTrack | Disabled | None |
-| SysMain (Superfetch) | Disabled | None (SSD) |
-| Win32PrioritySeparation | 0x26 | None |
-| **MMCSS SystemResponsiveness** | 10% | None |
-| **NetworkThrottlingIndex** | OFF | None |
-| **GPU Priority** | 8 (max) | None |
-| **GlobalTimerResolution** | Permanent | Low |
-
-### Privacy
-
-Minimizes telemetry and data collection.
-
-| Optimization | Value | Risk |
-|-------------|-------|------|
-| DiagTrack | Disabled | None |
-| dmwappushservice | Disabled | None |
-| Data Collection Level | 0 (Security) | None |
-| Advertising ID | Disabled | None |
-| **Firewall Rules** | Block 30 domains, 17 IP ranges | Low |
-| **Copilot** | Disabled | None |
-
-### Workstation
-
-Balances performance with stability for professional use.
-
-| Optimization | Value | Risk |
-|-------------|-------|------|
-| Power Plan | High Performance | None |
-| WSearch | Manual | Low |
-| Background Apps | Limited | Low |
-
----
-
-## Configuration
-
-### Default Configuration
-
-Located at `config/default.toml`:
-
-```toml
-[general]
-log_level = "info"
-snapshot_dir = "C:\\ProgramData\\Pieuvre\\snapshots"
-default_profile = "gaming"
-
-[audit]
-services = true
-hardware = true
-appx = true
-network = true
-```
-
-### Telemetry Domains
-
-Firewall blocking references `config/telemetry-domains.txt`:
-
-```
-vortex.data.microsoft.com
-watson.telemetry.microsoft.com
-settings-win.data.microsoft.com
-...
-```
+→ See [Configuration](config/README.md) for details
 
 ---
 
 ## Safety
 
-### Laptop Detection
-
-Pieuvre automatically detects battery presence and adjusts recommendations:
-
-- Timer 0.5ms: Disabled by default (battery impact)
-- Ultimate Performance: Replaced with High Performance
-- Visual warning in interactive mode
-
-### Automatic Snapshots
-
-Every modification creates a snapshot:
-
-```powershell
-Snapshot: 7be4b13b-051a-4cb2-afb2-257c7a3aff2c
-Location: C:\ProgramData\Pieuvre\snapshots\
-```
-
-### Rollback
-
-```powershell
-pieuvre rollback --last      # Restore previous state
-pieuvre rollback --list      # View all snapshots
-```
-
-### Non-Destructive Analysis
-
-`audit` and `analyze` commands are read-only. Only `sync` and `interactive` modify system state.
+- **Laptop detection** - Adjusts recommendations for battery devices
+- **Automatic snapshots** - Every modification is reversible
+- **Non-destructive analysis** - `audit` and `analyze` are read-only
 
 ---
 
-## Technical Details
+## Documentation
 
-### Timer Resolution
-
-Uses `NtSetTimerResolution` from ntdll.dll:
-
-```rust
-NtSetTimerResolution(5000, TRUE, &actual);  // 0.5ms
-```
-
-References:
-- [Microsoft Timer Resolution](https://docs.microsoft.com/en-us/windows/win32/api/timeapi/)
-- [Bruce Dawson Analysis](https://randomascii.wordpress.com/2020/10/04/windows-timer-resolution-the-great-rule-change/)
-
-### Power Plans
-
-GUID-based activation via `powercfg`:
-
-| Plan | GUID |
-|------|------|
-| Balanced | `381b4222-f694-41f0-9685-ff5bb260df2e` |
-| High Performance | `8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c` |
-| Ultimate Performance | `e9a42b02-d5df-448d-aa00-03f14749eb61` |
-
-### Service Control
-
-Uses Service Control Manager API:
-
-```rust
-OpenSCManagerW(...)
-OpenServiceW(...)
-ChangeServiceConfigW(SERVICE_DISABLED)
-```
-
-### Firewall
-
-Rules injected via `netsh`:
-
-```powershell
-netsh advfirewall firewall add rule name="Pieuvre-Block-Telemetry" ...
-```
-
-### MSI Mode
-
-Detection via registry enumeration:
-
-```
-HKLM\SYSTEM\CurrentControlSet\Enum\PCI\*\Device Parameters\Interrupt Management\MessageSignaledInterruptProperties
-```
-
----
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/improvement`)
-3. Commit changes (`git commit -am 'Add improvement'`)
-4. Push to branch (`git push origin feature/improvement`)
-5. Open a Pull Request
-
-### Development
-
-```powershell
-cargo build              # Debug build
-cargo test               # Run tests
-cargo clippy             # Lint check
-cargo fmt                # Format code
-```
+| Document | Description |
+|----------|-------------|
+| [CLI Reference](crates/pieuvre-cli/README.md) | Full command documentation |
+| [Configuration](config/README.md) | Profiles and settings |
+| [Architecture](docs/ARCHITECTURE.md) | Project structure |
+| [Technical Details](docs/TECHNICAL.md) | Implementation specifics |
+| [Contributing](CONTRIBUTING.md) | Development guidelines |
 
 ---
 
@@ -430,24 +130,15 @@ MIT License. See [LICENSE](LICENSE) for details.
 
 ## Acknowledgments
 
-### SOTA References
+### References
 
-- [ChrisTitusTech/winutil](https://github.com/ChrisTitusTech/winutil) - Windows utility inspiration
-- [Farag2/Sophia-Script](https://github.com/farag2/Sophia-Script-for-Windows) - 150+ tweaks reference
-- [Raphire/Win11Debloat](https://github.com/Raphire/Win11Debloat) - Bloatware removal patterns
-- [undergroundwires/privacy.sexy](https://github.com/undergroundwires/privacy.sexy) - Telemetry domains list
-- [O&O ShutUp10++](https://www.oo-software.com/en/shutup10) - Privacy toggles reference
-- [Hagezi DNS Blocklists](https://github.com/hagezi/dns-blocklists) - DNS blocking domains
-
-### Technical Documentation
-
-- [Windows Internals (Sysinternals)](https://docs.microsoft.com/en-us/sysinternals/)
-- [Bruce Dawson - Timer Resolution](https://randomascii.wordpress.com/2020/10/04/windows-timer-resolution-the-great-rule-change/)
-- [Microsoft Docs - Service Control Manager](https://docs.microsoft.com/en-us/windows/win32/services/service-control-manager)
-- [Microsoft Docs - Registry Functions](https://docs.microsoft.com/en-us/windows/win32/sysinfo/registry-functions)
+- [ChrisTitusTech/winutil](https://github.com/ChrisTitusTech/winutil)
+- [Farag2/Sophia-Script](https://github.com/farag2/Sophia-Script-for-Windows)
+- [Raphire/Win11Debloat](https://github.com/Raphire/Win11Debloat)
+- [privacy.sexy](https://github.com/undergroundwires/privacy.sexy)
 
 ### Rust Ecosystem
 
-- [windows-rs](https://github.com/microsoft/windows-rs) - Windows API bindings
-- [clap](https://github.com/clap-rs/clap) - CLI framework
-- [dialoguer](https://github.com/mitsuhiko/dialoguer) - Interactive prompts
+- [windows-rs](https://github.com/microsoft/windows-rs)
+- [clap](https://github.com/clap-rs/clap)
+- [dialoguer](https://github.com/mitsuhiko/dialoguer)

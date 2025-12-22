@@ -14,6 +14,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Nettoyage de ~560 dépendances transitives du Cargo.lock
   - Focus sur l'outil CLI uniquement
 
+### Changed
+
+- **Documentation restructurée**: README principal allégé (454 → 96 lignes)
+  - `docs/TECHNICAL.md`: Timer, Power, SCM, MSI documentation
+  - `docs/ARCHITECTURE.md`: Structure projet et data flow
+  - `config/README.md`: Profils et configuration détaillés
+  - `crates/pieuvre-cli/README.md`: Référence CLI complète
+  - `crates/pieuvre-sync/README.md`: 17 modules documentation
+  - `crates/pieuvre-audit/README.md`: API audit
+  - `crates/pieuvre-persist/README.md`: Snapshots et rollback
+  - `crates/pieuvre-common/README.md`: Types partagés
+
 ## [0.5.0] - 2025-12-21 (SOTA P4)
 
 ### Added
