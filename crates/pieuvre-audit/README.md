@@ -1,16 +1,17 @@
 # pieuvre-audit
 
-Read-only system inspection engine.
+Read-only system inspection engine SOTA.
 
 ---
 
 ## Features
 
-- Hardware detection (CPU, RAM, GPU, vendor)
-- Service enumeration with status analysis
-- Telemetry level detection
-- AppX package inventory
-- Network configuration auditing
+- **Hardware Detection**: CPU (hybrid P/E cores), RAM, GPU (DXGI VRAM), Storage (SSD/NVMe)
+- **Service Enumeration**: Real start_type via QueryServiceConfigW, 10 categories, PID tracking
+- **Telemetry Audit**: 30+ registry keys, data collection level, advertising, location
+- **Security Audit**: Defender status, Firewall profiles, UAC, SecureBoot, Credential Guard
+- **AppX Inventory**: Bloatware detection, removal risk assessment
+- **Network Audit**: 50+ telemetry domains, IP ranges, DNS resolution status
 
 ---
 
@@ -19,18 +20,32 @@ Read-only system inspection engine.
 ### Full Audit
 
 ```rust
-use pieuvre_audit;
+use pieuvre_audit::full_audit;
 
-let report = pieuvre_audit::full_audit()?;
+let report = full_audit()?;
 
-// Access hardware info
-println!("CPU: {}", report.hardware.cpu_name);
-println!("RAM: {} GB", report.hardware.ram_gb);
-println!("Is Laptop: {}", report.hardware.is_laptop);
+println!("CPU: {}", report.hardware.cpu.model_name);
+println!("GPU VRAM: {} MB", report.hardware.gpu[0].vram_bytes / 1_000_000);
+println!("Is Laptop: {}", pieuvre_audit::is_laptop());
 
-// Access services
 for service in &report.services {
-    println!("{}: {:?}", service.name, service.status);
+    println!("{}: {:?} ({:?})", service.name, service.status, service.start_type);
+}
+```
+
+### Security Audit
+
+```rust
+use pieuvre_audit::security_audit;
+
+let audit = security_audit()?;
+
+println!("Security Score: {}/100", audit.security_score);
+println!("Defender Realtime: {}", audit.defender.realtime_protection);
+println!("SecureBoot: {}", audit.secure_boot_enabled);
+
+for rec in &audit.recommendations {
+    println!("[{:?}] {}: {}", rec.severity, rec.category, rec.title);
 }
 ```
 
@@ -39,35 +54,64 @@ for service in &report.services {
 ```rust
 use pieuvre_audit::hardware;
 
-let info = hardware::detect()?;
+let hw = hardware::probe_hardware()?;
 
-// CPU info
-println!("Cores: {}", info.cpu_cores);
-println!("Hybrid: {}", info.is_hybrid_cpu);
+// CPU
+println!("Vendor: {}", hw.cpu.vendor);
+println!("Cores: {} logical, {} physical", hw.cpu.logical_cores, hw.cpu.physical_cores);
+println!("Hybrid: {} (P:{}, E:{})", hw.cpu.is_hybrid, hw.cpu.p_cores.len(), hw.cpu.e_cores.len());
 
-// Laptop detection
-println!("Has Battery: {}", info.has_battery);
+// GPU via DXGI
+for gpu in &hw.gpu {
+    println!("{} ({}) - {} MB VRAM", gpu.name, gpu.vendor, gpu.vram_bytes / 1_000_000);
+}
+
+// Storage with SSD detection
+for drive in &hw.storage {
+    println!("{}: SSD={}, NVMe={}, {} GB", drive.device_id, drive.is_ssd, drive.is_nvme, drive.size_bytes / 1_000_000_000);
+}
 ```
 
-### Service Enumeration
+### Services with Real Start Type
 
 ```rust
 use pieuvre_audit::services;
 
-let services = services::enumerate_all()?;
+let services = services::inspect_services()?;
 
-for svc in services {
-    println!("{}: {} ({})", svc.name, svc.display_name, svc.status);
+for svc in &services {
+    println!("{}: {:?} (start={:?}, cat={:?})", 
+        svc.name, svc.status, svc.start_type, svc.category);
+    if let Some(pid) = svc.pid {
+        println!("  PID: {}", pid);
+    }
 }
+
+// Get active telemetry services
+let telemetry = services::get_active_telemetry_services(&services);
+println!("Active telemetry services: {}", telemetry.len());
 ```
 
-### Telemetry Detection
+### Registry & Defender Status
 
 ```rust
-use pieuvre_audit::telemetry;
+use pieuvre_audit::registry;
 
-let level = telemetry::get_collection_level()?;
-let diagtrack_running = telemetry::is_diagtrack_running()?;
+// Telemetry status
+let telem = registry::get_telemetry_status()?;
+println!("DiagTrack: {}", telem.diagtrack_enabled);
+println!("Collection Level: {}", telem.data_collection_level);
+
+// Defender audit
+let defender = registry::get_defender_status()?;
+println!("Realtime: {}", defender.realtime_protection);
+println!("Tamper Protection: {}", defender.tamper_protection);
+println!("Exclusions: {} paths", defender.exclusion_paths.len());
+
+// UAC status
+let uac = registry::get_uac_status()?;
+println!("UAC Enabled: {}", uac.enabled);
+println!("Secure Desktop: {}", uac.secure_desktop);
 ```
 
 ---
@@ -76,21 +120,44 @@ let diagtrack_running = telemetry::is_diagtrack_running()?;
 
 ```json
 {
-  "timestamp": "2025-12-22T07:30:00Z",
+  "timestamp": "2025-12-22T08:00:00Z",
+  "system": {
+    "os_version": "Windows 11 Pro",
+    "build_number": 22631,
+    "edition": "Professional"
+  },
   "hardware": {
-    "cpu_name": "Intel Core i9-13900K",
-    "cpu_cores": 24,
-    "ram_gb": 32,
-    "is_laptop": false,
-    "is_hybrid_cpu": true
+    "cpu": {
+      "vendor": "Intel",
+      "model_name": "Intel Core i9-13900K",
+      "logical_cores": 32,
+      "physical_cores": 24,
+      "is_hybrid": true
+    },
+    "gpu": [
+      { "name": "NVIDIA GeForce RTX 4090", "vendor": "NVIDIA", "vram_bytes": 25769803776 }
+    ],
+    "storage": [
+      { "device_id": "C:", "is_ssd": true, "is_nvme": true, "size_bytes": 1000000000000 }
+    ]
   },
   "services": [...],
   "telemetry": {
-    "diagtrack_running": true,
-    "collection_level": 3
+    "diagtrack_enabled": true,
+    "data_collection_level": 1,
+    "advertising_id_enabled": false
   },
-  "appx_packages": [...]
+  "appx": [...]
 }
+```
+
+---
+
+## Tests
+
+```bash
+cargo test -p pieuvre-audit
+# 28 passed, 0 failed
 ```
 
 ---

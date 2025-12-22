@@ -26,7 +26,8 @@ Unlike batch scripts or registry tweaks, Pieuvre:
 
 ## Features
 
-- **Audit Engine** - Hardware, services, telemetry, AppX detection
+- **Audit Engine** - Hardware (DXGI GPU, SSD), services (real start_type), telemetry (30+ keys), security scoring
+- **Security Audit** - Defender status, Firewall profiles, UAC, SecureBoot, recommendations
 - **Sync Engine** - 20 optimization modules (SOTA 2025)
 - **Persistence Engine** - Snapshot creation & rollback
 - **Interactive Mode** - 45+ granular options

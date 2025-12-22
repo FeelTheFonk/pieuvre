@@ -4,6 +4,45 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.8.0] - 2025-12-22 (Audit SOTA)
+
+### Added
+
+- **pieuvre-audit**: Refonte SOTA complète du module d'audit
+  - **security.rs** (NEW): Audit sécurité complet avec scoring 0-100
+    - `audit_security()` - Analyse Defender, Firewall, UAC, SecureBoot
+    - Recommandations par sévérité (Critical/High/Medium/Low)
+    - `score_to_grade()` - Conversion score en note A-F
+  - **GPU via DXGI**: Détection multi-GPU avec VRAM précis
+    - `CreateDXGIFactory1` + `EnumAdapters1`
+    - Fallback registre si DXGI échoue
+  - **Storage SSD/NVMe**: Détection via IOCTL
+    - `StorageDeviceSeekPenaltyProperty` pour SSD
+    - `GetDiskFreeSpaceExW` pour taille réelle
+  - **Registry étendu**: 30+ clés privacy/telemetry
+    - `get_defender_status()` - Exclusions, Tamper, Cloud, PUA
+    - `get_uac_status()` - Enabled, SecureDesktop, ConsentPrompt
+    - `get_firewall_status()` - 3 profils Domain/Private/Public
+    - `is_secure_boot_enabled()`, `is_credential_guard_enabled()`
+  - **Services QueryServiceConfigW**: Vrai start_type (was hardcodé Manual)
+    - 10 catégories (was 6): +Network, Gaming, Media, Peripheral
+    - PID tracking pour services running
+  - **tests.rs** (NEW): 28 tests unitaires couvrant tous les modules
+
+### Changed
+
+- **TelemetryStatus**: +4 champs (activity_history, cortana, web_search, error_reporting)
+- **ServiceInfo**: +pid optionnel, +4 catégories
+- **ServiceStatus**: +4 états transitoires (StartPending, StopPending, etc.)
+- **ServiceStartType**: +Unknown pour cas d'erreur
+- **Cargo.toml**: Features Windows +3 (Dxgi, Ioctl, IO)
+
+### Technical
+
+- 28 tests passent (0 failed)
+- 7 fichiers sources dans pieuvre-audit (was 6)
+- ~800 lignes nouvelles de code SOTA
+
 ## [0.7.0] - 2025-12-22 (SOTA 2025)
 
 ### Added

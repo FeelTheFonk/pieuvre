@@ -76,6 +76,9 @@ pub struct ServiceInfo {
     pub status: ServiceStatus,
     pub start_type: ServiceStartType,
     pub category: ServiceCategory,
+    /// PID du processus si le service est en cours d'exécution
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pid: Option<u32>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -83,16 +86,21 @@ pub enum ServiceStatus {
     Running,
     Stopped,
     Paused,
+    StartPending,
+    StopPending,
+    ContinuePending,
+    PausePending,
     Unknown,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ServiceStartType {
+    Boot,
+    System,
     Automatic,
     Manual,
     Disabled,
-    Boot,
-    System,
+    Unknown,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -101,17 +109,25 @@ pub enum ServiceCategory {
     Performance,
     Security,
     System,
+    Network,
+    Gaming,
+    Media,
+    Peripheral,
     User,
     Unknown,
 }
 
-/// Statut télémétrie
+/// Statut télémétrie complet
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TelemetryStatus {
     pub diagtrack_enabled: bool,
     pub data_collection_level: u32,
     pub advertising_id_enabled: bool,
     pub location_enabled: bool,
+    pub activity_history_enabled: bool,
+    pub cortana_enabled: bool,
+    pub web_search_enabled: bool,
+    pub error_reporting_enabled: bool,
 }
 
 /// Rapport de latence DPC/ISR
