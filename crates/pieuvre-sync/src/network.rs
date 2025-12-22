@@ -106,6 +106,30 @@ pub fn disable_rsc() -> Result<()> {
     Ok(())
 }
 
+/// Advanced TCP Stack Hardening (SOTA)
+/// Tweaks for MaxFreeTcbs, MaxHashTableSize, and TcpWindowSize
+pub fn apply_tcp_stack_hardening() -> Result<()> {
+    let tcp_path = r"SYSTEM\CurrentControlSet\Services\Tcpip\Parameters";
+
+    // MaxFreeTcbs: 65536 (High performance)
+    crate::registry::set_dword_value(tcp_path, "MaxFreeTcbs", 65536)?;
+
+    // MaxHashTableSize: 16384
+    crate::registry::set_dword_value(tcp_path, "MaxHashTableSize", 16384)?;
+
+    // TcpWindowSize: 65535 (Classic SOTA value for low latency)
+    crate::registry::set_dword_value(tcp_path, "TcpWindowSize", 65535)?;
+
+    // Disable TCP Chimney Offload (can cause latency spikes)
+    crate::registry::set_dword_value(tcp_path, "EnableTCPChimney", 0)?;
+
+    // Disable RSS Queues auto-tuning
+    crate::registry::set_dword_value(tcp_path, "EnableRSS", 1)?;
+
+    tracing::info!("Advanced TCP Stack Hardening applied");
+    Ok(())
+}
+
 /// Helper interne pour modifier les propriétés avancées via le registre (SOTA Native)
 fn set_advanced_property(property_name: &str, value: &str) -> Result<u32> {
     let mut modified = 0u32;

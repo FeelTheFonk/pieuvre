@@ -13,6 +13,8 @@ pub mod appx;
 pub mod context_menu;
 pub mod cpu;
 pub mod dpc;
+pub mod memory;
+
 pub mod edge;
 pub mod explorer;
 pub mod firewall;

@@ -5,7 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4] - 2025-12-22 (SOTA Open Source Apex)
+
+### Added
+
+#### Visual Identity & Branding
+- **SOTA Icon**: Integration of a professional multi-resolution `.ico` (The Ghost) with PNG compression.
+- **Resource Injection**: Native metadata embedding (Version, Copyright, Product Name) via `winres`.
+- **Ghost Banner**: Updated CLI welcome screen with version 0.4.4 and `.⣠⟬ ⊚ ⟭⣄.` branding.
+
+#### SOTA 2026 Optimizations
+- **CPU Engine**: Implementation of `Win32PrioritySeparation` (Quantum optimization) and I/O Priority management.
+- **Memory Engine**: New `memory.rs` module with **Working Set Trimming** (`EmptyWorkingSet`), `LargeSystemCache`, and `IoPageLockLimit` tweaks.
+- **Network Engine**: Advanced TCP stack hardening (`MaxFreeTcbs`, `MaxHashTableSize`, `TcpWindowSize`, `EnableRSS`).
+
+#### Open Source Readiness
+- **Security Policy**: Added `SECURITY.md` for vulnerability disclosure.
+- **Documentation**: Full refactor of `README.md` for SOTA standards.
+- **CI/CD**: Optimized GitHub Actions for automated 0.4.4 releases.
+
+### Fixed
+- **WinAPI Alignment**: Resolved `ProcessIoPriority` naming conflict in `windows` crate v0.62.
+- **Build System**: Fixed missing icon resource during release compilation.
+
 ## [0.4.2] - 2025-12-22 (Apex SOTA)
+
 
 ### Added
 

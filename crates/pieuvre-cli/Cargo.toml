@@ -29,3 +29,7 @@ dialoguer.workspace = true
 tokio.workspace = true
 async-trait.workspace = true
 windows.workspace = true
+
+[build-dependencies]
+winres = { workspace = true }
+

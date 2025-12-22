@@ -1,4 +1,4 @@
-# ⣠⟬ ⊚ ⟭⣄
+# .⣠⟬ ⊚ ⟭⣄.
 
 Windows system control and optimization tool. Full registry/service/network/power management with snapshot-based rollback.
 
@@ -11,7 +11,7 @@ Windows system control and optimization tool. Full registry/service/network/powe
 
 ## Overview
 
-pieuvre is an advanced Windows optimization toolkit built in Rust, currently in its **Apex (0.4.2)** phase.
+pieuvre is an advanced Windows optimization toolkit built in Rust, currently in its **Apex (0.4.4)** phase.
 
 Unlike batch scripts or registry tweaks, pieuvre:
 
@@ -20,7 +20,7 @@ Unlike batch scripts or registry tweaks, pieuvre:
 - **Creates automatic snapshots** - Every change is reversible via `zstd` compressed backups
 - **Sentinel Engine** - Real-time monitoring and self-healing of critical system settings
 - **Hardware-Aware Intelligence** - Advanced detection for optimal DPC/ISR steering
-- **Data-Driven Architecture** - Full alignment between TOML profiles and sync engine
+- **SOTA 2026 Optimizations** - Advanced CPU Quantum, Working Set trimming, and TCP stack hardening
 
 **Target Users**: Power users, gaming enthusiasts, privacy-focused users, system administrators.
 
@@ -31,12 +31,13 @@ Unlike batch scripts or registry tweaks, pieuvre:
 - **Audit Engine** - Hardware (DXGI GPU, SSD), services, telemetry (40+ keys), security scoring
 - **ETW Monitoring** - Real-time Kernel DPC/ISR latency capture with `DriverResolver`
 - **Security Audit** - Defender status, Firewall profiles, UAC, SecureBoot, HVCI/VBS detection
-- **Sync Engine** - 35+ optimization modules including **DNS-over-HTTPS (DoH)** and **AI De-bloat**
+- **Sync Engine** - 40+ optimization modules including **CPU Quantum**, **Memory Trimming**, and **TCP Hardening**
 - **Persistence Engine** - Snapshot creation & rollback (zstd compression + SHA256)
 - **Sentinel Engine** - Event-driven background monitoring & auto-restoration (Self-Healing)
 - **Hardening Engine** - Persistence vector protection and IFEO hardening
 - **Cleanup Engine** - Deep system cleaning (WinSxS via DISM, Temp, Edge, Windows Update)
-- **Interactive Mode** - 11 sections, 90+ granular options (The Ghost UI)
+- **Interactive Mode** - 11 sections, 100+ granular options (The Ghost UI)
+
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
 

@@ -4,6 +4,10 @@
 
 use pieuvre_common::Result;
 use std::process::Command;
+use windows::Win32::System::Threading::{
+    GetCurrentProcess, SetProcessInformation, PROCESS_INFORMATION_CLASS,
+};
+
 
 /// Disable CPU Core Parking - keeps all cores active
 /// Prevents latency from core wake-up
@@ -161,6 +165,36 @@ pub fn reset_page_file() -> Result<()> {
         .output();
 
     tracing::info!("Page file reset to automatic");
+    Ok(())
+}
+
+/// Set Win32PrioritySeparation (CPU Quantum)
+/// 0x26 (38) is often recommended for gaming (Short, Variable, High boost)
+pub fn set_cpu_quantum(value: u32) -> Result<()> {
+    crate::registry::set_priority_separation(value)?;
+    tracing::info!("Win32PrioritySeparation set to 0x{:X}", value);
+    Ok(())
+}
+
+/// Set I/O Priority for the current process to High
+/// This ensures the tool itself has priority during sync/audit
+pub fn set_current_process_io_priority_high() -> Result<()> {
+    unsafe {
+        let mut io_priority = 3i32; // IoPriorityHigh
+
+        let result = SetProcessInformation(
+            GetCurrentProcess(),
+            PROCESS_INFORMATION_CLASS(9), // ProcessIoPriority
+            &mut io_priority as *mut _ as *mut _,
+            std::mem::size_of::<i32>() as u32,
+        );
+
+        if result.is_err() {
+            tracing::warn!("Failed to set I/O priority: {:?}", result);
+        } else {
+            tracing::debug!("Current process I/O priority set to High");
+        }
+    }
     Ok(())
 }
 
