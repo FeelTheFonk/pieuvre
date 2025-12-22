@@ -132,7 +132,6 @@ pub fn print_welcome_screen() {
     let term = Term::stdout();
     let _ = term.clear_screen();
     println!();
-    println!("  {}", style(".⣠⟬ ⊚ ⟭⣄.").cyan().bold());
     println!(
         "  {}",
         style(format!("pieuvre v{}", env!("CARGO_PKG_VERSION"))).dim()
@@ -154,7 +153,7 @@ pub fn check_admin_status() {
 }
 
 pub fn print_quick_status() {
-    print_box_top("Apex Intelligence");
+    print_box_top(".⣠⟬ ⊚ ⟭⣄.");
 
     let is_laptop = pieuvre_audit::hardware::is_laptop();
     print_line(&format!(
@@ -238,11 +237,11 @@ pub fn print_quick_status() {
 
 pub fn show_main_menu() -> Result<MainAction> {
     let options = &[
-        "Custom Selection     - Granular Apex control",
-        "Apply GAMING Profile - Maximum performance Apex",
-        "Apply PRIVACY Profile- Data protection Apex",
-        "Apply WORKSTATION    - Stability & Speed Apex",
-        "Display Apex Status  - Deep system audit",
+        "Custom Selection     - Granular control",
+        "Apply GAMING Profile - Maximum performance",
+        "Apply PRIVACY Profile- Data protection",
+        "Apply WORKSTATION    - Stability & Speed",
+        "Display Status       - Deep system audit",
         "Manage Snapshots     - Persistence & Rollback",
         "Exit",
     ];
