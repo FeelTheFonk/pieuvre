@@ -11,10 +11,10 @@ Le mode interactif utilise une architecture modulaire:
 
 | Module | Description |
 |--------|-------------|
-| `interactive/mod.rs` | Orchestrateur principal (~220 lignes) |
-| `interactive/sections.rs` | 5 sections avec `OptItem` typé et `RiskLevel` |
-| `interactive/executor.rs` | Trait `OptExecutor` + 5 implémentations |
-| `interactive/ui.rs` | Interface avec `indicatif` progress bars |
+| `interactive/mod.rs` | Orchestrateur principal (Flow guide par defaut) |
+| `interactive/sections.rs` | 9 sections avec `OptItem` typé et `RiskLevel` |
+| `interactive/executor.rs` | Trait `OptExecutor` + 9 implémentations |
+| `interactive/ui.rs` | Interface SOTA (ASCII Art, NO EMOJI) |
 
 ---
 
@@ -26,7 +26,7 @@ Le mode interactif utilise une architecture modulaire:
 | `analyze` | Generate profile-based recommendations |
 | `sync` | Apply profile optimizations |
 | `status` | Display current optimization state |
-| `interactive` | Granular selection interface |
+| `interactive` | Granular selection interface (Default launch) |
 | `rollback` | Restore previous system state |
 | `verify` | Check integrity of applied changes |
 
@@ -98,7 +98,8 @@ pieuvre sync --profile gaming             # Apply
 
 ### interactive
 
-Granular selection interface with 45 options.
+Granular selection interface with 65+ options.
+**Note:** Ce mode est lance par defaut si aucun argument n'est fourni a `pieuvre.exe`.
 
 ```powershell
 pieuvre interactive --profile <PROFILE>
@@ -111,8 +112,13 @@ pieuvre interactive --profile <PROFILE>
 **Categories:**
 - Telemetry (13 options)
 - Privacy (11 options)
-- Performance (14 options)
-- Bloatware (10 categories)
+- Performance & GPU (18 options)
+- Scheduler (5 options)
+- AppX Bloatware (10 categories)
+- CPU & Memory (4 options)
+- DPC Latency (5 options)
+- Security (3 options)
+- Network Avancé (5 options)
 
 ---
 

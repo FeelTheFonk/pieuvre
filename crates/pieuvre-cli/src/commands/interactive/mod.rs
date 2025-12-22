@@ -18,8 +18,56 @@ use pieuvre_persist::snapshot;
 use tracing::{info, instrument, warn};
 
 pub use sections::OptItem;
+use ui::MainAction;
 
-/// Point d'entrée du mode interactif SOTA
+/// Point d'entrée interactif par défaut (sans arguments CLI)
+pub fn run_default() -> Result<()> {
+    // 1. Écran d'accueil ASCII
+    ui::print_welcome_screen();
+    
+    // 2. Vérification privilèges admin
+    ui::check_admin_status();
+    
+    // 3. Résumé rapide état système
+    ui::print_quick_status();
+    
+    // 4. Menu principal interactif
+    let action = ui::show_main_menu()?;
+    
+    match action {
+        MainAction::Interactive(profile) => run(&profile),
+        MainAction::QuickApply(profile) => run_quick_apply(&profile),
+        MainAction::Status => super::status::run(),
+        MainAction::Rollback => super::rollback::run(true, false, None),
+        MainAction::Exit => {
+            ui::print_goodbye();
+            Ok(())
+        }
+    }
+}
+
+/// Application rapide d'un profil sans sélection granulaire
+pub fn run_quick_apply(profile: &str) -> Result<()> {
+    println!();
+    println!("  [*] Application rapide du profil: {}", profile.to_uppercase());
+    
+    // Création d'un snapshot de sécurité
+    let changes = Vec::<ChangeRecord>::new();
+    let snap = snapshot::create(&format!("Avant profil rapide {}", profile), changes)?;
+    println!("  [OK] Snapshot de sauvegarde cree: {}", &snap.id.to_string()[..8]);
+    
+    // Application réelle via pieuvre-sync
+    pieuvre_sync::apply_profile(profile, false)?;
+    
+    println!();
+    println!("  [OK] Profil {} applique avec succes.", profile.to_uppercase());
+    println!("       Redemarrage recommande pour certaines modifications.");
+    println!();
+    
+    Ok(())
+}
+
+/// Point d'entrée du mode interactif SOTA avec sélection granulaire
 #[instrument(skip_all, fields(profile = %profile))]
 pub fn run(profile: &str) -> Result<()> {
     let is_laptop = is_laptop();

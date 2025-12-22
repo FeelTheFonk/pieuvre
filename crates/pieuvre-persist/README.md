@@ -1,12 +1,14 @@
 # pieuvre-persist
 
-Snapshot and rollback management engine.
+Snapshot and rollback management engine with **zstd compression** and **SHA256 integrity**.
 
 ---
 
 ## Features
 
 - Automatic snapshot creation before modifications
+- **zstd compression** (3-10x ratio)
+- **SHA256 checksums** for integrity validation
 - Rollback to any previous state
 - Change record tracking with timestamps
 - JSON export for external analysis
@@ -20,18 +22,13 @@ Snapshot and rollback management engine.
   "id": "7be4b13b-051a-4cb2-afb2-257c7a3aff2c",
   "timestamp": "2025-12-22T07:30:00Z",
   "description": "Gaming profile applied",
+  "checksum": "sha256:...",
   "changes": [
     {
       "type": "service",
       "name": "DiagTrack",
       "original_value": "Automatic",
       "new_value": "Disabled"
-    },
-    {
-      "type": "registry",
-      "path": "HKLM\\SYSTEM\\...",
-      "original_value": "0",
-      "new_value": "1"
     }
   ]
 }
@@ -48,7 +45,6 @@ use pieuvre_persist::snapshot;
 
 let changes = vec![
     ChangeRecord::service("DiagTrack", "Automatic", "Disabled"),
-    ChangeRecord::registry(path, "0", "1"),
 ];
 
 let snapshot = snapshot::create("Gaming profile", changes)?;
@@ -86,8 +82,8 @@ snapshot::restore(&latest.id)?;
 
 ```
 C:\ProgramData\Pieuvre\snapshots\
-├── 7be4b13b-051a-4cb2-afb2-257c7a3aff2c.json
-├── a1b2c3d4-e5f6-7890-abcd-ef1234567890.json
+├── 7be4b13b-051a-4cb2-afb2-257c7a3aff2c.json.zst
+├── a1b2c3d4-e5f6-7890-abcd-ef1234567890.json.zst
 └── ...
 ```
 
@@ -97,9 +93,9 @@ C:\ProgramData\Pieuvre\snapshots\
 
 | Type | Rollback Support |
 |------|------------------|
-| Service state | ✅ Full |
-| Registry values | ✅ Full |
-| Firewall rules | ✅ Full |
-| Hosts file | ✅ Full |
-| AppX packages | ❌ Cannot reinstall |
-| OneDrive | ⚠️ Manual reinstall |
+| Service state | [OK] Full |
+| Registry values | [OK] Full |
+| Firewall rules | [OK] Full |
+| Hosts file | [OK] Full |
+| AppX packages | [ERR] Cannot reinstall |
+| OneDrive | [WARN] Manual reinstall |

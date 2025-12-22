@@ -16,6 +16,13 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Section 8: **Security** (HVCI, VBS, Spectre/Meltdown) avec avertissements critiques
 - Section 9: **Network Avancé** (interrupt moderation, LSO, EEE, RSS, RSC)
 
+#### UX & Interface - Flow Guidé SOTA 2026
+- **Mode par défaut**: Lancement automatique du mode interactif si `pieuvre.exe` est exécuté sans arguments.
+- **Écran d'accueil ASCII**: Nouvelle bannière professionnelle avec détection de version et d'architecture.
+- **Diagnostic Initial**: Affichage rapide de l'état système (Timer, Power Plan, DiagTrack) dès le lancement.
+- **Menu Principal**: Navigation centralisée entre personnalisation, application rapide, statut et snapshots.
+- **Vérification Privilèges**: Détection automatique du statut administrateur avec avertissements contextuels.
+
 #### Performance - Options GPU Enrichies
 - `enable_game_mode` - Windows Game Mode hardware
 - `prerendered_frames` - Pre-Rendered Frames = 1 (input lag minimal)
@@ -23,22 +30,20 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `shader_cache` - DirectX Shader Cache 256MB
 
 #### Interface Utilisateur
-- `RiskLevel::Critical` - Niveau de risque pour options de sécurité
-- `print_security_warning()` - Avertissement visuel section Security
-- `print_selection_summary_full()` - Résumé 9 sections avec indicateurs reboot
-- `print_final_result_with_reboot()` - Notification reboot si DPC/Security sélectionnés
+- **Style "NO EMOJI"**: Refactorisation complète de l'interface pour un rendu pro, expert et sobre.
+- `RiskLevel::Critical` - Niveau de risque pour options de sécurité critiques.
+- `print_security_warning()` - Avertissement visuel section Security.
+- `print_selection_summary_full()` - Résumé 9 sections avec indicateurs reboot.
+- `print_final_result_with_reboot()` - Notification reboot si DPC/Security sélectionnés.
 
 #### Executors
-- `CPUExecutor` - Exécution optimisations CPU/Memory
-- `DPCExecutor` - Exécution optimisations latence DPC
-- `SecurityExecutor` - Exécution désactivation protections (avec warnings)
-- `NetworkAdvancedExecutor` - Exécution optimisations réseau avancées
+- `CPUExecutor`, `DPCExecutor`, `SecurityExecutor`, `NetworkAdvancedExecutor`.
 
 ### Technical
-- **103 tests unitaires** - 100% passent (+4 nouveaux tests sections)
-- **0 warnings clippy**
-- Détection automatique laptop pour options risquées (core_parking warning)
-- Indicateur reboot automatique selon options sélectionnées
+- **103 tests unitaires** - 100% passent (+4 nouveaux tests sections).
+- **0 warnings clippy** (correction `redundant_guards`).
+- Détection automatique laptop pour options risquées.
+- Indicateur reboot automatique selon options sélectionnées.
 
 ---
 

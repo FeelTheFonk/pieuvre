@@ -11,10 +11,10 @@ const OUTPUT_DIR: &str = r"C:\ProgramData\Pieuvre\reports";
 
 pub fn run(full: bool, output: Option<String>) -> Result<()> {
     println!("\n╔══════════════════════════════════════════════════════════════════╗");
-    println!("║              🐙 PIEUVRE - Audit Système                          ║");
+    println!("║              PIEUVRE - Audit Systeme                             ║");
     println!("╚══════════════════════════════════════════════════════════════════╝\n");
     
-    println!("🔍 Mode: {}\n", if full { "Complet" } else { "Standard" });
+    println!("  [*] Mode: {}\n", if full { "Complet" } else { "Standard" });
     
     tracing::info!("Démarrage audit (full: {})", full);
     
@@ -47,11 +47,11 @@ pub fn run(full: bool, output: Option<String>) -> Result<()> {
     println!("  Packages:   {} Appx", report.appx.len());
     println!("═══════════════════════════════════════════════════════════════════");
     
-    println!("\n📁 Rapport sauvegardé: {}", output_path.display());
+    println!("\n  [*] Rapport sauvegarde: {}", output_path.display());
     
-    println!("\n💡 Prochaines étapes:");
-    println!("   pieuvre analyze --profile gaming");
-    println!("   pieuvre sync --profile gaming --dry-run");
+    println!("\n  Prochaines etapes:");
+    println!("    pieuvre analyze --profile gaming");
+    println!("    pieuvre sync --profile gaming --dry-run");
     
     Ok(())
 }

@@ -1,6 +1,6 @@
 # pieuvre-sync
 
-System modification engine with **20 specialized modules** (SOTA 2025).
+System modification engine with **22 specialized modules** (SOTA 2026).
 
 ---
 
@@ -25,13 +25,15 @@ System modification engine with **20 specialized modules** (SOTA 2025).
 | Explorer | `explorer.rs` | Explorer UI tweaks |
 | Game Mode | `game_mode.rs` | Game Bar/DVR/HAGS/Pre-rendered frames |
 | Network | `network.rs` | Nagle/Interrupt Moderation/LSO/RSS |
-| **Security** | `security.rs` | **VBS/HVCI/Memory Integrity** (NEW) |
-| **DPC** | `dpc.rs` | **DPC latency optimizations** (NEW) |
-| **CPU** | `cpu.rs` | **Core Parking/Memory Compression** (NEW) |
+| Security | `security.rs` | VBS/HVCI/Memory Integrity |
+| DPC | `dpc.rs` | DPC latency optimizations |
+| CPU | `cpu.rs` | Core Parking/Memory Compression |
+| BIOS | `bios.rs` | TPM/SecureBoot status (WMI) |
+| Defender | `defender.rs` | Real-time protection & exclusions |
 
 ---
 
-## SOTA 2025 Features
+## SOTA 2026 Features
 
 ### Security Module (5-10% FPS Gain)
 

@@ -28,9 +28,9 @@ Unlike batch scripts or registry tweaks, Pieuvre:
 
 - **Audit Engine** - Hardware (DXGI GPU, SSD), services (real start_type), telemetry (30+ keys), security scoring
 - **Security Audit** - Defender status, Firewall profiles, UAC, SecureBoot, recommendations
-- **Sync Engine** - 20 optimization modules (SOTA 2025)
-- **Persistence Engine** - Snapshot creation & rollback
-- **Interactive Mode** - 45+ granular options
+- **Sync Engine** - 22 optimization modules (SOTA 2026)
+- **Persistence Engine** - Snapshot creation & rollback (zstd compression)
+- **Interactive Mode** - 65+ granular options (Default launch mode)
 
 → See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details
 

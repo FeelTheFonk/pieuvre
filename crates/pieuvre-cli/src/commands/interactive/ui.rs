@@ -1,24 +1,36 @@
-//! Interface utilisateur pour le mode interactif
-//!
-//! Module SOTA 2026: Gestion affichage avec indicatif progress bars.
-
+use anyhow::Result;
 use console::style;
+use dialoguer::{theme::ColorfulTheme, Select};
 use indicatif::{ProgressBar, ProgressStyle, MultiProgress};
 
-/// Affiche le header du mode interactif
+/// Actions disponibles depuis le menu principal
+pub enum MainAction {
+    /// Mode interactif standard avec sélection granulaire
+    Interactive(String),
+    /// Application rapide d'un profil (gaming, privacy, workstation)
+    QuickApply(String),
+    /// Afficher le statut actuel du système
+    Status,
+    /// Gestion des snapshots et rollback
+    Rollback,
+    /// Quitter l'application
+    Exit,
+}
+
+/// Affiche le header du mode interactif (style pro, sans emoji)
 pub fn print_header(is_laptop: bool, profile: &str) {
     println!();
     println!("{}", style("═".repeat(68)).cyan());
-    println!("{}", style("           PIEUVRE - Mode Interactif SOTA").cyan().bold());
+    println!("{}", style("           PIEUVRE - Selection des Optimisations").cyan().bold());
     println!("{}", style("═".repeat(68)).cyan());
     println!();
     println!("  {}", style("NAVIGATION:").bold());
-    println!("    {}    Haut/Bas pour naviguer", style("Flèches").green());
-    println!("    {}     Cocher/Décocher une option", style("Espace").green());
-    println!("    {}     Valider la sélection", style("Entrée").green());
+    println!("    Fleches   Haut/Bas pour naviguer");
+    println!("    Espace    Cocher/Decocher une option");
+    println!("    Entree    Valider la selection");
     println!();
-    println!("  Système: {}", if is_laptop { 
-        style("LAPTOP (batterie détectée)").yellow() 
+    println!("  Systeme: {}", if is_laptop { 
+        style("LAPTOP").yellow() 
     } else { 
         style("DESKTOP").green() 
     });
@@ -26,8 +38,156 @@ pub fn print_header(is_laptop: bool, profile: &str) {
     println!();
     
     if is_laptop {
-        println!("  {} Options avec [LAPTOP] déconseillées sur batterie", style("[!]").yellow().bold());
+        println!("  {} Options [WARN][LAPTOP] deconseillees sur batterie", style("[!]").yellow().bold());
         println!();
+    }
+}
+
+/// Affiche l'écran d'accueil professionnel (ASCII Art SOTA)
+pub fn print_welcome_screen() {
+    println!();
+    println!("{}", style("═".repeat(68)).cyan());
+    println!();
+    println!("    ██████╗ ██╗███████╗██╗   ██╗██╗   ██╗██████╗ ███████╗");
+    println!("    ██╔══██╗██║██╔════╝██║   ██║██║   ██║██╔══██╗██╔════╝");
+    println!("    ██████╔╝██║█████╗  ██║   ██║██║   ██║██████╔╝█████╗  ");
+    println!("    ██╔═══╝ ██║██╔══╝  ██║   ██║╚██╗ ██╔╝██╔══██╗██╔══╝  ");
+    println!("    ██║     ██║███████╗╚██████╔╝ ╚████╔╝ ██║  ██║███████╗");
+    println!("    ╚═╝     ╚═╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝  ╚═╝╚══════╝");
+    println!();
+    println!("    Windows System Alignment Tool - v{}", env!("CARGO_PKG_VERSION"));
+    println!();
+    println!("{}", style("═".repeat(68)).cyan());
+    println!();
+}
+
+/// Vérifie le statut administrateur et affiche un avertissement si nécessaire
+pub fn check_admin_status() {
+    if is_elevated() {
+        println!("  [OK] Privileges administrateur detectes");
+    } else {
+        println!("  {} Execution en tant qu'utilisateur standard", style("[WARN]").yellow().bold());
+        println!("       Certaines optimisations necessitent des privileges eleves.");
+        println!("       Clic droit > Executer en tant qu'administrateur recommande.");
+        println!();
+    }
+}
+
+/// Affiche un résumé rapide de l'état du système
+pub fn print_quick_status() {
+    println!();
+    println!("  {}", style("ETAT SYSTEME").bold());
+    println!("  {}", style("─".repeat(60)).dim());
+    
+    // Hardware
+    let is_laptop = pieuvre_audit::hardware::is_laptop();
+    println!("  Type:        {}", if is_laptop { "Laptop" } else { "Desktop" });
+    
+    // Timer
+    match pieuvre_sync::timer::get_timer_resolution() {
+        Ok(info) => {
+            let status = if info.current_ms() <= 0.55 { "[OK]" } else { "[--]" };
+            println!("  Timer:       {:.2}ms {}", info.current_ms(), status);
+        }
+        Err(_) => println!("  Timer:       Non disponible"),
+    }
+    
+    // Power Plan
+    match pieuvre_sync::power::get_active_power_plan() {
+        Ok(plan) => {
+            let status = if plan.contains("High") || plan.contains("Ultimate") { "[OK]" } else { "[--]" };
+            println!("  Power Plan:  {} {}", plan, status);
+        }
+        Err(_) => println!("  Power Plan:  Non disponible"),
+    }
+    
+    // DiagTrack
+    match pieuvre_sync::services::get_service_start_type("DiagTrack") {
+        Ok(4) => println!("  DiagTrack:   Disabled [OK]"),
+        Ok(_) => println!("  DiagTrack:   Running [--]"),
+        Err(_) => println!("  DiagTrack:   Non trouve"),
+    }
+    
+    println!();
+}
+
+/// Affiche le menu principal et retourne l'action choisie
+pub fn show_main_menu() -> Result<MainAction> {
+    let options = &[
+        "Selection personnalisee   - Choisir les optimisations une par une",
+        "Appliquer profil GAMING   - Optimisations recommandees gaming",
+        "Appliquer profil PRIVACY  - Protection donnees personnelles",
+        "Appliquer profil WORKSTATION - Equilibre performance/stabilite",
+        "Afficher statut complet   - Etat detaille du systeme",
+        "Gerer les snapshots       - Rollback des modifications",
+        "Quitter",
+    ];
+    
+    println!("  {}", style("QUE VOULEZ-VOUS FAIRE ?").bold());
+    println!();
+    
+    let selection = Select::with_theme(&ColorfulTheme::default())
+        .items(options)
+        .default(0)
+        .interact()?;
+    
+    match selection {
+        0 => {
+            let profile = select_profile()?;
+            Ok(MainAction::Interactive(profile))
+        }
+        1 => Ok(MainAction::QuickApply("gaming".to_string())),
+        2 => Ok(MainAction::QuickApply("privacy".to_string())),
+        3 => Ok(MainAction::QuickApply("workstation".to_string())),
+        4 => Ok(MainAction::Status),
+        5 => Ok(MainAction::Rollback),
+        _ => Ok(MainAction::Exit),
+    }
+}
+
+/// Sélection du profil de base pour la personnalisation
+fn select_profile() -> Result<String> {
+    let profiles = &[
+        "GAMING      - Latence minimale, performance maximale",
+        "PRIVACY     - Telemetrie et tracking desactives",
+        "WORKSTATION - Equilibre productivite/performance",
+    ];
+    
+    println!();
+    println!("  {}", style("PROFIL DE BASE").bold());
+    println!("  Le profil determine les options pre-cochees par defaut.");
+    println!();
+    
+    let selection = Select::with_theme(&ColorfulTheme::default())
+        .items(profiles)
+        .default(0)
+        .interact()?;
+    
+    Ok(match selection {
+        0 => "gaming",
+        1 => "privacy",
+        _ => "workstation",
+    }.to_string())
+}
+
+/// Message de fin
+pub fn print_goodbye() {
+    println!();
+    println!("  A bientot.");
+    println!();
+}
+
+/// Vérifie si le processus a des privilèges élevés (Windows)
+fn is_elevated() -> bool {
+    use std::process::Command;
+    
+    let output = Command::new("net")
+        .args(["session"])
+        .output();
+    
+    match output {
+        Ok(o) => o.status.success(),
+        Err(_) => false,
     }
 }
 

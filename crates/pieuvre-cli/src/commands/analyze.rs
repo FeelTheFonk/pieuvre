@@ -12,11 +12,11 @@ const OUTPUT_DIR: &str = r"C:\ProgramData\Pieuvre\reports";
 
 pub fn run(profile: &str) -> Result<()> {
     println!("\n╔══════════════════════════════════════════════════════════════════╗");
-    println!("║              🐙 PIEUVRE - Analyse Système                        ║");
+    println!("║              PIEUVRE - Analyse Systeme                           ║");
     println!("╚══════════════════════════════════════════════════════════════════╝\n");
     
-    println!("📋 Profil cible: {}\n", profile.to_uppercase());
-    println!("🔍 Collecte des données système...\n");
+    println!("  [*] Profil cible: {}\n", profile.to_uppercase());
+    println!("  [*] Collecte des donnees systeme...\n");
     
     // Exécuter l'audit
     let report = full_audit()?;
@@ -190,12 +190,12 @@ pub fn run(profile: &str) -> Result<()> {
     fs::write(&report_path, &json)?;
     
     println!("\n═══════════════════════════════════════════════════════════════════");
-    println!("📁 Rapport sauvegardé: {}", report_path.display());
+    println!("  [*] Rapport sauvegarde: {}", report_path.display());
     println!("═══════════════════════════════════════════════════════════════════");
     
-    println!("\n💡 Pour appliquer ces recommandations:");
-    println!("   pieuvre sync --profile {} --dry-run", profile);
-    println!("   pieuvre sync --profile {}", profile);
+    println!("\n  Prochaines etapes:");
+    println!("    pieuvre sync --profile {} --dry-run", profile);
+    println!("    pieuvre sync --profile {}", profile);
     
     Ok(())
 }

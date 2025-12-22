@@ -15,14 +15,15 @@ use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 #[command(name = "pieuvre")]
 #[command(author = "Pieuvre Contributors")]
 #[command(version)]
-#[command(about = "Outil SOTA d'alignement système Windows 11", long_about = None)]
+#[command(about = "Outil SOTA d'alignement systeme Windows 11")]
+#[command(long_about = "Outil SOTA d'alignement systeme Windows 11.\n\nLancez sans arguments pour le mode interactif guide.")]
 struct Cli {
     /// Niveau de verbosité (-v, -vv, -vvv)
     #[arg(short, long, action = clap::ArgAction::Count)]
     verbose: u8,
 
     #[command(subcommand)]
-    command: Commands,
+    command: Option<Commands>,
 }
 
 #[derive(Subcommand)]
@@ -113,13 +114,15 @@ fn main() -> anyhow::Result<()> {
         .init();
 
     match cli.command {
-        Commands::Audit { full, output } => commands::audit::run(full, output),
-        Commands::Analyze { profile } => commands::analyze::run(&profile),
-        Commands::Sync { profile, dry_run } => commands::sync::run(&profile, dry_run),
-        Commands::Status => commands::status::run(),
-        Commands::Rollback { list, last, id } => commands::rollback::run(list, last, id),
-        Commands::Verify { repair } => commands::verify::run(repair),
-        Commands::Interactive { profile } => commands::interactive::run(&profile),
-        Commands::Completions { shell } => commands::completions::run(shell),
+        // Mode interactif par defaut si aucune commande fournie
+        None => commands::interactive::run_default(),
+        Some(Commands::Audit { full, output }) => commands::audit::run(full, output),
+        Some(Commands::Analyze { profile }) => commands::analyze::run(&profile),
+        Some(Commands::Sync { profile, dry_run }) => commands::sync::run(&profile, dry_run),
+        Some(Commands::Status) => commands::status::run(),
+        Some(Commands::Rollback { list, last, id }) => commands::rollback::run(list, last, id),
+        Some(Commands::Verify { repair }) => commands::verify::run(repair),
+        Some(Commands::Interactive { profile }) => commands::interactive::run(&profile),
+        Some(Commands::Completions { shell }) => commands::completions::run(shell),
     }
 }
