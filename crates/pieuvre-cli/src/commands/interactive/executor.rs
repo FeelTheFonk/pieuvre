@@ -5,6 +5,7 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use pieuvre_common::ChangeRecord;
+use pieuvre_sync::operation::SyncOperation;
 use tracing::{info, instrument, warn};
 
 /// Résultat d'exécution d'une optimisation
@@ -681,6 +682,97 @@ impl OptExecutor for NetworkAdvancedExecutor {
 }
 
 // ============================================================================
+// DNS EXECUTOR
+// ============================================================================
+
+pub struct DNSExecutor;
+
+#[async_trait]
+impl OptExecutor for DNSExecutor {
+    #[instrument(skip(self, _changes), fields(category = "dns"))]
+    async fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
+        use pieuvre_sync::dns;
+
+        match id {
+            "doh_cloudflare" => {
+                tokio::task::spawn_blocking(|| dns::ConfigureDohOperation {
+                    provider: dns::DNSProvider::Cloudflare,
+                })
+                .await?
+                .apply()
+                .await?;
+                Ok(ExecutionResult::ok("DNS-over-HTTPS (Cloudflare) enabled"))
+            }
+            "doh_google" => {
+                tokio::task::spawn_blocking(|| dns::ConfigureDohOperation {
+                    provider: dns::DNSProvider::Google,
+                })
+                .await?
+                .apply()
+                .await?;
+                Ok(ExecutionResult::ok("DNS-over-HTTPS (Google) enabled"))
+            }
+            "doh_quad9" => {
+                tokio::task::spawn_blocking(|| dns::ConfigureDohOperation {
+                    provider: dns::DNSProvider::Quad9,
+                })
+                .await?
+                .apply()
+                .await?;
+                Ok(ExecutionResult::ok("DNS-over-HTTPS (Quad9) enabled"))
+            }
+            "dns_flush" => {
+                tokio::task::spawn_blocking(|| dns::FlushDnsOperation)
+                    .await?
+                    .apply()
+                    .await?;
+                Ok(ExecutionResult::ok("DNS cache flushed"))
+            }
+            _ => anyhow::bail!("Unknown DNS option: {}", id),
+        }
+    }
+}
+
+// ============================================================================
+// CLEANUP EXECUTOR
+// ============================================================================
+
+pub struct CleanupExecutor;
+
+#[async_trait]
+impl OptExecutor for CleanupExecutor {
+    #[instrument(skip(self, _changes), fields(category = "cleanup"))]
+    async fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
+        use pieuvre_sync::cleanup;
+
+        match id {
+            "cleanup_temp" => {
+                tokio::task::spawn_blocking(|| cleanup::CleanupTempOperation)
+                    .await?
+                    .apply()
+                    .await?;
+                Ok(ExecutionResult::ok("Temporary files cleaned"))
+            }
+            "cleanup_winsxs" => {
+                tokio::task::spawn_blocking(|| cleanup::CleanupWinSxSOperation)
+                    .await?
+                    .apply()
+                    .await?;
+                Ok(ExecutionResult::ok("WinSxS cleanup completed"))
+            }
+            "cleanup_edge" => {
+                tokio::task::spawn_blocking(|| cleanup::CleanupEdgeCacheOperation)
+                    .await?
+                    .apply()
+                    .await?;
+                Ok(ExecutionResult::ok("Edge cache cleaned"))
+            }
+            _ => anyhow::bail!("Unknown cleanup option: {}", id),
+        }
+    }
+}
+
+// ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
 
@@ -727,6 +819,8 @@ pub fn get_executor(category: &str) -> Box<dyn OptExecutor> {
         "dpc" => Box::new(DPCExecutor),
         "security" => Box::new(SecurityExecutor),
         "network_advanced" => Box::new(NetworkAdvancedExecutor),
+        "dns" => Box::new(DNSExecutor),
+        "cleanup" => Box::new(CleanupExecutor),
         _ => Box::new(TelemetryExecutor), // Fallback
     }
 }

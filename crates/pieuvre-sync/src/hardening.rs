@@ -219,6 +219,11 @@ pub const CRITICAL_KEYS: &[&str] = &[
     r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_DLLs",
     r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon",
     r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\ShellServiceObjectDelayLoad",
+    // AI & DNS SOTA 2026
+    r"SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
+    r"SOFTWARE\Microsoft\Windows\CurrentVersion\AI\DataAnalysis",
+    r"SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot",
+    r"SYSTEM\CurrentControlSet\Services\Dnscache\Parameters",
 ];
 
 /// Services critiques à verrouiller (SOTA 2026)

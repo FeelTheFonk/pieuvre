@@ -11,7 +11,7 @@ Windows system control and optimization tool. Full registry/service/network/powe
 
 ## Overview
 
-pieuvre is an advanced Windows optimization toolkit built in Rust, currently in its **The Ghost (0.4.0)** phase.
+pieuvre is an advanced Windows optimization toolkit built in Rust, currently in its **Apex (0.4.2)** phase.
 
 Unlike batch scripts or registry tweaks, pieuvre:
 
@@ -31,11 +31,12 @@ Unlike batch scripts or registry tweaks, pieuvre:
 - **Audit Engine** - Hardware (DXGI GPU, SSD), services, telemetry (40+ keys), security scoring
 - **ETW Monitoring** - Real-time Kernel DPC/ISR latency capture with `DriverResolver`
 - **Security Audit** - Defender status, Firewall profiles, UAC, SecureBoot, HVCI/VBS detection
-- **Sync Engine** - 30+ optimization modules including **Interrupt Affinity Steering**
+- **Sync Engine** - 35+ optimization modules including **DNS-over-HTTPS (DoH)** and **AI De-bloat**
 - **Persistence Engine** - Snapshot creation & rollback (zstd compression + SHA256)
 - **Sentinel Engine** - Event-driven background monitoring & auto-restoration (Self-Healing)
 - **Hardening Engine** - Persistence vector protection and IFEO hardening
-- **Interactive Mode** - 9 sections, 80+ granular options (The Ghost UI)
+- **Cleanup Engine** - Deep system cleaning (WinSxS via DISM, Temp, Edge, Windows Update)
+- **Interactive Mode** - 11 sections, 90+ granular options (The Ghost UI)
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
 

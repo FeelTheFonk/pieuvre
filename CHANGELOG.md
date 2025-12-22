@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2025-12-22 (Apex SOTA)
+
+### Added
+
+#### Sentinel Apex: Hardening Total
+- **AI & DNS Protection**: Verrouillage immédiat des clés de registre liées à Windows Recall, CoPilot et DNS-over-HTTPS via ACLs (Hardening).
+- **Self-Healing Apex**: Surveillance active et restauration instantanée des paramètres DNS et AI.
+
+#### Sync Engine Apex
+- **Module Cleanup**: Nettoyage profond (WinSxS via DISM, Temp, Edge Cache, Windows Update, Prefetch).
+- **Module DNS SOTA**: Sélecteur DNS (Cloudflare, Google, Quad9) avec DoH forcé et verrouillage Sentinel.
+- **Module AI De-bloat**: Désactivation complète de Recall et CoPilot avec protection Sentinel.
+
+#### UI "The Ghost" Apex
+- **11 Sections**: Intégration des sections DNS et Cleanup dans le flux interactif.
+- **Apex Summary**: Résumé de sélection étendu à 11 catégories.
+
 ## [0.4.1] - 2025-12-22 (The Ghost Refined)
 
 ### Added

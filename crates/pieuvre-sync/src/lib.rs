@@ -2,6 +2,9 @@
 //!
 //! Synchronization module: applying optimizations.
 
+pub mod ai;
+pub mod cleanup;
+pub mod dns;
 pub mod interrupts;
 pub mod sentinel {
     pub mod monitor;
@@ -242,6 +245,21 @@ pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
             },
         }));
     }
+
+    // 7. AI (Recall & CoPilot) - SOTA 2026
+    operations.push(Box::new(crate::ai::DisableRecallOperation));
+    operations.push(Box::new(crate::ai::DisableCoPilotOperation));
+
+    // 8. DNS SOTA 2026
+    operations.push(Box::new(crate::dns::ConfigureDohOperation {
+        provider: crate::dns::DNSProvider::Cloudflare,
+    }));
+    operations.push(Box::new(crate::dns::FlushDnsOperation));
+
+    // 9. Cleanup SOTA 2026
+    operations.push(Box::new(crate::cleanup::CleanupTempOperation));
+    operations.push(Box::new(crate::cleanup::CleanupWinSxSOperation));
+    operations.push(Box::new(crate::cleanup::CleanupEdgeCacheOperation));
 
     // --- DYNAMIC ADAPTATION ---
     // A. Optimisation NVIDIA

@@ -137,9 +137,19 @@ pub async fn run(profile: &str) -> Result<()> {
     let security_selected = collect_selection(&security_opts, "Security")?;
 
     // Section 9: Advanced Network
-    ui::print_section_header(9, 9, "ADVANCED NETWORK");
+    ui::print_section_header(9, 11, "ADVANCED NETWORK");
     let net_adv_opts = sections::network_advanced_section();
     let net_adv_selected = collect_selection(&net_adv_opts, "Advanced Network")?;
+
+    // Section 10: DNS SOTA 2026
+    ui::print_section_header(10, 11, "DNS SOTA 2026");
+    let dns_opts = sections::dns_section();
+    let dns_selected = collect_selection(&dns_opts, "DNS SOTA 2026")?;
+
+    // Section 11: Cleanup SOTA 2026
+    ui::print_section_header(11, 11, "CLEANUP SOTA 2026");
+    let cleanup_opts = sections::cleanup_section();
+    let cleanup_selected = collect_selection(&cleanup_opts, "Cleanup SOTA 2026")?;
 
     // ═══════════════════════════════════════════════════════════════════════
     // SUMMARY AND CONFIRMATION
@@ -153,7 +163,9 @@ pub async fn run(profile: &str) -> Result<()> {
         + cpu_selected.len()
         + dpc_selected.len()
         + security_selected.len()
-        + net_adv_selected.len();
+        + net_adv_selected.len()
+        + dns_selected.len()
+        + cleanup_selected.len();
 
     ui::print_selection_summary_full(
         telem_selected.len(),
@@ -165,6 +177,8 @@ pub async fn run(profile: &str) -> Result<()> {
         dpc_selected.len(),
         security_selected.len(),
         net_adv_selected.len(),
+        dns_selected.len(),
+        cleanup_selected.len(),
     );
 
     if total == 0 {
@@ -292,6 +306,28 @@ pub async fn run(profile: &str) -> Result<()> {
         "network_advanced",
         &net_adv_opts,
         &net_adv_selected,
+        &mut changes,
+        &mut success_count,
+        &mut error_count,
+        &pb,
+    )
+    .await;
+
+    execute_category(
+        "dns",
+        &dns_opts,
+        &dns_selected,
+        &mut changes,
+        &mut success_count,
+        &mut error_count,
+        &pb,
+    )
+    .await;
+
+    execute_category(
+        "cleanup",
+        &cleanup_opts,
+        &cleanup_selected,
         &mut changes,
         &mut success_count,
         &mut error_count,

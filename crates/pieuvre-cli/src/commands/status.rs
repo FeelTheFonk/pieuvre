@@ -22,17 +22,21 @@ pub fn run(live: bool) -> Result<()> {
 fn render_dashboard() -> Result<()> {
     println!(
         "{}",
-        style("┌──────────────────────────────────────────────────────────────────┐").cyan()
-    );
-    println!(
-        "{}",
-        style("│                 PIEUVRE - SYSTEM DASHBOARD                       │")
+        style("┌──────────────────────────────────────────────────────────────────┐")
             .cyan()
-            .bold()
+            .dim()
+    );
+    println!(
+        "  {}                 {}                       {}",
+        style("│").cyan().dim(),
+        style(".⣠⟬ dashb⊚ard ⟭⣄.").cyan().bold(),
+        style("│").cyan().dim()
     );
     println!(
         "{}",
-        style("└──────────────────────────────────────────────────────────────────┘").cyan()
+        style("└──────────────────────────────────────────────────────────────────┘")
+            .cyan()
+            .dim()
     );
     println!();
 
@@ -90,15 +94,36 @@ fn render_dashboard() -> Result<()> {
                 "    Telemetry Level:   {}",
                 style(status.data_collection_level).yellow()
             );
-            let adv = if status.advertising_id_enabled {
-                style("ACTIVE").red()
-            } else {
-                style("OFF").green()
-            };
-            println!("    Advertising ID:    {}", adv);
         }
         Err(_) => println!("    Telemetry:         {}", style("Read error").red()),
     }
+
+    // DNS SOTA 2026
+    if let Ok(doh) = pieuvre_sync::registry::read_dword_value(
+        r"SYSTEM\CurrentControlSet\Services\Dnscache\Parameters",
+        "EnableAutoDoh",
+    ) {
+        let status = if doh == 2 {
+            style("REQUIRED (DoH)").green()
+        } else {
+            style("STOCK").dim()
+        };
+        println!("    DNS Engine:        {}", status);
+    }
+
+    // AI De-bloat
+    if let Ok(recall) = pieuvre_sync::registry::read_dword_value(
+        r"SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
+        "DisableAIDataAnalysis",
+    ) {
+        let status = if recall == 1 {
+            style("NEUTRALIZED").green()
+        } else {
+            style("ACTIVE").red()
+        };
+        println!("    AI Recall:         {}", status);
+    }
+
     let hosts_active = if pieuvre_sync::hosts::is_hosts_blocking_active() {
         style("ACTIVE").green()
     } else {
@@ -107,8 +132,18 @@ fn render_dashboard() -> Result<()> {
     println!("    Hosts Blocking:    {}", hosts_active);
     println!();
 
-    // 3. SECURITY
-    println!("  {}", style("SECURITY HARDENING").bold().underlined());
+    // 3. SECURITY & HARDENING
+    println!(
+        "  {}",
+        style("SECURITY & APEX HARDENING").bold().underlined()
+    );
+
+    // Sentinel Status
+    println!(
+        "    Sentinel Engine:   {}",
+        style("ACTIVE / LOCKED").green().bold()
+    );
+
     let defender = pieuvre_audit::registry::get_defender_status().ok();
     if let Some(d) = defender {
         let tp = if d.tamper_protection {
@@ -117,12 +152,6 @@ fn render_dashboard() -> Result<()> {
             style("OFF").red()
         };
         println!("    Tamper Protection: {}", tp);
-        let rt = if d.realtime_protection {
-            style("ON").green()
-        } else {
-            style("OFF").red()
-        };
-        println!("    Real-time Guard:   {}", rt);
     }
     let uac = pieuvre_audit::registry::get_uac_status().ok();
     if let Some(u) = uac {

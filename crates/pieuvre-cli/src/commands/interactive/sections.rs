@@ -327,6 +327,33 @@ pub fn network_advanced_section() -> Vec<OptItem> {
     ]
 }
 
+// ============================================================================
+// SECTION 10: DNS SOTA 2026
+// ============================================================================
+
+/// Returns options for the DNS section
+pub fn dns_section() -> Vec<OptItem> {
+    vec![
+        OptItem::safe("doh_cloudflare", "Enable DNS-over-HTTPS (Cloudflare)"),
+        OptItem::safe_off("doh_google", "Enable DNS-over-HTTPS (Google)"),
+        OptItem::safe_off("doh_quad9", "Enable DNS-over-HTTPS (Quad9)"),
+        OptItem::safe("dns_flush", "Flush DNS Resolver Cache"),
+    ]
+}
+
+// ============================================================================
+// SECTION 11: CLEANUP SOTA 2026
+// ============================================================================
+
+/// Returns options for the Cleanup section
+pub fn cleanup_section() -> Vec<OptItem> {
+    vec![
+        OptItem::safe("cleanup_temp", "Clean Temporary Files (System/User)"),
+        OptItem::safe("cleanup_winsxs", "Clean WinSxS (Windows Update)"),
+        OptItem::safe("cleanup_edge", "Clean Edge Browser Cache"),
+    ]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
