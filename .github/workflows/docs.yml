@@ -7,12 +7,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
 
 jobs:
   docs:
@@ -29,24 +23,3 @@ jobs:
         
       - name: Build Docs
         run: cargo doc --workspace --no-deps --all-features
-        
-      - name: Fix Documentation Index
-        shell: pwsh
-        run: |
-          if (!(Test-Path "target/doc/index.html")) {
-            echo '<meta http-equiv="refresh" content="0; url=pieuvre_cli/index.html">' > target/doc/index.html
-          }
-        
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
-        
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: target/doc
-          
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
