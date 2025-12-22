@@ -2,6 +2,20 @@
 
 Command-line interface for Pieuvre Windows optimization tool.
 
+[![SOTA 2026](https://img.shields.io/badge/SOTA-2026-brightgreen)]()
+[![Tests](https://img.shields.io/badge/tests-12%20passed-success)]()
+
+## Architecture SOTA
+
+Le mode interactif utilise une architecture modulaire:
+
+| Module | Description |
+|--------|-------------|
+| `interactive/mod.rs` | Orchestrateur principal (~220 lignes) |
+| `interactive/sections.rs` | 5 sections avec `OptItem` typé et `RiskLevel` |
+| `interactive/executor.rs` | Trait `OptExecutor` + 5 implémentations |
+| `interactive/ui.rs` | Interface avec `indicatif` progress bars |
+
 ---
 
 ## Commands

@@ -1,8 +1,11 @@
 //! Pieuvre - Outil d'alignement système Windows 11
 //!
-//! Interface CLI principale.
+//! Interface CLI principale SOTA 2026.
 
 mod commands;
+
+#[cfg(test)]
+mod tests;
 
 use clap::{Parser, Subcommand};
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};

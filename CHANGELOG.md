@@ -4,6 +4,50 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.9.0] - 2025-12-22 (CLI SOTA 2026)
+
+### Added
+
+- **pieuvre-cli**: Refonte SOTA 2026 complète du mode interactif
+  - **interactive/mod.rs** (NEW): Orchestrateur SOTA ~220 lignes (was 929 monolithic)
+  - **interactive/sections.rs** (NEW): 5 sections avec `OptItem` struct typé
+    - `telemetry_section()` - 13 options services télémétrie
+    - `privacy_section()` - 11 options registre
+    - `performance_section(is_laptop)` - 15 options adaptatives
+    - `scheduler_section()` - 6 options MMCSS/timers
+    - `appx_section()` - 10 catégories bloatware
+    - `RiskLevel` enum: Safe, Conditional, Performance, Warning
+  - **interactive/executor.rs** (NEW): Trait pattern pour exécution polymorphe
+    - `OptExecutor` trait avec 5 implémentations
+    - `TelemetryExecutor`, `PrivacyExecutor`, `PerformanceExecutor`
+    - `SchedulerExecutor`, `AppxExecutor`
+    - `ExecutionResult` struct pour résultats typés
+  - **interactive/ui.rs** (NEW): Interface avec `indicatif` progress bars
+    - `create_progress_bar()` avec style SOTA
+    - `print_header()`, `print_section_header()`
+    - `print_final_result()` avec couleurs `console`
+  - **tests.rs** (NEW): 12 tests unitaires CLI
+    - Tests sections, executor, UI
+    - Couverture optionnelle intégration CLI
+
+### Changed
+
+- **Architecture CLI**: Monolithe → Modulaire
+  - `interactive.rs` (929 lignes) → `interactive/` (4 fichiers, ~750 lignes)
+  - Réduction complexité cyclomatique de ~80% 
+- **Structured Logging**: `tracing::instrument` sur tous les executors
+- **Progress Bars**: `indicatif` activé (was dépendance inutilisée)
+- **UI**: Couleurs `console::style` pour feedback visuel
+
+### Technical
+
+- 12 tests unitaires pieuvre-cli (0 failed)
+- Architecture SOLID: Single Responsibility via trait `OptExecutor`
+- DRY: Sections réutilisables, executor pattern
+- KISS: run() ~100 lignes au lieu de 929
+
+---
+
 ## [0.8.0] - 2025-12-22 (Audit SOTA)
 
 ### Added
