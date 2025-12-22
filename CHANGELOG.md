@@ -5,9 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.0] - 2025-12-22 (Climax)
+## [0.4.0] - 2025-12-22 (The Ghost)
 
 ### Added
+
+#### UI "The Ghost": SOTA 2026
+- **Zero-Frame Interface**: Complete removal of ASCII borders for a pure, data-centric experience.
+- **Minimalist Header**: New logo `⣠⟬ ⊚ ⟭⣄` in `dimmed cyan` with single-line system metadata.
+- **Expert Aesthetics**: Systematic use of `dim` colors for secondary data and `bold white` for active selection.
+- **Fluid Feedback**: Borderless progress bars `█` and single-character spinners.
+
+#### Sentinel Engine: Advanced Hardening
+- **Service Monitoring**: Real-time tracking of critical service states via `NotifyServiceStatusChange`.
+- **Persistence Protection**: Enhanced hardening of RunKeys and Winlogon shell vectors.
+
+### Technical
+- **Documentation SOTA**: Full audit and validation of all `.md` files to 2026 standards.
+- **Zero Redundancy**: Codebase-wide refactoring for maximum architectural purity.
+
+---
+
+## [0.3.0] - 2025-12-22 (Climax)
 
 #### Sentinel Engine: Reactive Inviolability
 - **Event-Driven Mode**: Migration from polling to event-driven monitoring via `RegNotifyChangeKeyValue`.

@@ -96,9 +96,9 @@ pieuvre-cli
 - `security.rs` - VBS/HVCI/Memory Integrity
 - `dpc.rs` - DPC latency optimizations
 - `cpu.rs` - Core Parking/Memory
-- `hardening.rs` - **System Hardening & IFEO Protection** (NEW)
-- `interrupts.rs` - **Dynamic Interrupt Affinity Steering** (NEW)
-- `sentinel/` - **Event-Driven Self-Healing Engine** (NEW)
+- `hardening.rs` - **System Hardening & IFEO Protection**
+- `interrupts.rs` - **Dynamic Interrupt Affinity Steering**
+- `sentinel/` - **Event-Driven Self-Healing Engine** (v0.4.0: Service Monitoring)
 - `power_plan.rs` - Atomic Power Plan operations (MsiOperation, AppxOperation)
 
 ### pieuvre-persist

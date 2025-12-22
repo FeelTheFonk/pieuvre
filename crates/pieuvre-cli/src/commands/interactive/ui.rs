@@ -17,66 +17,26 @@ pub enum MainAction {
     Exit,
 }
 
-/// Displays the interactive mode header (professional style, no emoji)
+/// Displays the interactive mode header (The Ghost style)
 pub fn print_header(is_laptop: bool, profile: &str) {
     println!();
     println!(
-        "{}",
-        style("┌──────────────────────────────────────────────────────────────────┐").cyan()
-    );
-    println!(
-        "{}",
-        style("│           ⣠⟬ ⊚ ⟭⣄  - Optimization Selection                     │")
-            .cyan()
-            .bold()
-    );
-    println!(
-        "{}",
-        style("└──────────────────────────────────────────────────────────────────┘").cyan()
-    );
-    println!();
-    println!("  {}", style("NAVIGATION:").bold());
-    println!("    Arrows    Up/Down to navigate");
-    println!("    Space     Check/Uncheck an option");
-    println!("    Enter     Confirm selection");
-    println!();
-    println!(
-        "  System:  {}",
+        "  {}  {} · {}",
+        style("⣠⟬ ⊚ ⟭⣄").cyan().dim(),
         if is_laptop {
-            style("LAPTOP").yellow()
+            style("LAPTOP").yellow().dim()
         } else {
-            style("DESKTOP").green()
-        }
+            style("DESKTOP").green().dim()
+        },
+        style(profile.to_uppercase()).white().bold()
     );
-    println!("  Profile: {}", style(profile.to_uppercase()).cyan().bold());
-    println!();
-
-    if is_laptop {
-        println!(
-            "  {} [WARN][LAPTOP] Options not recommended on battery",
-            style("[!]").yellow().bold()
-        );
-        println!();
-    }
 }
 
 /// Displays the professional welcome screen (ASCII Art)
 pub fn print_welcome_screen() {
     println!();
-    println!(
-        "{}",
-        style("┌──────────────────────────────────────────────────────────────────┐").cyan()
-    );
-    println!("│                                                                  │");
-    println!(
-        "│    ⣠⟬ ⊚ ⟭⣄  - v{}                                         │",
-        env!("CARGO_PKG_VERSION")
-    );
-    println!("│                                                                  │");
-    println!(
-        "{}",
-        style("└──────────────────────────────────────────────────────────────────┘").cyan()
-    );
+    println!("  {}", style("⣠⟬ ⊚ ⟭⣄").cyan().bold());
+    println!("  {}", style(format!("PIEUVRE v{}", env!("CARGO_PKG_VERSION"))).dim());
     println!();
 }
 
@@ -99,7 +59,6 @@ pub fn check_admin_status() {
 pub fn print_quick_status() {
     println!();
     println!("  {}", style("SYSTEM STATE").bold());
-    println!("  {}", style("─".repeat(60)).dim());
 
     // Hardware
     let is_laptop = pieuvre_audit::hardware::is_laptop();
@@ -284,14 +243,13 @@ fn is_elevated() -> bool {
 
 /// Displays a section header
 pub fn print_section_header(number: u8, total: u8, name: &str) {
-    println!("{}", style("─".repeat(68)).dim());
+    println!();
     println!(
-        "  {}/{}  {}",
+        "  {} · {}  {}",
         style(number).cyan().bold(),
         style(total).dim(),
         style(name).bold()
     );
-    println!("{}", style("─".repeat(68)).dim());
 }
 
 /// Displays selection summary (simplified version, 5 sections)
@@ -306,21 +264,7 @@ pub fn print_selection_summary(
     let total = telem_count + privacy_count + perf_count + sched_count + appx_count;
 
     println!();
-    println!(
-        "{}",
-        style("┌──────────────────────────────────────────────────────────────────┐").cyan()
-    );
-    println!(
-        "{}",
-        style("│                    SELECTION SUMMARY                             │")
-            .cyan()
-            .bold()
-    );
-    println!(
-        "{}",
-        style("└──────────────────────────────────────────────────────────────────┘").cyan()
-    );
-    println!();
+    println!("  {}", style("SELECTION SUMMARY").bold());
     println!("  Telemetry:    {}", style(telem_count).green().bold());
     println!("  Privacy:      {}", style(privacy_count).green().bold());
     println!("  Performance:  {}", style(perf_count).green().bold());
@@ -338,9 +282,9 @@ pub fn print_selection_summary(
 pub fn create_progress_bar(total: u64, multi: &MultiProgress) -> ProgressBar {
     let pb = multi.add(ProgressBar::new(total));
     pb.set_style(
-        ProgressStyle::with_template("  {spinner:.green} [{bar:40.cyan/blue}] {pos}/{len} {msg}")
+        ProgressStyle::with_template("  {spinner:.cyan} {bar:40.white/dim} {pos}/{len} {msg}")
             .unwrap()
-            .progress_chars("█▓▒░"),
+            .progress_chars("█ "),
     );
     pb
 }
@@ -349,7 +293,7 @@ pub fn create_progress_bar(total: u64, multi: &MultiProgress) -> ProgressBar {
 #[allow(dead_code)]
 pub fn create_spinner(multi: &MultiProgress, message: &str) -> ProgressBar {
     let sp = multi.add(ProgressBar::new_spinner());
-    sp.set_style(ProgressStyle::with_template("  {spinner:.green} {msg}").unwrap());
+    sp.set_style(ProgressStyle::with_template("  {spinner:.cyan} {msg}").unwrap());
     sp.set_message(message.to_string());
     sp
 }
@@ -376,21 +320,7 @@ pub fn print_operation_result(name: &str, success: bool, message: &str) {
 /// Displays final result
 pub fn print_final_result(success_count: usize, error_count: usize, snapshot_id: Option<&str>) {
     println!();
-    println!(
-        "{}",
-        style("┌──────────────────────────────────────────────────────────────────┐").cyan()
-    );
-    println!(
-        "{}",
-        style("│                      RESULT                                      │")
-            .cyan()
-            .bold()
-    );
-    println!(
-        "{}",
-        style("└──────────────────────────────────────────────────────────────────┘").cyan()
-    );
-    println!();
+    println!("  {}", style("RESULT").bold());
     println!("  Success:  {}", style(success_count).green().bold());
     println!(
         "  Errors:   {}",
@@ -493,21 +423,7 @@ pub fn print_selection_summary_full(
         + net_adv_count;
 
     println!();
-    println!(
-        "{}",
-        style("┌──────────────────────────────────────────────────────────────────┐").cyan()
-    );
-    println!(
-        "{}",
-        style("│                    SELECTION SUMMARY                             │")
-            .cyan()
-            .bold()
-    );
-    println!(
-        "{}",
-        style("└──────────────────────────────────────────────────────────────────┘").cyan()
-    );
-    println!();
+    println!("  {}", style("SELECTION SUMMARY").bold());
     println!("  Telemetry:       {}", style(telem_count).green().bold());
     println!("  Privacy:         {}", style(privacy_count).green().bold());
     println!("  Performance:     {}", style(perf_count).green().bold());

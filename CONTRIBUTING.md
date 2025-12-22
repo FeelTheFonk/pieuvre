@@ -29,7 +29,11 @@ cargo build
 ### Test
 
 ```powershell
+# Standard tests
 cargo test
+
+# SOTA tests (recommended)
+cargo nextest run
 ```
 
 ### Lint
