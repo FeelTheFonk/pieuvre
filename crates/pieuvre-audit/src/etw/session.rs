@@ -6,16 +6,18 @@ use pieuvre_common::{PieuvreError, Result};
 use windows::core::{PCWSTR, PWSTR};
 use windows::Win32::System::Diagnostics::Etw::{
     StartTraceW, ControlTraceW, EVENT_TRACE_PROPERTIES,
-    EVENT_TRACE_CONTROL_STOP, EVENT_TRACE_REAL_TIME_MODE,
+    EVENT_TRACE_CONTROL_STOP, EVENT_TRACE_CONTROL_QUERY, EVENT_TRACE_REAL_TIME_MODE,
     EVENT_TRACE_SYSTEM_LOGGER_MODE, WNODE_FLAG_TRACED_GUID,
-    KERNEL_LOGGER_NAMEW,
+    KERNEL_LOGGER_NAMEW, CONTROLTRACE_HANDLE,
+    EVENT_TRACE_LOGFILEW, PROCESS_TRACE_MODE_REAL_TIME, PROCESS_TRACE_MODE_EVENT_RECORD,
+    OpenTraceW, ProcessTrace, EVENT_TRACE_FLAG,
 };
-use windows::Win32::System::SystemInformation::OSVERSIONINFOW;
 use std::mem::size_of;
 
 /// Gère une session de trace ETW Kernel
 pub struct EtwSession {
-    handle: u64,
+    #[allow(dead_code)]
+    handle: CONTROLTRACE_HANDLE,
     name: String,
 }
 
@@ -37,11 +39,11 @@ impl EtwSession {
             props.LogFileMode = EVENT_TRACE_REAL_TIME_MODE | EVENT_TRACE_SYSTEM_LOGGER_MODE;
             
             // Flags pour DPC (0x20) et Interrupt (0x40)
-            props.EnableFlags = 0x00000020 | 0x00000040; 
+            props.EnableFlags = EVENT_TRACE_FLAG(0x00000020 | 0x00000040); 
             
             props.LoggerNameOffset = size_of::<EVENT_TRACE_PROPERTIES>() as u32;
 
-            let mut handle: u64 = 0;
+            let mut handle = CONTROLTRACE_HANDLE::default();
             let result = StartTraceW(&mut handle, session_name, props);
 
             if result.is_err() {
@@ -66,18 +68,18 @@ impl EtwSession {
 
     /// Consomme les événements de la session (bloquant)
     pub fn process_events(&self) -> Result<()> {
-        use windows::Win32::System::Diagnostics::Etw::{OpenTraceW, ProcessTrace, EVENT_TRACE_LOGFILEW, PROCESS_TRACE_MODE_REAL_TIME, PROCESS_TRACE_MODE_EVENT_RECORD};
         use crate::etw::parser::EtwParser;
 
         unsafe {
             let mut log_file = EVENT_TRACE_LOGFILEW::default();
             let name_wide: Vec<u16> = self.name.encode_utf16().chain(std::iter::once(0)).collect();
             log_file.LoggerName = PWSTR(name_wide.as_ptr() as *mut _);
-            log_file.ProcessTraceMode = PROCESS_TRACE_MODE_REAL_TIME | PROCESS_TRACE_MODE_EVENT_RECORD;
-            log_file.Anonymous1.EventRecordCallback = Some(EtwParser::event_record_callback);
+            log_file.Anonymous1.ProcessTraceMode = PROCESS_TRACE_MODE_REAL_TIME | PROCESS_TRACE_MODE_EVENT_RECORD;
+            
+            log_file.Anonymous2.EventRecordCallback = Some(EtwParser::event_record_callback);
 
             let trace_handle = OpenTraceW(&mut log_file);
-            if trace_handle == 0 || trace_handle == !0 {
+            if trace_handle.Value == 0 || trace_handle.Value == !0 {
                 return Err(PieuvreError::Internal("Failed to open ETW trace".to_string()));
             }
 
@@ -90,13 +92,26 @@ impl EtwSession {
         }
     }
 
+    /// Vérifie si la session "NT Kernel Logger" est déjà active
+    pub fn check_active() -> Result<bool> {
+        unsafe {
+            let session_name = KERNEL_LOGGER_NAMEW;
+            let mut buffer = vec![0u8; size_of::<EVENT_TRACE_PROPERTIES>() + 512];
+            let props = &mut *(buffer.as_mut_ptr() as *mut EVENT_TRACE_PROPERTIES);
+            props.Wnode.BufferSize = buffer.len() as u32;
+            
+            let result = ControlTraceW(CONTROLTRACE_HANDLE { Value: 0 }, session_name, props, EVENT_TRACE_CONTROL_QUERY);
+            Ok(result.is_ok())
+        }
+    }
+
     fn stop_session(name: PCWSTR) -> Result<()> {
         unsafe {
             let mut buffer = vec![0u8; size_of::<EVENT_TRACE_PROPERTIES>() + 512];
             let props = &mut *(buffer.as_mut_ptr() as *mut EVENT_TRACE_PROPERTIES);
             props.Wnode.BufferSize = buffer.len() as u32;
             
-            let _ = ControlTraceW(0, name, props, EVENT_TRACE_CONTROL_STOP);
+            let _ = ControlTraceW(CONTROLTRACE_HANDLE { Value: 0 }, name, props, EVENT_TRACE_CONTROL_STOP);
             Ok(())
         }
     }

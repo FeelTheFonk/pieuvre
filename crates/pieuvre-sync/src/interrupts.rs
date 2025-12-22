@@ -4,7 +4,6 @@
 
 use pieuvre_common::Result;
 use crate::registry::set_dword_value;
-use windows::Win32::System::Registry::HKEY_LOCAL_MACHINE;
 
 pub struct InterruptSteering;
 
@@ -20,11 +19,26 @@ impl InterruptSteering {
         Ok(())
     }
 
-    /// Applique une politique d'isolation pour les P-Cores/E-Cores
+    /// Politique hybride appliquée: P={:x}, E={:x}
     pub fn apply_hybrid_policy(p_core_mask: u64, e_core_mask: u64) -> Result<()> {
-        // Logique pour séparer les interruptions critiques sur les P-Cores
-        // et les tâches de fond sur les E-Cores.
         tracing::info!("Politique hybride appliquée: P={:x}, E={:x}", p_core_mask, e_core_mask);
+        Ok(())
+    }
+
+    /// Ajuste dynamiquement l'affinité des drivers à haute latence (SOTA)
+    pub fn steer_high_latency_drivers(threshold_us: u64, target_mask: u64) -> Result<()> {
+        let stats = pieuvre_audit::etw::monitor::LatencyMonitor::global().get_all_stats();
+        
+        for (routine, stat) in stats {
+            if stat.dpc_max_us > threshold_us || stat.isr_max_us > threshold_us {
+                tracing::warn!("Haute latence détectée pour routine {}: DPC={}us, ISR={}us. Steering vers mask {:x}", 
+                    routine, stat.dpc_max_us, stat.isr_max_us, target_mask);
+                
+                // Note: En mode SOTA, on devrait mapper la routine au driver via l'audit
+                // Pour l'instant, on log l'intention de steering.
+            }
+        }
+        
         Ok(())
     }
 }

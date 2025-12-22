@@ -28,3 +28,4 @@ chrono.workspace = true
 dialoguer.workspace = true
 tokio.workspace = true
 async-trait.workspace = true
+windows.workspace = true

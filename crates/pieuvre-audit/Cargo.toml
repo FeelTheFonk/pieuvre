@@ -17,7 +17,14 @@ chrono.workspace = true
 uuid.workspace = true
 
 # Windows APIs
-windows.workspace = true
+windows = { workspace = true, features = [
+    "Win32_System_Diagnostics_Etw",
+    "Win32_System_Threading",
+    "Win32_Security",
+    "Win32_System_Registry",
+    "Win32_System_SystemInformation",
+    "Win32_System_Time"
+] }
 windows-sys.workspace = true
 
 # Registry parsing

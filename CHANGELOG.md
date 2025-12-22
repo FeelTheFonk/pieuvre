@@ -9,6 +9,11 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+#### Audit Global SOTA 2026 (Pinacle)
+- **Migration Native API (100%)** : Suppression totale de `reg.exe` via `Command::new`. Utilisation systématique de `RegCreateKeyExW`, `RegDeleteTreeW` et `RegSetValueExW`.
+- **Hardening Stabilisé** : Correction des descripteurs de sécurité (SDDL) et des casts de pointeurs dans `hardening.rs`.
+- **Intelligence Réactive** : Validation du moteur ETW Kernel pour la capture DPC/ISR en temps réel.
+
 #### Moteur ETW & Intelligence Réactive (Phase 12) - SOTA 2026
 - **Moteur ETW Kernel** : Capture en temps réel des événements `DPC` et `ISR` via les APIs natives `StartTraceW` et `ProcessTrace`.
 - **Analyse de Latence** : Parsing des payloads `EVENT_RECORD` pour extraire la latence exacte en microsecondes par routine driver.
@@ -28,8 +33,8 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Technical
 - **103 tests unitaires** validés avec le nouveau runtime asynchrone.
-- **Compilation validée** sur l'ensemble du workspace (audit, sync, cli).
-- Alignement des types `ChangeRecord` avec les structures de données réelles.
+- **0 avertissement Clippy** : Standard de qualité SOTA atteint sur l'ensemble du workspace.
+- **Native API Only** : Élimination totale des dépendances aux outils CLI externes pour les modifications système.
 
 ---
 

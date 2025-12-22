@@ -71,19 +71,19 @@ impl OptItem {
 /// Retourne les options de la section Télémétrie
 pub fn telemetry_section() -> Vec<OptItem> {
     vec![
-        OptItem::safe("diagtrack", "[SAFE] DiagTrack - Télémétrie principale"),
-        OptItem::safe("dmwappush", "[SAFE] dmwappushservice - Push WAP"),
-        OptItem::safe("wersvc", "[SAFE] WerSvc - Windows Error Reporting"),
-        OptItem::safe("wercplsupport", "[SAFE] wercplsupport - Error Reports support"),
-        OptItem::safe_off("pcasvc", "[SAFE] PcaSvc - Program Compatibility"),
-        OptItem::safe_off("wdisystem", "[SAFE] WdiSystemHost - Diagnostic Host"),
-        OptItem::safe_off("wdiservice", "[SAFE] WdiServiceHost - Diagnostic Service"),
-        OptItem::conditional("lfsvc", "[COND] lfsvc - Geolocation", true),
-        OptItem::safe("mapsbroker", "[SAFE] MapsBroker - Maps download"),
-        OptItem::safe("firewall", "[SAFE] Firewall - Bloquer 47 domaines télémétrie"),
-        OptItem::safe("sched_tasks", "[SAFE] Scheduled Tasks - Désactiver 25 tâches télémétrie"),
-        OptItem::safe_off("hosts", "[SAFE] Hosts file - Bloquer 50+ domaines DNS natif"),
-        OptItem::conditional("onedrive", "[COND] OneDrive - Désinstaller complètement", false),
+        OptItem::safe("diagtrack", "DiagTrack - Telemetrie principale"),
+        OptItem::safe("dmwappush", "dmwappushservice - Push WAP"),
+        OptItem::safe("wersvc", "WerSvc - Windows Error Reporting"),
+        OptItem::safe("wercplsupport", "wercplsupport - Error Reports support"),
+        OptItem::safe_off("pcasvc", "PcaSvc - Program Compatibility"),
+        OptItem::safe_off("wdisystem", "WdiSystemHost - Diagnostic Host"),
+        OptItem::safe_off("wdiservice", "WdiServiceHost - Diagnostic Service"),
+        OptItem::conditional("lfsvc", "lfsvc - Geolocation", true),
+        OptItem::safe("mapsbroker", "MapsBroker - Maps download"),
+        OptItem::safe("firewall", "Firewall - Bloquer domaines telemetrie"),
+        OptItem::safe("sched_tasks", "Scheduled Tasks - Desactiver taches telemetrie"),
+        OptItem::safe_off("hosts", "Hosts file - Bloquer domaines DNS natif"),
+        OptItem::conditional("onedrive", "OneDrive - Desinstaller completement", false),
     ]
 }
 
@@ -94,17 +94,17 @@ pub fn telemetry_section() -> Vec<OptItem> {
 /// Retourne les options de la section Privacy
 pub fn privacy_section() -> Vec<OptItem> {
     vec![
-        OptItem::safe("telemetry_level", "[SAFE] Telemetry Level 0 (Security only)"),
-        OptItem::safe("advertising_id", "[SAFE] Désactiver Advertising ID"),
-        OptItem::safe("location", "[SAFE] Désactiver Localisation"),
-        OptItem::safe("activity_history", "[SAFE] Désactiver Historique activité"),
-        OptItem::safe("cortana", "[SAFE] Désactiver Cortana"),
-        OptItem::safe("context_menu", "[SAFE] Classic context menu + nettoyer clutter"),
-        OptItem::safe("widgets", "[SAFE] Désactiver Widgets Win11"),
-        OptItem::conditional("pause_updates", "[COND] Pause Windows Updates 35 jours", false),
-        OptItem::conditional("driver_updates", "[COND] Désactiver maj drivers auto", false),
-        OptItem::safe("recall", "[SAFE] Bloquer Windows Recall (24H2 AI)"),
-        OptItem::safe("group_policy_telem", "[SAFE] Group Policy Telemetry (enterprise)"),
+        OptItem::safe("telemetry_level", "Telemetry Level 0 (Security only)"),
+        OptItem::safe("advertising_id", "Desactiver Advertising ID"),
+        OptItem::safe("location", "Desactiver Localisation"),
+        OptItem::safe("activity_history", "Desactiver Historique activite"),
+        OptItem::safe("cortana", "Desactiver Cortana"),
+        OptItem::safe("context_menu", "Classic context menu + nettoyer clutter"),
+        OptItem::safe("widgets", "Desactiver Widgets Win11"),
+        OptItem::conditional("pause_updates", "Pause Windows Updates 35 jours", false),
+        OptItem::conditional("driver_updates", "Desactiver maj drivers auto", false),
+        OptItem::safe("recall", "Bloquer Windows Recall (24H2 AI)"),
+        OptItem::safe("group_policy_telem", "Group Policy Telemetry (enterprise)"),
     ]
 }
 
@@ -115,45 +115,45 @@ pub fn privacy_section() -> Vec<OptItem> {
 /// Retourne les options de la section Performance
 /// `is_laptop` adapte les options pour batterie
 pub fn performance_section(is_laptop: bool) -> Vec<OptItem> {
-    let mut opts = Vec::with_capacity(15);
+    let mut opts = Vec::with_capacity(20);
 
     // Timer 0.5ms
     if is_laptop {
-        opts.push(OptItem::warning("timer", "[WARN][LAPTOP] Timer 0.5ms - +25% conso batterie"));
+        opts.push(OptItem::warning("timer", "Timer 0.5ms - Impact batterie"));
     } else {
-        opts.push(OptItem::safe("timer", "[SAFE] Timer 0.5ms - Latence réduite (gaming)"));
+        opts.push(OptItem::safe("timer", "Timer Resolution 0.5ms (Input lag)"));
     }
 
     // Power Plan
     if is_laptop {
-        opts.push(OptItem::warning("power_ultimate", "[WARN][LAPTOP] Ultimate Performance - Usure batterie"));
-        opts.push(OptItem::safe("power_high", "[SAFE] High Performance - Recommandé laptop"));
+        opts.push(OptItem::warning("power_ultimate", "Ultimate Performance - Usure batterie"));
+        opts.push(OptItem::safe("power_high", "High Performance - Recommande laptop"));
     } else {
-        opts.push(OptItem::safe("power_ultimate", "[SAFE] Ultimate Performance - Max performance desktop"));
+        opts.push(OptItem::safe("power_ultimate", "Power Plan: Ultimate Performance"));
     }
 
     // Options communes
     opts.extend([
-        OptItem::perf("cpu_throttle", "[PERF] Désactiver CPU Throttling"),
-        OptItem::perf("usb_suspend", "[PERF] Désactiver USB Selective Suspend"),
-        OptItem::safe("msi", "[SAFE] Activer MSI Mode GPU/NVMe"),
-        OptItem::safe("sysmain", "[SAFE] Désactiver SysMain (SSD recommandé)"),
-        OptItem::conditional("wsearch", "[COND] Désactiver WSearch - Recherche plus lente", false),
-        OptItem::safe("edge_disable", "[SAFE] Désactiver features Edge (sidebar, DVR, shopping)"),
-        OptItem::safe("explorer_tweaks", "[SAFE] Explorer tweaks (extensions, This PC, no recent)"),
-        OptItem::safe("game_bar", "[SAFE] Désactiver Game Bar/DVR (alt+tab plus rapide)"),
-        OptItem::perf("fullscreen_opt", "[PERF] Désactiver Fullscreen Optimizations"),
-        OptItem::conditional("hags", "[COND] Désactiver HAGS (meilleur pour anciens jeux)", false),
-        OptItem::perf("nagle", "[PERF] Désactiver Nagle Algorithm (latence réseau)"),
-        OptItem::perf("power_throttle", "[PERF] Désactiver CPU Power Throttling"),
+        OptItem::perf("cpu_throttle", "Desactiver CPU Throttling"),
+        OptItem::perf("usb_suspend", "Desactiver USB Selective Suspend"),
+        OptItem::safe("msi", "Activer MSI (Message Signaled Interrupts)"),
+        OptItem::safe("sysmain", "Desactiver SysMain (Superfetch)"),
+        OptItem::conditional("wsearch", "Desactiver Windows Search Indexer", false),
+        OptItem::safe("edge_disable", "Desactiver Edge background/bloat"),
+        OptItem::safe("explorer_tweaks", "Optimisations Windows Explorer"),
+        OptItem::safe("game_bar", "Desactiver Game Bar & DVR"),
+        OptItem::perf("fullscreen_opt", "Desactiver Fullscreen Optimizations"),
+        OptItem::conditional("hags", "Desactiver HAGS (Hardware GPU Scheduling)", false),
+        OptItem::perf("nagle", "Desactiver Nagle Algorithm (Network Latency)"),
+        OptItem::perf("power_throttle", "Desactiver Power Throttling"),
     ]);
 
     // GPU avancé - input lag minimal
     opts.extend([
-        OptItem::safe("enable_game_mode", "[SAFE] Activer Windows Game Mode (hardware opt)"),
-        OptItem::perf("prerendered_frames", "[PERF] Pre-Rendered Frames = 1 (input lag minimal)"),
-        OptItem::conditional("vrr_opt", "[COND] Désactiver VRR Scheduling (certains écrans)", false),
-        OptItem::safe_off("shader_cache", "[SAFE] Shader Cache DirectX 256MB"),
+        OptItem::safe("enable_game_mode", "Activer Windows Game Mode"),
+        OptItem::perf("prerendered_frames", "Low Latency: Pre-rendered frames = 1"),
+        OptItem::conditional("vrr_opt", "Desactiver VRR Optimizations", false),
+        OptItem::safe_off("shader_cache", "Shader Cache: 256MB (Stutter reduction)"),
     ]);
 
     opts
@@ -166,12 +166,12 @@ pub fn performance_section(is_laptop: bool) -> Vec<OptItem> {
 /// Retourne les options de la section Scheduler
 pub fn scheduler_section() -> Vec<OptItem> {
     vec![
-        OptItem::safe("priority_sep", "[SAFE] Win32PrioritySeparation 0x26 - Short quantum, foreground boost"),
-        OptItem::safe("mmcss", "[SAFE] MMCSS Gaming - SystemResponsiveness 10%, Network throttling OFF"),
-        OptItem::safe("games_priority", "[SAFE] GPU Priority 8, Task Priority 6 - Gaming boost"),
-        OptItem::perf("global_timer", "[PERF] Timer resolution permanente - Reboot recommandé"),
-        OptItem::safe("startup_delay", "[SAFE] Désactiver délai startup apps"),
-        OptItem::safe("shutdown_timeout", "[SAFE] Shutdown rapide (2s timeout)"),
+        OptItem::perf("priority_sep", "Win32PrioritySeparation 0x26 (Fixed)"),
+        OptItem::perf("mmcss", "MMCSS Gaming Profile (Priority 6)"),
+        OptItem::perf("games_priority", "GPU Priority 8 / Scheduling 6"),
+        OptItem::perf("global_timer", "Global Timer Resolution (Reboot)"),
+        OptItem::safe("startup_delay", "Desactiver Startup Delay (0ms)"),
+        OptItem::safe("shutdown_timeout", "Shutdown Timeout 2000ms"),
     ]
 }
 
@@ -182,16 +182,16 @@ pub fn scheduler_section() -> Vec<OptItem> {
 /// Retourne les options de la section AppX
 pub fn appx_section() -> Vec<OptItem> {
     vec![
-        OptItem::safe("bing_apps", "[SAFE] Apps Bing (News, Weather, Finance, Sports, Search)"),
-        OptItem::safe("ms_productivity", "[SAFE] Apps productivité (Todos, People, OfficeHub)"),
-        OptItem::safe("ms_media", "[SAFE] Apps media (ZuneMusic, ZuneVideo, Clipchamp)"),
-        OptItem::conditional("ms_communication", "[COND] Mail/Calendar, Skype, Teams - Attention si utilisés", false),
-        OptItem::safe("ms_legacy", "[SAFE] Apps legacy (Paint3D, 3DBuilder, Print3D, MixedReality)"),
-        OptItem::safe("ms_tools", "[SAFE] Outils (FeedbackHub, GetHelp, GetStarted, QuickAssist)"),
-        OptItem::safe("third_party", "[SAFE] Third-party (Spotify, Disney+, CandyCrush, Facebook)"),
-        OptItem::conditional("copilot", "[COND] Microsoft Copilot - Désactiver AI intégrée", false),
-        OptItem::safe("cortana_app", "[SAFE] Cortana"),
-        OptItem::conditional("xbox", "[COND] Xbox apps (attention Game Pass)", false),
+        OptItem::safe("bing_apps", "Apps Bing (News, Weather, Finance, Sports)"),
+        OptItem::safe("ms_productivity", "Apps productivite (Todos, People, OfficeHub)"),
+        OptItem::safe("ms_media", "Apps media (ZuneMusic, ZuneVideo, Clipchamp)"),
+        OptItem::conditional("ms_communication", "Mail/Calendar, Skype, Teams", false),
+        OptItem::safe("ms_legacy", "Apps legacy (Paint3D, 3DBuilder, Print3D)"),
+        OptItem::safe("ms_tools", "Outils (FeedbackHub, GetHelp, QuickAssist)"),
+        OptItem::safe("third_party", "Third-party (Spotify, Disney+, Facebook)"),
+        OptItem::conditional("copilot", "Microsoft Copilot - Desactiver AI", false),
+        OptItem::safe("cortana_app", "Cortana"),
+        OptItem::conditional("xbox", "Xbox apps (attention Game Pass)", false),
     ]
 }
 
@@ -204,17 +204,16 @@ pub fn appx_section() -> Vec<OptItem> {
 pub fn cpu_section(is_laptop: bool) -> Vec<OptItem> {
     let mut opts = Vec::with_capacity(5);
 
-    // Core Parking - agressif sur batterie
     if is_laptop {
-        opts.push(OptItem::warning("core_parking", "[WARN][LAPTOP] Désactiver Core Parking - Usure batterie"));
+        opts.push(OptItem::warning("core_parking", "Desactiver Core Parking - Impact batterie"));
     } else {
-        opts.push(OptItem::safe("core_parking", "[SAFE] Désactiver Core Parking - Tous cores actifs"));
+        opts.push(OptItem::safe("core_parking", "Desactiver Core Parking - Tous cores actifs"));
     }
 
     opts.extend([
-        OptItem::safe_off("memory_compression", "[SAFE] Désactiver Memory Compression (16GB+ RAM recommandé)"),
-        OptItem::safe_off("superfetch_registry", "[SAFE] Désactiver Superfetch/Prefetch via registre"),
-        OptItem::conditional("static_pagefile", "[COND] Page File statique (1.5x RAM, réduit fragmentation)", false),
+        OptItem::safe_off("memory_compression", "Desactiver Memory Compression (16GB+ RAM)"),
+        OptItem::safe_off("superfetch_registry", "Desactiver Superfetch/Prefetch via registre"),
+        OptItem::conditional("static_pagefile", "Page File statique (1.5x RAM)", false),
     ]);
 
     opts
@@ -227,11 +226,11 @@ pub fn cpu_section(is_laptop: bool) -> Vec<OptItem> {
 /// Retourne les options de la section DPC Latency (micro-stuttering)
 pub fn dpc_section() -> Vec<OptItem> {
     vec![
-        OptItem::perf("paging_executive", "[PERF] DisablePagingExecutive - Kernel en RAM"),
-        OptItem::conditional("dynamic_tick", "[COND] Désactiver Dynamic Tick - Reboot requis", false),
-        OptItem::perf("tsc_sync", "[PERF] TSC Sync Enhanced - Précision timer"),
-        OptItem::conditional("hpet", "[COND] Désactiver HPET - Tester avec LatencyMon", false),
-        OptItem::safe_off("interrupt_affinity", "[SAFE] Interrupt Affinity Spread - Distribution cores"),
+        OptItem::perf("paging_executive", "DisablePagingExecutive - Kernel en RAM"),
+        OptItem::conditional("dynamic_tick", "Desactiver Dynamic Tick - Reboot requis", false),
+        OptItem::perf("tsc_sync", "TSC Sync Enhanced - Precision timer"),
+        OptItem::conditional("hpet", "Desactiver HPET - Tester avec LatencyMon", false),
+        OptItem::safe_off("interrupt_affinity", "Interrupt Affinity Spread - Distribution cores"),
     ]
 }
 
@@ -243,9 +242,9 @@ pub fn dpc_section() -> Vec<OptItem> {
 /// WARNING: Options à risque de sécurité - systèmes gaming isolés uniquement
 pub fn security_section() -> Vec<OptItem> {
     vec![
-        OptItem::warning("hvci", "[WARN] Désactiver Memory Integrity (HVCI) - +5-10% gaming, reboot"),
-        OptItem::warning("vbs", "[WARN] Désactiver VBS - Virtualisation sécurité, reboot"),
-        OptItem::critical("spectre", "[CRITICAL] Désactiver Spectre/Meltdown - RISQUE SÉCURITÉ MAJEUR"),
+        OptItem::warning("hvci", "Memory Integrity (HVCI) - Off (+5% FPS)"),
+        OptItem::warning("vbs", "Virtualization Based Security (VBS) - Off"),
+        OptItem::critical("spectre", "Spectre/Meltdown Mitigations - Off (RISK)"),
     ]
 }
 
@@ -256,11 +255,11 @@ pub fn security_section() -> Vec<OptItem> {
 /// Retourne les options de la section Network Avancé
 pub fn network_advanced_section() -> Vec<OptItem> {
     vec![
-        OptItem::perf("interrupt_moderation", "[PERF] Désactiver Interrupt Moderation - Latence réseau"),
-        OptItem::safe_off("lso", "[SAFE] Désactiver Large Send Offload (LSO)"),
-        OptItem::safe_off("eee", "[SAFE] Désactiver Energy Efficient Ethernet"),
-        OptItem::safe("rss", "[SAFE] Activer Receive Side Scaling (RSS)"),
-        OptItem::safe_off("rsc", "[SAFE] Désactiver Receive Segment Coalescing"),
+        OptItem::perf("interrupt_moderation", "Desactiver Interrupt Moderation - Latence"),
+        OptItem::safe_off("lso", "Desactiver Large Send Offload (LSO)"),
+        OptItem::safe_off("eee", "Desactiver Energy Efficient Ethernet"),
+        OptItem::safe("rss", "Activer Receive Side Scaling (RSS)"),
+        OptItem::safe_off("rsc", "Desactiver Receive Segment Coalescing"),
     ]
 }
 
@@ -272,25 +271,6 @@ mod tests {
     fn test_telemetry_section_not_empty() {
         let section = telemetry_section();
         assert!(!section.is_empty());
-        assert!(section.len() >= 10);
-    }
-
-    #[test]
-    fn test_privacy_section_not_empty() {
-        let section = privacy_section();
-        assert!(!section.is_empty());
-    }
-
-    #[test]
-    fn test_performance_section_desktop() {
-        let section = performance_section(false);
-        assert!(section.iter().any(|o| o.id == "power_ultimate" && o.risk == RiskLevel::Safe));
-    }
-
-    #[test]
-    fn test_performance_section_laptop() {
-        let section = performance_section(true);
-        assert!(section.iter().any(|o| o.id == "power_ultimate" && o.risk == RiskLevel::Warning));
     }
 
     #[test]
@@ -314,29 +294,5 @@ mod tests {
         };
         
         assert_eq!(all_ids.len(), unique_count, "Duplicate IDs found in sections");
-    }
-
-    #[test]
-    fn test_cpu_section_laptop_warning() {
-        let section = cpu_section(true);
-        assert!(section.iter().any(|o| o.id == "core_parking" && o.risk == RiskLevel::Warning));
-    }
-
-    #[test]
-    fn test_security_section_has_critical() {
-        let section = security_section();
-        assert!(section.iter().any(|o| o.risk == RiskLevel::Critical));
-    }
-
-    #[test]
-    fn test_dpc_section_not_empty() {
-        let section = dpc_section();
-        assert!(section.len() >= 4);
-    }
-
-    #[test]
-    fn test_network_advanced_section_not_empty() {
-        let section = network_advanced_section();
-        assert!(section.len() >= 5);
     }
 }

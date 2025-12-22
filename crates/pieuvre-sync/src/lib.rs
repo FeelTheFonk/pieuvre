@@ -82,7 +82,7 @@ async fn apply_gaming_profile() -> Result<()> {
     use tokio::task::JoinSet;
 
     // 0. Sondage matériel SOTA
-    let hw = tokio::task::spawn_blocking(|| pieuvre_audit::hardware::probe_hardware()).await
+    let hw = tokio::task::spawn_blocking(pieuvre_audit::hardware::probe_hardware).await
         .map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))??;
 
     let mut operations: Vec<Box<dyn SyncOperation>> = vec![
@@ -148,7 +148,7 @@ async fn apply_gaming_profile() -> Result<()> {
     }
 
     // 4. Power plan (Encore spécifique car complexe)
-    let _ = tokio::task::spawn_blocking(|| power::apply_gaming_power_config()).await;
+    let _ = tokio::task::spawn_blocking(power::apply_gaming_power_config).await;
     
     tracing::info!("Profil Gaming applique ({} changements contextuels)", all_changes.len());
     Ok(())
@@ -195,8 +195,8 @@ async fn apply_privacy_profile() -> Result<()> {
     }
 
     // 3. Hosts & Firewall (Encore spécifique)
-    let _ = tokio::task::spawn_blocking(|| hosts::add_telemetry_blocks()).await;
-    let _ = tokio::task::spawn_blocking(|| firewall::create_telemetry_block_rules()).await;
+    let _ = tokio::task::spawn_blocking(hosts::add_telemetry_blocks).await;
+    let _ = tokio::task::spawn_blocking(firewall::create_telemetry_block_rules).await;
     
     tracing::info!("Profil Privacy applique ({} changements)", all_changes.len());
     Ok(())

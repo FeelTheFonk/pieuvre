@@ -28,6 +28,10 @@ impl Sentinel {
             // Pour SOTA, on réapplique systématiquement le hardening
             crate::hardening::lock_registry_key(key)?;
         }
+
+        for service in crate::hardening::CRITICAL_SERVICES {
+            crate::hardening::lock_service(service)?;
+        }
         
         Ok(())
     }

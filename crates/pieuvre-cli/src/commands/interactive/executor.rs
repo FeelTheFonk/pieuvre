@@ -49,68 +49,68 @@ impl OptExecutor for TelemetryExecutor {
         match id {
             "diagtrack" => {
                 capture_service_state("DiagTrack", changes);
-                services::disable_service("DiagTrack")?;
+                tokio::task::spawn_blocking(|| services::disable_service("DiagTrack")).await??;
                 info!(service = "DiagTrack", "Service disabled");
                 Ok(ExecutionResult::ok("DiagTrack disabled"))
             }
             "dmwappush" => {
                 capture_service_state("dmwappushservice", changes);
-                services::disable_service("dmwappushservice")?;
+                tokio::task::spawn_blocking(|| services::disable_service("dmwappushservice")).await??;
                 info!(service = "dmwappushservice", "Service disabled");
                 Ok(ExecutionResult::ok("dmwappushservice disabled"))
             }
             "wersvc" => {
                 capture_service_state("WerSvc", changes);
-                services::disable_service("WerSvc")?;
+                tokio::task::spawn_blocking(|| services::disable_service("WerSvc")).await??;
                 Ok(ExecutionResult::ok("WerSvc disabled"))
             }
             "wercplsupport" => {
                 capture_service_state("wercplsupport", changes);
-                services::disable_service("wercplsupport")?;
+                tokio::task::spawn_blocking(|| services::disable_service("wercplsupport")).await??;
                 Ok(ExecutionResult::ok("wercplsupport disabled"))
             }
             "pcasvc" => {
                 capture_service_state("PcaSvc", changes);
-                services::disable_service("PcaSvc")?;
+                tokio::task::spawn_blocking(|| services::disable_service("PcaSvc")).await??;
                 Ok(ExecutionResult::ok("PcaSvc disabled"))
             }
             "wdisystem" => {
                 capture_service_state("WdiSystemHost", changes);
-                services::disable_service("WdiSystemHost")?;
+                tokio::task::spawn_blocking(|| services::disable_service("WdiSystemHost")).await??;
                 Ok(ExecutionResult::ok("WdiSystemHost disabled"))
             }
             "wdiservice" => {
                 capture_service_state("WdiServiceHost", changes);
-                services::disable_service("WdiServiceHost")?;
+                tokio::task::spawn_blocking(|| services::disable_service("WdiServiceHost")).await??;
                 Ok(ExecutionResult::ok("WdiServiceHost disabled"))
             }
             "lfsvc" => {
                 capture_service_state("lfsvc", changes);
-                services::disable_service("lfsvc")?;
+                tokio::task::spawn_blocking(|| services::disable_service("lfsvc")).await??;
                 Ok(ExecutionResult::ok("lfsvc disabled"))
             }
             "mapsbroker" => {
                 capture_service_state("MapsBroker", changes);
-                services::disable_service("MapsBroker")?;
+                tokio::task::spawn_blocking(|| services::disable_service("MapsBroker")).await??;
                 Ok(ExecutionResult::ok("MapsBroker disabled"))
             }
             "firewall" => {
-                let rules = firewall::create_telemetry_block_rules()?;
+                let rules = tokio::task::spawn_blocking(firewall::create_telemetry_block_rules).await??;
                 info!(rules_count = rules.len(), "Firewall rules created");
                 Ok(ExecutionResult::ok_count(rules.len(), format!("{} firewall rules", rules.len())))
             }
             "sched_tasks" => {
-                let tasks = scheduled_tasks::disable_telemetry_tasks()?;
+                let tasks = tokio::task::spawn_blocking(scheduled_tasks::disable_telemetry_tasks).await??;
                 info!(tasks_count = tasks.len(), "Scheduled tasks disabled");
                 Ok(ExecutionResult::ok_count(tasks.len(), format!("{} tasks disabled", tasks.len())))
             }
             "hosts" => {
-                let count = hosts::add_telemetry_blocks()?;
+                let count = tokio::task::spawn_blocking(hosts::add_telemetry_blocks).await??;
                 info!(domains_count = count, "Hosts entries added");
                 Ok(ExecutionResult::ok_count(count as usize, format!("{} domains blocked", count)))
             }
             "onedrive" => {
-                onedrive::uninstall_onedrive()?;
+                tokio::task::spawn_blocking(onedrive::uninstall_onedrive).await??;
                 info!("OneDrive uninstalled");
                 Ok(ExecutionResult::ok("OneDrive removed"))
             }
@@ -136,47 +136,47 @@ impl OptExecutor for PrivacyExecutor {
 
         match id {
             "telemetry_level" => {
-                registry::set_telemetry_level(0)?;
+                tokio::task::spawn_blocking(|| registry::set_telemetry_level(0)).await??;
                 Ok(ExecutionResult::ok("Telemetry level 0"))
             }
             "advertising_id" => {
-                registry::disable_advertising_id()?;
+                tokio::task::spawn_blocking(registry::disable_advertising_id).await??;
                 Ok(ExecutionResult::ok("Advertising ID disabled"))
             }
             "location" => {
-                registry::disable_location()?;
+                tokio::task::spawn_blocking(registry::disable_location).await??;
                 Ok(ExecutionResult::ok("Location disabled"))
             }
             "activity_history" => {
-                registry::disable_activity_history()?;
+                tokio::task::spawn_blocking(registry::disable_activity_history).await??;
                 Ok(ExecutionResult::ok("Activity history disabled"))
             }
             "cortana" => {
-                registry::disable_cortana()?;
+                tokio::task::spawn_blocking(registry::disable_cortana).await??;
                 Ok(ExecutionResult::ok("Cortana disabled"))
             }
             "context_menu" => {
-                let n = context_menu::remove_context_menu_clutter()?;
+                let n = tokio::task::spawn_blocking(context_menu::remove_context_menu_clutter).await??;
                 Ok(ExecutionResult::ok_count(n as usize, format!("{} items removed", n)))
             }
             "widgets" => {
-                widgets::disable_widgets()?;
+                tokio::task::spawn_blocking(widgets::disable_widgets).await??;
                 Ok(ExecutionResult::ok("Widgets disabled"))
             }
             "pause_updates" => {
-                windows_update::pause_updates()?;
+                tokio::task::spawn_blocking(windows_update::pause_updates).await??;
                 Ok(ExecutionResult::ok("Updates paused 35 days"))
             }
             "driver_updates" => {
-                windows_update::disable_driver_updates()?;
+                tokio::task::spawn_blocking(windows_update::disable_driver_updates).await??;
                 Ok(ExecutionResult::ok("Driver updates disabled"))
             }
             "recall" => {
-                registry::disable_recall()?;
+                tokio::task::spawn_blocking(registry::disable_recall).await??;
                 Ok(ExecutionResult::ok("Windows Recall blocked"))
             }
             "group_policy_telem" => {
-                registry::set_group_policy_telemetry(0)?;
+                tokio::task::spawn_blocking(|| registry::set_group_policy_telemetry(0)).await??;
                 Ok(ExecutionResult::ok("Group Policy telemetry Security"))
             }
             _ => anyhow::bail!("Unknown privacy option: {}", id),
@@ -198,27 +198,27 @@ impl OptExecutor for PerformanceExecutor {
 
         match id {
             "timer" => {
-                timer::set_timer_resolution(5000)?;
+                tokio::task::spawn_blocking(|| timer::set_timer_resolution(5000)).await??;
                 Ok(ExecutionResult::ok("Timer 0.5ms"))
             }
             "power_ultimate" => {
-                power::set_power_plan(power::PowerPlan::UltimatePerformance)?;
+                tokio::task::spawn_blocking(|| power::set_power_plan(power::PowerPlan::UltimatePerformance)).await??;
                 Ok(ExecutionResult::ok("Ultimate Performance"))
             }
             "power_high" => {
-                power::set_power_plan(power::PowerPlan::HighPerformance)?;
+                tokio::task::spawn_blocking(|| power::set_power_plan(power::PowerPlan::HighPerformance)).await??;
                 Ok(ExecutionResult::ok("High Performance"))
             }
             "cpu_throttle" => {
-                power::disable_cpu_throttling()?;
+                tokio::task::spawn_blocking(power::disable_cpu_throttling).await??;
                 Ok(ExecutionResult::ok("CPU throttling disabled"))
             }
             "usb_suspend" => {
-                power::configure_power_settings(false, false, 100, 100)?;
+                tokio::task::spawn_blocking(|| power::configure_power_settings(false, false, 100, 100)).await??;
                 Ok(ExecutionResult::ok("USB suspend disabled"))
             }
             "msi" => {
-                let devices = msi::list_msi_eligible_devices()?;
+                let devices = tokio::task::spawn_blocking(msi::list_msi_eligible_devices).await??;
                 let mut enabled = 0;
                 for dev in &devices {
                     if !dev.msi_enabled {
@@ -232,57 +232,56 @@ impl OptExecutor for PerformanceExecutor {
                 Ok(ExecutionResult::ok_count(enabled, format!("{}/{} MSI devices", enabled, devices.len())))
             }
             "sysmain" => {
-                services::disable_service("SysMain")?;
+                tokio::task::spawn_blocking(|| services::disable_service("SysMain")).await??;
                 Ok(ExecutionResult::ok("SysMain disabled"))
             }
             "wsearch" => {
-                services::disable_service("WSearch")?;
+                tokio::task::spawn_blocking(|| services::disable_service("WSearch")).await??;
                 Ok(ExecutionResult::ok("WSearch disabled"))
             }
             "edge_disable" => {
-                edge::disable_edge()?;
-                let _ = edge::remove_edge_tasks();
+                tokio::task::spawn_blocking(edge::disable_edge).await??;
+                let _ = tokio::task::spawn_blocking(edge::remove_edge_tasks).await;
                 Ok(ExecutionResult::ok("Edge features disabled"))
             }
             "explorer_tweaks" => {
-                explorer::apply_explorer_tweaks()?;
+                tokio::task::spawn_blocking(explorer::apply_explorer_tweaks).await??;
                 Ok(ExecutionResult::ok("Explorer tweaks applied"))
             }
             "game_bar" => {
-                game_mode::disable_game_bar()?;
+                tokio::task::spawn_blocking(game_mode::disable_game_bar).await??;
                 Ok(ExecutionResult::ok("Game Bar disabled"))
             }
             "fullscreen_opt" => {
-                game_mode::disable_fullscreen_optimizations()?;
+                tokio::task::spawn_blocking(game_mode::disable_fullscreen_optimizations).await??;
                 Ok(ExecutionResult::ok("Fullscreen optimizations disabled"))
             }
             "hags" => {
-                game_mode::disable_hags()?;
+                tokio::task::spawn_blocking(game_mode::disable_hags).await??;
                 Ok(ExecutionResult::ok("HAGS disabled"))
             }
             "nagle" => {
-                let n = network::disable_nagle_algorithm()?;
+                let n = tokio::task::spawn_blocking(network::disable_nagle_algorithm).await??;
                 Ok(ExecutionResult::ok_count(n as usize, format!("{} interfaces", n)))
             }
             "power_throttle" => {
-                registry::disable_power_throttling()?;
+                tokio::task::spawn_blocking(registry::disable_power_throttling).await??;
                 Ok(ExecutionResult::ok("Power throttling disabled"))
             }
-            // GPU avancé - input lag minimal
             "enable_game_mode" => {
-                game_mode::enable_game_mode()?;
+                tokio::task::spawn_blocking(game_mode::enable_game_mode).await??;
                 Ok(ExecutionResult::ok("Windows Game Mode enabled"))
             }
             "prerendered_frames" => {
-                game_mode::set_prerendered_frames(1)?;
+                tokio::task::spawn_blocking(|| game_mode::set_prerendered_frames(1)).await??;
                 Ok(ExecutionResult::ok("Pre-rendered frames set to 1"))
             }
             "vrr_opt" => {
-                game_mode::disable_vrr_optimizations()?;
+                tokio::task::spawn_blocking(game_mode::disable_vrr_optimizations).await??;
                 Ok(ExecutionResult::ok("VRR optimizations disabled"))
             }
             "shader_cache" => {
-                game_mode::set_shader_cache_size(256)?;
+                tokio::task::spawn_blocking(|| game_mode::set_shader_cache_size(256)).await??;
                 Ok(ExecutionResult::ok("Shader cache set to 256MB"))
             }
             _ => anyhow::bail!("Unknown performance option: {}", id),
@@ -304,27 +303,27 @@ impl OptExecutor for SchedulerExecutor {
 
         match id {
             "priority_sep" => {
-                registry::set_priority_separation(0x26)?;
+                tokio::task::spawn_blocking(|| registry::set_priority_separation(0x26)).await??;
                 Ok(ExecutionResult::ok("Win32PrioritySeparation 0x26"))
             }
             "mmcss" => {
-                registry::configure_mmcss_gaming()?;
+                tokio::task::spawn_blocking(registry::configure_mmcss_gaming).await??;
                 Ok(ExecutionResult::ok("MMCSS configured"))
             }
             "games_priority" => {
-                registry::configure_games_priority()?;
+                tokio::task::spawn_blocking(registry::configure_games_priority).await??;
                 Ok(ExecutionResult::ok("GPU=8, Priority=6"))
             }
             "global_timer" => {
-                registry::enable_global_timer_resolution()?;
+                tokio::task::spawn_blocking(registry::enable_global_timer_resolution).await??;
                 Ok(ExecutionResult::ok("Global timer (reboot required)"))
             }
             "startup_delay" => {
-                registry::disable_startup_delay()?;
+                tokio::task::spawn_blocking(registry::disable_startup_delay).await??;
                 Ok(ExecutionResult::ok("Startup delay 0ms"))
             }
             "shutdown_timeout" => {
-                registry::reduce_shutdown_timeout()?;
+                tokio::task::spawn_blocking(registry::reduce_shutdown_timeout).await??;
                 Ok(ExecutionResult::ok("Shutdown timeout 2000ms"))
             }
             _ => anyhow::bail!("Unknown scheduler option: {}", id),
@@ -346,43 +345,43 @@ impl OptExecutor for AppxExecutor {
 
         match id {
             "bing_apps" => {
-                let r = appx::remove_bing_apps()?;
+                let r = tokio::task::spawn_blocking(appx::remove_bing_apps).await??;
                 Ok(ExecutionResult::ok_count(r.len(), format!("{} Bing apps removed", r.len())))
             }
             "ms_productivity" => {
-                let r = appx::remove_ms_productivity()?;
+                let r = tokio::task::spawn_blocking(appx::remove_ms_productivity).await??;
                 Ok(ExecutionResult::ok_count(r.len(), format!("{} apps removed", r.len())))
             }
             "ms_media" => {
-                let r = appx::remove_ms_media()?;
+                let r = tokio::task::spawn_blocking(appx::remove_ms_media).await??;
                 Ok(ExecutionResult::ok_count(r.len(), format!("{} apps removed", r.len())))
             }
             "ms_communication" => {
-                let r = appx::remove_ms_communication()?;
+                let r = tokio::task::spawn_blocking(appx::remove_ms_communication).await??;
                 Ok(ExecutionResult::ok_count(r.len(), format!("{} apps removed", r.len())))
             }
             "ms_legacy" => {
-                let r = appx::remove_ms_legacy()?;
+                let r = tokio::task::spawn_blocking(appx::remove_ms_legacy).await??;
                 Ok(ExecutionResult::ok_count(r.len(), format!("{} apps removed", r.len())))
             }
             "ms_tools" => {
-                let r = appx::remove_ms_tools()?;
+                let r = tokio::task::spawn_blocking(appx::remove_ms_tools).await??;
                 Ok(ExecutionResult::ok_count(r.len(), format!("{} apps removed", r.len())))
             }
             "third_party" => {
-                let r = appx::remove_third_party()?;
+                let r = tokio::task::spawn_blocking(appx::remove_third_party).await??;
                 Ok(ExecutionResult::ok_count(r.len(), format!("{} apps removed", r.len())))
             }
             "copilot" => {
-                let r = appx::remove_copilot()?;
+                let r = tokio::task::spawn_blocking(appx::remove_copilot).await??;
                 Ok(ExecutionResult::ok_count(r.len(), format!("{} removed", r.len())))
             }
             "cortana_app" => {
-                let r = appx::remove_cortana()?;
+                let r = tokio::task::spawn_blocking(appx::remove_cortana).await??;
                 Ok(ExecutionResult::ok_count(r.len(), format!("{} removed", r.len())))
             }
             "xbox" => {
-                let r = appx::remove_xbox_packages()?;
+                let r = tokio::task::spawn_blocking(appx::remove_xbox_packages).await??;
                 Ok(ExecutionResult::ok_count(r.len(), format!("{} Xbox apps removed", r.len())))
             }
             _ => anyhow::bail!("Unknown appx option: {}", id),
@@ -404,20 +403,19 @@ impl OptExecutor for CPUExecutor {
 
         match id {
             "core_parking" => {
-                cpu::disable_core_parking()?;
+                tokio::task::spawn_blocking(cpu::disable_core_parking).await??;
                 Ok(ExecutionResult::ok("Core Parking disabled - all cores active"))
             }
             "memory_compression" => {
-                cpu::disable_memory_compression()?;
+                tokio::task::spawn_blocking(cpu::disable_memory_compression).await??;
                 Ok(ExecutionResult::ok("Memory Compression disabled"))
             }
             "superfetch_registry" => {
-                cpu::disable_superfetch_registry()?;
+                tokio::task::spawn_blocking(cpu::disable_superfetch_registry).await??;
                 Ok(ExecutionResult::ok("Superfetch disabled via registry"))
             }
             "static_pagefile" => {
-                // Calcul automatique: 1.5x RAM ou 16GB min
-                cpu::set_static_page_file(16384)?;
+                tokio::task::spawn_blocking(|| cpu::set_static_page_file(16384)).await??;
                 Ok(ExecutionResult::ok("Page file set to 16GB static"))
             }
             _ => anyhow::bail!("Unknown CPU option: {}", id),
@@ -439,23 +437,23 @@ impl OptExecutor for DPCExecutor {
 
         match id {
             "paging_executive" => {
-                dpc::disable_paging_executive()?;
+                tokio::task::spawn_blocking(dpc::disable_paging_executive).await??;
                 Ok(ExecutionResult::ok("DisablePagingExecutive enabled"))
             }
             "dynamic_tick" => {
-                dpc::disable_dynamic_tick()?;
+                tokio::task::spawn_blocking(dpc::disable_dynamic_tick).await??;
                 Ok(ExecutionResult::ok("Dynamic tick disabled - reboot required"))
             }
             "tsc_sync" => {
-                dpc::set_tsc_sync_enhanced()?;
+                tokio::task::spawn_blocking(dpc::set_tsc_sync_enhanced).await??;
                 Ok(ExecutionResult::ok("TSC sync set to enhanced"))
             }
             "hpet" => {
-                dpc::disable_hpet()?;
+                tokio::task::spawn_blocking(dpc::disable_hpet).await??;
                 Ok(ExecutionResult::ok("HPET disabled"))
             }
             "interrupt_affinity" => {
-                dpc::set_interrupt_affinity_spread()?;
+                tokio::task::spawn_blocking(dpc::set_interrupt_affinity_spread).await??;
                 Ok(ExecutionResult::ok("Interrupt affinity spread across cores"))
             }
             _ => anyhow::bail!("Unknown DPC option: {}", id),
@@ -477,15 +475,15 @@ impl OptExecutor for SecurityExecutor {
 
         match id {
             "hvci" => {
-                security::disable_memory_integrity()?;
+                tokio::task::spawn_blocking(security::disable_memory_integrity).await??;
                 Ok(ExecutionResult::ok("HVCI disabled - reboot required"))
             }
             "vbs" => {
-                security::disable_vbs()?;
+                tokio::task::spawn_blocking(security::disable_vbs).await??;
                 Ok(ExecutionResult::ok("VBS disabled - reboot required"))
             }
             "spectre" => {
-                security::disable_spectre_meltdown()?;
+                tokio::task::spawn_blocking(security::disable_spectre_meltdown).await??;
                 warn!("CRITICAL: Spectre/Meltdown mitigations disabled!");
                 Ok(ExecutionResult::ok("Spectre/Meltdown disabled - CRITICAL SECURITY RISK"))
             }
@@ -508,23 +506,23 @@ impl OptExecutor for NetworkAdvancedExecutor {
 
         match id {
             "interrupt_moderation" => {
-                let n = network::disable_interrupt_moderation()?;
+                let n = tokio::task::spawn_blocking(network::disable_interrupt_moderation).await??;
                 Ok(ExecutionResult::ok_count(n as usize, "Interrupt moderation disabled"))
             }
             "lso" => {
-                network::disable_lso()?;
+                tokio::task::spawn_blocking(network::disable_lso).await??;
                 Ok(ExecutionResult::ok("Large Send Offload disabled"))
             }
             "eee" => {
-                network::disable_eee()?;
+                tokio::task::spawn_blocking(network::disable_eee).await??;
                 Ok(ExecutionResult::ok("Energy Efficient Ethernet disabled"))
             }
             "rss" => {
-                network::enable_rss()?;
+                tokio::task::spawn_blocking(network::enable_rss).await??;
                 Ok(ExecutionResult::ok("Receive Side Scaling enabled"))
             }
             "rsc" => {
-                network::disable_rsc()?;
+                tokio::task::spawn_blocking(network::disable_rsc).await??;
                 Ok(ExecutionResult::ok("Receive Segment Coalescing disabled"))
             }
             _ => anyhow::bail!("Unknown network_advanced option: {}", id),

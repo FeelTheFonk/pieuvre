@@ -11,6 +11,7 @@ pub mod network;
 pub mod registry;
 pub mod security;
 pub mod services;
+pub mod etw;
 
 #[cfg(test)]
 mod tests;

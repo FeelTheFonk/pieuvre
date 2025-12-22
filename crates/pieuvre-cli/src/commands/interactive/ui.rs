@@ -20,9 +20,9 @@ pub enum MainAction {
 /// Affiche le header du mode interactif (style pro, sans emoji)
 pub fn print_header(is_laptop: bool, profile: &str) {
     println!();
-    println!("{}", style("═".repeat(68)).cyan());
-    println!("{}", style("           PIEUVRE - Selection des Optimisations").cyan().bold());
-    println!("{}", style("═".repeat(68)).cyan());
+    println!("{}", style("┌──────────────────────────────────────────────────────────────────┐").cyan());
+    println!("{}", style("│           PIEUVRE - Selection des Optimisations                  │").cyan().bold());
+    println!("{}", style("└──────────────────────────────────────────────────────────────────┘").cyan());
     println!();
     println!("  {}", style("NAVIGATION:").bold());
     println!("    Fleches   Haut/Bas pour naviguer");
@@ -46,13 +46,11 @@ pub fn print_header(is_laptop: bool, profile: &str) {
 /// Affiche l'écran d'accueil professionnel (ASCII Art SOTA)
 pub fn print_welcome_screen() {
     println!();
-    println!("{}", style("═".repeat(68)).cyan());
-    println!();
-    println!("╭╌╌╚╌╌⊚╌╌╚╌╌╮");
-    println!();
-    println!("    pieuvre. - v{}", env!("CARGO_PKG_VERSION"));
-    println!();
-    println!("{}", style("═".repeat(68)).cyan());
+    println!("{}", style("┌──────────────────────────────────────────────────────────────────┐").cyan());
+    println!("│                                                                  │");
+    println!("│    pieuvre. - v{}                                         │", env!("CARGO_PKG_VERSION"));
+    println!("│                                                                  │");
+    println!("{}", style("└──────────────────────────────────────────────────────────────────┘").cyan());
     println!();
 }
 
@@ -77,6 +75,18 @@ pub fn print_quick_status() {
     // Hardware
     let is_laptop = pieuvre_audit::hardware::is_laptop();
     println!("  Type:        {}", if is_laptop { "Laptop" } else { "Desktop" });
+    
+    if let Ok(hw) = pieuvre_audit::hardware::probe_hardware() {
+        if hw.cpu.is_hybrid {
+            println!("  CPU:         {} [Hybrid: {}P/{}E]", 
+                hw.cpu.model_name, 
+                style(hw.cpu.p_cores.len()).cyan(), 
+                style(hw.cpu.e_cores.len()).yellow()
+            );
+        } else {
+            println!("  CPU:         {} [{} Cores]", hw.cpu.model_name, hw.cpu.physical_cores);
+        }
+    }
     
     // Timer
     match pieuvre_sync::timer::get_timer_resolution() {
@@ -104,7 +114,20 @@ pub fn print_quick_status() {
     }
 
     // ETW Latency (SOTA 2026)
-    println!("  Latency:     Monitoring actif [SOTA]");
+    match pieuvre_audit::etw::session::EtwSession::check_active() {
+        Ok(true) => {
+            let max_lat = pieuvre_audit::etw::monitor::LatencyMonitor::global().get_max_latency();
+            let lat_style = if max_lat < 100 {
+                style(format!("{}us", max_lat)).green()
+            } else if max_lat < 500 {
+                style(format!("{}us", max_lat)).yellow()
+            } else {
+                style(format!("{}us", max_lat)).red().bold()
+            };
+            println!("  Latency:     {} [SOTA]", lat_style);
+        }
+        _ => println!("  Latency:     {} [OFF]", style("Non demarre").dim()),
+    }
     
     println!();
 }
@@ -183,17 +206,32 @@ pub fn wait_for_exit() {
     let _ = std::io::stdin().read_line(&mut input);
 }
 
-/// Vérifie si le processus a des privilèges élevés (Windows)
+/// Vérifie si le processus a des privilèges élevés (SOTA Native)
 fn is_elevated() -> bool {
-    use std::process::Command;
-    
-    let output = Command::new("net")
-        .args(["session"])
-        .output();
-    
-    match output {
-        Ok(o) => o.status.success(),
-        Err(_) => false,
+    use windows::Win32::Foundation::HANDLE;
+    use windows::Win32::Security::{GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY};
+    use windows::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
+
+    unsafe {
+        let mut token = HANDLE::default();
+        if OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token).is_err() {
+            return false;
+        }
+
+        let mut elevation = TOKEN_ELEVATION::default();
+        let mut size = std::mem::size_of::<TOKEN_ELEVATION>() as u32;
+        
+        let result = GetTokenInformation(
+            token,
+            TokenElevation,
+            Some(&mut elevation as *mut _ as *mut _),
+            size,
+            &mut size,
+        );
+
+        let _ = windows::Win32::Foundation::CloseHandle(token);
+        
+        result.is_ok() && elevation.TokenIsElevated != 0
     }
 }
 
@@ -221,9 +259,9 @@ pub fn print_selection_summary(
     let total = telem_count + privacy_count + perf_count + sched_count + appx_count;
     
     println!();
-    println!("{}", style("═".repeat(68)).cyan());
-    println!("{}", style("                    RÉSUMÉ SÉLECTION").cyan().bold());
-    println!("{}", style("═".repeat(68)).cyan());
+    println!("{}", style("┌──────────────────────────────────────────────────────────────────┐").cyan());
+    println!("{}", style("│                    RÉSUMÉ SÉLECTION                              │").cyan().bold());
+    println!("{}", style("└──────────────────────────────────────────────────────────────────┘").cyan());
     println!();
     println!("  Télémétrie:   {}", style(telem_count).green().bold());
     println!("  Privacy:      {}", style(privacy_count).green().bold());
@@ -282,9 +320,9 @@ pub fn print_operation_result(name: &str, success: bool, message: &str) {
 /// Affiche le résultat final
 pub fn print_final_result(success_count: usize, error_count: usize, snapshot_id: Option<&str>) {
     println!();
-    println!("{}", style("═".repeat(68)).cyan());
-    println!("{}", style("                      RÉSULTAT").cyan().bold());
-    println!("{}", style("═".repeat(68)).cyan());
+    println!("{}", style("┌──────────────────────────────────────────────────────────────────┐").cyan());
+    println!("{}", style("│                      RÉSULTAT                                    │").cyan().bold());
+    println!("{}", style("└──────────────────────────────────────────────────────────────────┘").cyan());
     println!();
     println!("  Succès:  {}", style(success_count).green().bold());
     println!("  Erreurs: {}", if error_count > 0 { 
@@ -353,9 +391,9 @@ pub fn print_selection_summary_full(
         + cpu_count + dpc_count + security_count + net_adv_count;
     
     println!();
-    println!("{}", style("═".repeat(68)).cyan());
-    println!("{}", style("                    RÉSUMÉ SÉLECTION").cyan().bold());
-    println!("{}", style("═".repeat(68)).cyan());
+    println!("{}", style("┌──────────────────────────────────────────────────────────────────┐").cyan());
+    println!("{}", style("│                    RÉSUMÉ SÉLECTION                              │").cyan().bold());
+    println!("{}", style("└──────────────────────────────────────────────────────────────────┘").cyan());
     println!();
     println!("  Télémétrie:      {}", style(telem_count).green().bold());
     println!("  Privacy:         {}", style(privacy_count).green().bold());

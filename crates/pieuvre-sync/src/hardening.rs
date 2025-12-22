@@ -57,7 +57,7 @@ fn apply_sddl_service(service_name: &str, sddl: &str) -> Result<()> {
             None,
         ).map_err(|e| PieuvreError::Internal(format!("SDDL conversion failed: {}", e)))?;
 
-        let mut dacl = std::ptr::null_mut() as *mut windows::Win32::Security::ACL;
+        let mut dacl = std::ptr::null_mut();
         let mut dacl_present = 0i32;
         let mut dacl_defaulted = 0i32;
 
@@ -110,7 +110,7 @@ fn apply_sddl(key_path: &str, sddl: &str) -> Result<()> {
         // Note: Dans windows-rs 0.62, BOOL est souvent projeté comme bool dans les arguments de sortie
         // ou via un type spécifique. Si BOOL n'est pas trouvé, on utilise i32 pour le pointeur brut.
         let mut dacl_present = 0i32; 
-        let mut dacl = std::ptr::null_mut() as *mut windows::Win32::Security::ACL;
+        let mut dacl = std::ptr::null_mut();
         let mut dacl_defaulted = 0i32;
 
         let res_dacl = windows::Win32::Security::GetSecurityDescriptorDacl(
@@ -192,4 +192,15 @@ pub const CRITICAL_KEYS: &[&str] = &[
     r"SYSTEM\CurrentControlSet\Control\PriorityControl",
     r"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management",
     r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile",
+    r"SYSTEM\CurrentControlSet\Control\Session Manager\Kernel",
+    r"SYSTEM\CurrentControlSet\Services\DiagTrack",
+    r"SYSTEM\CurrentControlSet\Services\SysMain",
+];
+
+/// Services critiques à verrouiller
+pub const CRITICAL_SERVICES: &[&str] = &[
+    "DiagTrack",
+    "SysMain",
+    "WSearch",
+    "WerSvc",
 ];

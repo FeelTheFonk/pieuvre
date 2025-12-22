@@ -117,10 +117,9 @@ fn set_advanced_property(property_name: &str, value: &str) -> Result<u32> {
         let key_path = format!(r"{}\{}", class_key, subkey);
         
         // Vérifier si c'est une carte réseau valide (DriverDesc présent)
-        if crate::registry::read_string_value(&key_path, "DriverDesc").is_ok() {
-            if crate::registry::set_string_value(&key_path, property_name, value).is_ok() {
+        if crate::registry::read_string_value(&key_path, "DriverDesc").is_ok()
+            && crate::registry::set_string_value(&key_path, property_name, value).is_ok() {
                 modified += 1;
-            }
         }
     }
     

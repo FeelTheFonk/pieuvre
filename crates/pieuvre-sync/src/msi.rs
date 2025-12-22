@@ -151,9 +151,11 @@ fn get_msi_info(device_id: &str) -> Option<(String, bool, bool)> {
         
         let _ = RegCloseKey(hkey_msi);
         
-        if read_ok {
+        if read_ok && msi_value == 1 {
             // MSI supporté si la clé existe, activé si valeur = 1
-            Some((msi_path, true, msi_value == 1))
+            Some((msi_path, true, true))
+        } else if read_ok {
+            Some((msi_path, true, false))
         } else {
             Some((msi_path, false, false))
         }

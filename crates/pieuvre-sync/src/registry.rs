@@ -3,8 +3,8 @@
 use pieuvre_common::{PieuvreError, Result};
 use windows::Win32::System::Registry::{
     RegOpenKeyExW, RegSetValueExW, RegCloseKey, RegDeleteValueW, RegEnumKeyExW,
-    RegQueryValueExW, HKEY_LOCAL_MACHINE, HKEY,
-    KEY_SET_VALUE, KEY_READ, REG_DWORD, REG_SZ,
+    RegQueryValueExW, RegCreateKeyExW, RegDeleteTreeW, HKEY_LOCAL_MACHINE, HKEY,
+    KEY_SET_VALUE, KEY_READ, REG_DWORD, REG_SZ, REG_OPTION_NON_VOLATILE, KEY_WRITE,
 };
 use windows::core::{PCWSTR, PWSTR};
 
@@ -14,16 +14,20 @@ pub fn set_dword_value(subkey: &str, value_name: &str, value: u32) -> Result<()>
         let mut hkey = Default::default();
         let subkey_wide: Vec<u16> = subkey.encode_utf16().chain(std::iter::once(0)).collect();
         
-        let result = RegOpenKeyExW(
+        let result = RegCreateKeyExW(
             HKEY_LOCAL_MACHINE,
             PCWSTR(subkey_wide.as_ptr()),
             Some(0),
-            KEY_SET_VALUE,
+            None,
+            REG_OPTION_NON_VOLATILE,
+            KEY_WRITE,
+            None,
             &mut hkey,
+            None,
         );
         
         if result.is_err() {
-            return Err(PieuvreError::Registry(format!("Cannot open key: {}", subkey)));
+            return Err(PieuvreError::Registry(format!("Cannot create/open key: {}", subkey)));
         }
         
         let value_wide: Vec<u16> = value_name.encode_utf16().chain(std::iter::once(0)).collect();
@@ -54,16 +58,20 @@ pub fn set_string_value(subkey: &str, value_name: &str, value: &str) -> Result<(
         let mut hkey = Default::default();
         let subkey_wide: Vec<u16> = subkey.encode_utf16().chain(std::iter::once(0)).collect();
         
-        let result = RegOpenKeyExW(
+        let result = RegCreateKeyExW(
             HKEY_LOCAL_MACHINE,
             PCWSTR(subkey_wide.as_ptr()),
             Some(0),
-            KEY_SET_VALUE,
+            None,
+            REG_OPTION_NON_VOLATILE,
+            KEY_WRITE,
+            None,
             &mut hkey,
+            None,
         );
         
         if result.is_err() {
-            return Err(PieuvreError::Registry(format!("Cannot open key: {}", subkey)));
+            return Err(PieuvreError::Registry(format!("Cannot create/open key: {}", subkey)));
         }
         
         let value_wide: Vec<u16> = value_name.encode_utf16().chain(std::iter::once(0)).collect();
@@ -84,6 +92,23 @@ pub fn set_string_value(subkey: &str, value_name: &str, value: &str) -> Result<(
         }
         
         tracing::debug!("Registre: {}\\{} = {}", subkey, value_name, value);
+        Ok(())
+    }
+}
+
+/// Supprime une clé et toutes ses sous-clés (récursif)
+pub fn delete_key_recursive(subkey: &str) -> Result<()> {
+    unsafe {
+        let subkey_wide: Vec<u16> = subkey.encode_utf16().chain(std::iter::once(0)).collect();
+        let result = RegDeleteTreeW(HKEY_LOCAL_MACHINE, PCWSTR(subkey_wide.as_ptr()));
+        
+        if result.is_err() {
+            // Si la clé n'existe pas, on considère cela comme un succès (YAGNI/Fail Fast)
+            let err_code = result.0 as u32;
+            if err_code != 2 { // ERROR_FILE_NOT_FOUND
+                return Err(PieuvreError::Registry(format!("Failed to delete key recursive {}: {:?}", subkey, result)));
+            }
+        }
         Ok(())
     }
 }
@@ -411,18 +436,11 @@ pub fn enable_global_timer_resolution() -> Result<()> {
 
 /// Desactive le delai de demarrage des apps startup
 pub fn disable_startup_delay() -> Result<()> {
-    use std::process::Command;
-    // Note: Cette cle peut ne pas exister, on la cree avec reg add
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Serialize",
-            "/v", "StartupDelayInMSec",
-            "/t", "REG_DWORD",
-            "/d", "0",
-            "/f"
-        ])
-        .output();
+    set_dword_value(
+        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Serialize",
+        "StartupDelayInMSec",
+        0,
+    )?;
     tracing::info!("Startup delay disabled");
     Ok(())
 }
@@ -457,45 +475,27 @@ pub fn disable_power_throttling() -> Result<()> {
 
 /// Enable CPU Power Throttling (restore default)
 pub fn enable_power_throttling() -> Result<()> {
-    use std::process::Command;
-    let _ = Command::new("reg")
-        .args([
-            "delete",
-            r"HKLM\SYSTEM\CurrentControlSet\Control\Power\PowerThrottling",
-            "/v", "PowerThrottlingOff",
-            "/f"
-        ])
-        .output();
+    delete_value(
+        r"SYSTEM\CurrentControlSet\Control\Power\PowerThrottling",
+        "PowerThrottlingOff",
+    )?;
     tracing::info!("Power Throttling enabled (default)");
     Ok(())
 }
 
 /// Block Windows Recall (24H2 AI feature)
 pub fn disable_recall() -> Result<()> {
-    use std::process::Command;
-    // Disable via Group Policy
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
-            "/v", "DisableAIDataAnalysis",
-            "/t", "REG_DWORD",
-            "/d", "1",
-            "/f"
-        ])
-        .output();
+    set_dword_value(
+        r"SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
+        "DisableAIDataAnalysis",
+        1,
+    )?;
     
-    // Also disable Recall specifically
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
-            "/v", "TurnOffSavingSnapshots",
-            "/t", "REG_DWORD",
-            "/d", "1",
-            "/f"
-        ])
-        .output();
+    set_dword_value(
+        r"SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
+        "TurnOffSavingSnapshots",
+        1,
+    )?;
     
     tracing::info!("Windows Recall disabled");
     Ok(())
@@ -503,56 +503,31 @@ pub fn disable_recall() -> Result<()> {
 
 /// Enable Windows Recall
 pub fn enable_recall() -> Result<()> {
-    use std::process::Command;
-    let _ = Command::new("reg")
-        .args([
-            "delete",
-            r"HKLM\SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
-            "/f"
-        ])
-        .output();
+    // Suppression récursive de la clé de policy
+    delete_key_recursive(r"SOFTWARE\Policies\Microsoft\Windows\WindowsAI")?;
     tracing::info!("Windows Recall enabled");
     Ok(())
 }
 
 /// Set Group Policy Telemetry level (enterprise style)
 pub fn set_group_policy_telemetry(level: u32) -> Result<()> {
-    use std::process::Command;
-    // Computer Configuration > Administrative Templates > Windows Components > Data Collection
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection",
-            "/v", "AllowTelemetry",
-            "/t", "REG_DWORD",
-            "/d", &level.to_string(),
-            "/f"
-        ])
-        .output();
+    set_dword_value(
+        r"SOFTWARE\Policies\Microsoft\Windows\DataCollection",
+        "AllowTelemetry",
+        level,
+    )?;
     
-    // Disable device name in diagnostics
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection",
-            "/v", "AllowDeviceNameInTelemetry",
-            "/t", "REG_DWORD",
-            "/d", "0",
-            "/f"
-        ])
-        .output();
+    set_dword_value(
+        r"SOFTWARE\Policies\Microsoft\Windows\DataCollection",
+        "AllowDeviceNameInTelemetry",
+        0,
+    )?;
     
-    // Disable tailored experiences
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKLM\SOFTWARE\Policies\Microsoft\Windows\CloudContent",
-            "/v", "DisableTailoredExperiencesWithDiagnosticData",
-            "/t", "REG_DWORD",
-            "/d", "1",
-            "/f"
-        ])
-        .output();
+    set_dword_value(
+        r"SOFTWARE\Policies\Microsoft\Windows\CloudContent",
+        "DisableTailoredExperiencesWithDiagnosticData",
+        1,
+    )?;
     
     tracing::info!("Group Policy Telemetry set to {}", level);
     Ok(())
