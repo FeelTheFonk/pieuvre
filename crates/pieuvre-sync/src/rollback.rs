@@ -2,7 +2,6 @@
 //!
 //! Logique de retour arrière automatique basée sur les ChangeRecords.
 
-use crate::operation::{SyncOperation, ServiceOperation, RegistryDwordOperation};
 use pieuvre_common::{Result, ChangeRecord};
 use tracing::{instrument, info, warn};
 
@@ -36,6 +35,12 @@ pub async fn rollback_changes(changes: Vec<ChangeRecord>) -> Result<()> {
 async fn rollback_registry(key: &str, value: &str, val_type: &str, data: Vec<u8>) -> Result<()> {
     info!(key, value, "Restauration registre...");
     
+    // Déverrouillage SOTA (Phase 11)
+    let _ = tokio::task::spawn_blocking({
+        let key = key.to_string();
+        move || crate::hardening::unlock_registry_key(&key)
+    }).await;
+
     if val_type == "REG_DWORD" && data.len() == 4 {
         let dword = u32::from_le_bytes([data[0], data[1], data[2], data[3]]);
         tokio::task::spawn_blocking({
@@ -70,16 +75,13 @@ async fn rollback_service(name: &str, start_type: u32) -> Result<()> {
 }
 
 async fn rollback_firewall(name: &str) -> Result<()> {
-    info!(name, "Suppression regle firewall...");
+    info!(name, "Suppression regle firewall (Native COM)...");
     
     tokio::task::spawn_blocking({
-        let name = name.to_string();
+        let _name = name.to_string();
         move || {
-            use std::process::Command;
-            let _ = Command::new("netsh")
-                .args(["advfirewall", "firewall", "delete", "rule", &format!("name={}", name)])
-                .output();
-            Ok::<(), pieuvre_common::PieuvreError>(())
+            // Utiliser l'API COM native au lieu de netsh
+            crate::firewall::remove_pieuvre_rules().map(|_| ())
         }
     }).await.map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))??;
     

@@ -7,6 +7,7 @@ description = "Module de synchronisation pour Pieuvre"
 
 [dependencies]
 pieuvre-common = { path = "../pieuvre-common" }
+pieuvre-audit = { path = "../pieuvre-audit" }
 
 serde.workspace = true
 thiserror.workspace = true
@@ -19,4 +20,3 @@ async-trait.workspace = true
 # Windows APIs
 windows.workspace = true
 windows-sys.workspace = true
-

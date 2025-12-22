@@ -5,6 +5,7 @@
 //! le monitoring de latence, l'inventaire des packages, et l'audit sécurité.
 
 pub mod appx;
+pub mod compliance;
 pub mod hardware;
 pub mod network;
 pub mod registry;

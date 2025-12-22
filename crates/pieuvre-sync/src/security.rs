@@ -85,26 +85,8 @@ pub fn disable_spectre_meltdown() -> Result<()> {
 /// Enable Spectre/Meltdown mitigations (restore security)
 /// Note: Suppression des valeurs = Windows utilise les defaults (mitigations ON)
 pub fn enable_spectre_meltdown() -> Result<()> {
-    use std::process::Command;
-    
-    // Pour supprimer une valeur, on utilise reg delete (pas d'API native simple)
-    let _ = Command::new("reg")
-        .args([
-            "delete",
-            &format!("HKLM\\{}", MEMORY_MANAGEMENT_KEY),
-            "/v", "FeatureSettingsOverride",
-            "/f"
-        ])
-        .output();
-    
-    let _ = Command::new("reg")
-        .args([
-            "delete",
-            &format!("HKLM\\{}", MEMORY_MANAGEMENT_KEY),
-            "/v", "FeatureSettingsOverrideMask",
-            "/f"
-        ])
-        .output();
+    crate::registry::delete_value(MEMORY_MANAGEMENT_KEY, "FeatureSettingsOverride")?;
+    crate::registry::delete_value(MEMORY_MANAGEMENT_KEY, "FeatureSettingsOverrideMask")?;
     
     tracing::info!("Spectre/Meltdown mitigations restored");
     Ok(())

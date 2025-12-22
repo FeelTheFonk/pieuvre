@@ -776,6 +776,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "chrono",
+ "pieuvre-audit",
  "pieuvre-common",
  "serde",
  "thiserror 2.0.17",

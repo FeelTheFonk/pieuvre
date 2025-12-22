@@ -15,6 +15,17 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - **Parallélisme Granulaire** : Utilisation de `tokio::task::JoinSet` pour réduire drastiquement le temps d'application des profils.
 - **Rollback Automatique** : Génération systématique de `ChangeRecord` pour chaque opération, permettant un retour arrière chirurgical.
 
+#### Intelligence Contextuelle (Hardware-Aware) - SOTA 2026
+- **Sondage DXGI** : Détection précise du GPU (VRAM, Vendor) via l'interface native DXGI.
+- **Audit Stockage** : Détection native du BusType (NVMe vs SATA) via `DeviceIoControl`.
+- **Sync Dynamique** : Adaptation automatique du profil `Gaming` selon le matériel détecté (NVIDIA Tweaks, Hybrid CPU Scheduling, NVMe I/O).
+- **Détection CPU Hybride** : Identification des P-Cores/E-Cores pour optimisation du scheduling Windows 11.
+
+#### Hardening & Conformité SOTA 2026
+- **Registry Hardening** : Verrouillage des clés de registre critiques via SDDL (Security Descriptor Definition Language).
+- **Audit de Conformité** : Détection de dérive (drift) pour garantir l'intégrité des optimisations.
+- **Rollback Inviolable** : Gestion automatique des ACLs lors de la restauration système.
+
 #### Observabilité & Diagnostic
 - **Instrumentation Native** : Décoration systématique des fonctions critiques avec `#[instrument]` via la crate `tracing`.
 - **Logging Structuré** : Traçabilité totale des opérations asynchrones avec contexte (ID d'opération, paramètres).

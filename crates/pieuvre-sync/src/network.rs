@@ -3,7 +3,6 @@
 //! Nagle algorithm disable and TCP optimizations for gaming.
 
 use pieuvre_common::Result;
-use std::process::Command;
 
 /// Disable Nagle's Algorithm for all network adapters
 /// Reduces latency for online gaming by sending TCP packets immediately
@@ -61,106 +60,72 @@ pub fn is_nagle_disabled() -> bool {
 /// Disable Interrupt Moderation on all network adapters
 /// Reduces network latency at cost of higher CPU usage
 pub fn disable_interrupt_moderation() -> Result<u32> {
-    let output = Command::new("powershell")
-        .args([
-            "-NoProfile",
-            "-Command",
-            r#"Get-NetAdapterAdvancedProperty -DisplayName "*Interrupt Moderation*" | ForEach-Object { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName "Interrupt Moderation" -RegistryValue 0 -ErrorAction SilentlyContinue }"#
-        ])
-        .output()?;
-    
-    if output.status.success() {
-        tracing::info!("Interrupt Moderation disabled on all adapters");
-        Ok(1)
-    } else {
-        tracing::warn!("Could not disable Interrupt Moderation");
-        Ok(0)
-    }
+    set_advanced_property("*InterruptModeration", "0")
 }
 
 /// Enable Interrupt Moderation (restore default)
 pub fn enable_interrupt_moderation() -> Result<()> {
-    let _ = Command::new("powershell")
-        .args([
-            "-NoProfile",
-            "-Command",
-            r#"Get-NetAdapterAdvancedProperty -DisplayName "*Interrupt Moderation*" | ForEach-Object { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName "Interrupt Moderation" -RegistryValue 1 -ErrorAction SilentlyContinue }"#
-        ])
-        .output();
-    
-    tracing::info!("Interrupt Moderation enabled");
-    Ok(())
+    set_advanced_property("*InterruptModeration", "1").map(|_| ())
 }
 
 /// Disable Large Send Offload (LSO) for reduced latency
 pub fn disable_lso() -> Result<()> {
-    // IPv4
-    let _ = Command::new("powershell")
-        .args([
-            "-NoProfile",
-            "-Command",
-            r#"Get-NetAdapterAdvancedProperty -DisplayName "*Large Send Offload*" | ForEach-Object { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName $_.DisplayName -RegistryValue 0 -ErrorAction SilentlyContinue }"#
-        ])
-        .output();
-    
+    let _ = set_advanced_property("*LsoV2IPv4", "0");
+    let _ = set_advanced_property("*LsoV2IPv6", "0");
     tracing::info!("Large Send Offload disabled");
     Ok(())
 }
 
 /// Enable LSO (restore default)
 pub fn enable_lso() -> Result<()> {
-    let _ = Command::new("powershell")
-        .args([
-            "-NoProfile",
-            "-Command",
-            r#"Get-NetAdapterAdvancedProperty -DisplayName "*Large Send Offload*" | ForEach-Object { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName $_.DisplayName -RegistryValue 1 -ErrorAction SilentlyContinue }"#
-        ])
-        .output();
-    
+    let _ = set_advanced_property("*LsoV2IPv4", "1");
+    let _ = set_advanced_property("*LsoV2IPv6", "1");
     tracing::info!("Large Send Offload enabled");
     Ok(())
 }
 
 /// Disable Energy Efficient Ethernet for consistent performance
 pub fn disable_eee() -> Result<()> {
-    let _ = Command::new("powershell")
-        .args([
-            "-NoProfile",
-            "-Command",
-            r#"Get-NetAdapterAdvancedProperty -DisplayName "*Energy Efficient Ethernet*" | ForEach-Object { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName "Energy Efficient Ethernet" -RegistryValue 0 -ErrorAction SilentlyContinue }"#
-        ])
-        .output();
-    
+    let _ = set_advanced_property("*EEE", "0");
     tracing::info!("Energy Efficient Ethernet disabled");
     Ok(())
 }
 
 /// Enable Receive Side Scaling (RSS) across all cores
 pub fn enable_rss() -> Result<()> {
-    let _ = Command::new("powershell")
-        .args([
-            "-NoProfile",
-            "-Command",
-            "Enable-NetAdapterRss -Name * -ErrorAction SilentlyContinue"
-        ])
-        .output();
-    
+    let _ = set_advanced_property("*RSS", "1");
     tracing::info!("Receive Side Scaling enabled");
     Ok(())
 }
 
 /// Disable Receive Segment Coalescing for lower latency
 pub fn disable_rsc() -> Result<()> {
-    let _ = Command::new("powershell")
-        .args([
-            "-NoProfile",
-            "-Command",
-            "Disable-NetAdapterRsc -Name * -ErrorAction SilentlyContinue"
-        ])
-        .output();
-    
+    let _ = set_advanced_property("*RscIPv4", "0");
+    let _ = set_advanced_property("*RscIPv6", "0");
     tracing::info!("Receive Segment Coalescing disabled");
     Ok(())
+}
+
+/// Helper interne pour modifier les propriétés avancées via le registre (SOTA Native)
+fn set_advanced_property(property_name: &str, value: &str) -> Result<u32> {
+    let mut modified = 0u32;
+    let class_key = r"SYSTEM\CurrentControlSet\Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}";
+    
+    let subkeys = crate::registry::list_subkeys(class_key)?;
+    for subkey in subkeys {
+        if subkey == "Properties" { continue; }
+        let key_path = format!(r"{}\{}", class_key, subkey);
+        
+        // Vérifier si c'est une carte réseau valide (DriverDesc présent)
+        if crate::registry::read_string_value(&key_path, "DriverDesc").is_ok() {
+            if crate::registry::set_string_value(&key_path, property_name, value).is_ok() {
+                modified += 1;
+            }
+        }
+    }
+    
+    tracing::debug!("Property {} set to {} on {} adapters", property_name, value, modified);
+    Ok(modified)
 }
 
 /// Apply all network latency optimizations

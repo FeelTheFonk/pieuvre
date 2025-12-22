@@ -10,6 +10,7 @@ pub mod edge;
 pub mod explorer;
 pub mod firewall;
 pub mod game_mode;
+pub mod hardening;
 pub mod hosts;
 pub mod msi;
 pub mod network;
@@ -58,17 +59,29 @@ pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
             tracing::warn!("Profil inconnu: {}", profile_name);
         }
     }
+
+    // Hardening SOTA (Phase 11)
+    if !dry_run {
+        tracing::info!("Application du Hardening SOTA...");
+        for key in crate::hardening::CRITICAL_KEYS {
+            let _ = crate::hardening::lock_registry_key(key);
+        }
+    }
     
     Ok(())
 }
 
 async fn apply_gaming_profile() -> Result<()> {
-    tracing::info!("Application profil Gaming (Polymorphe)...");
+    tracing::info!("Application profil Gaming (Polymorphe & Contextuel)...");
     
     use crate::operation::{SyncOperation, ServiceOperation, RegistryDwordOperation};
     use tokio::task::JoinSet;
 
-    let operations: Vec<Box<dyn SyncOperation>> = vec![
+    // 0. Sondage matériel SOTA
+    let hw = tokio::task::spawn_blocking(|| pieuvre_audit::hardware::probe_hardware()).await
+        .map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))??;
+
+    let mut operations: Vec<Box<dyn SyncOperation>> = vec![
         // 1. Timer & Priority (Registre)
         Box::new(RegistryDwordOperation {
             key: r"SYSTEM\CurrentControlSet\Control\PriorityControl".to_string(),
@@ -83,6 +96,38 @@ async fn apply_gaming_profile() -> Result<()> {
         Box::new(ServiceOperation { name: "SysMain".to_string(), target_start_type: 4 }),
         Box::new(ServiceOperation { name: "WSearch".to_string(), target_start_type: 4 }),
     ];
+
+    // --- ADAPTATION DYNAMIQUE (SOTA 2026) ---
+
+    // A. Optimisation NVIDIA
+    if hw.gpu.iter().any(|g| g.vendor == "NVIDIA") {
+        tracing::info!("GPU NVIDIA détecté : application des tweaks spécifiques");
+        operations.push(Box::new(RegistryDwordOperation {
+            key: r"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}\0000".to_string(),
+            value: "PowerMizerEnable".to_string(),
+            target_data: 1,
+        }));
+    }
+
+    // B. Optimisation CPU Hybride (Intel 12th+)
+    if hw.cpu.is_hybrid {
+        tracing::info!("CPU Hybride détecté : optimisation du scheduling P-Cores");
+        operations.push(Box::new(RegistryDwordOperation {
+            key: r"SYSTEM\CurrentControlSet\Control\Session Manager\Kernel".to_string(),
+            value: "DistributeTimers".to_string(),
+            target_data: 1,
+        }));
+    }
+
+    // C. Optimisation NVMe
+    if hw.storage.iter().any(|s| s.is_nvme) {
+        tracing::info!("Stockage NVMe détecté : optimisation des files d'attente");
+        operations.push(Box::new(RegistryDwordOperation {
+            key: r"SYSTEM\CurrentControlSet\Control\FileSystem".to_string(),
+            value: "NtfsDisableLastAccessUpdate".to_string(),
+            target_data: 1,
+        }));
+    }
 
     let mut set = JoinSet::new();
     for op in operations {
@@ -101,7 +146,7 @@ async fn apply_gaming_profile() -> Result<()> {
     // 4. Power plan (Encore spécifique car complexe)
     let _ = tokio::task::spawn_blocking(|| power::apply_gaming_power_config()).await;
     
-    tracing::info!("Profil Gaming applique ({} changements)", all_changes.len());
+    tracing::info!("Profil Gaming applique ({} changements contextuels)", all_changes.len());
     Ok(())
 }
 
