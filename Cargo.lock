@@ -640,6 +640,7 @@ name = "pieuvre-sync"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "pieuvre-common",
  "serde",
  "thiserror 2.0.17",

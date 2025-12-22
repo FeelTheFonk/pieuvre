@@ -90,3 +90,19 @@ impl TimerResolutionInfo {
         self.maximum_100ns as f64 / 10000.0
     }
 }
+
+/// Réinitialise la résolution timer à la valeur par défaut (15.625ms)
+pub fn reset_timer_resolution() -> Result<u32> {
+    // 156250 = 15.625ms en unités de 100ns
+    let mut actual = 0u32;
+    
+    let status = unsafe { NtSetTimerResolution(156250, 0, &mut actual) };
+    
+    if status >= 0 {
+        tracing::info!("Timer resolution reset to default (15.625ms)");
+        Ok(actual)
+    } else {
+        Err(PieuvreError::Unsupported(format!("NtSetTimerResolution reset: {}", status)))
+    }
+}
+

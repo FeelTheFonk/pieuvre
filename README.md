@@ -27,9 +27,9 @@ Unlike batch scripts or registry tweaks, Pieuvre:
 ## Features
 
 - **Audit Engine** - Hardware, services, telemetry, AppX detection
-- **Sync Engine** - 17 optimization modules
+- **Sync Engine** - 20 optimization modules (SOTA 2025)
 - **Persistence Engine** - Snapshot creation & rollback
-- **Interactive Mode** - 45 granular options
+- **Interactive Mode** - 45+ granular options
 
 → See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details
 

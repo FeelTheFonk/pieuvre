@@ -7,8 +7,10 @@ use std::process::Command;
 
 /// Pause Windows Updates for 35 days (maximum)
 pub fn pause_updates() -> Result<()> {
-    // Static pause date (35 days from release)
-    let date_str = "2026-01-25";
+    // Calculate date 35 days from now
+    let pause_date = chrono::Utc::now() + chrono::Duration::days(35);
+    let date_str = pause_date.format("%Y-%m-%d").to_string();
+
     
     // Pause feature updates
     let _ = Command::new("reg")

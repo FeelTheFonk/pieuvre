@@ -4,6 +4,8 @@
 
 pub mod appx;
 pub mod context_menu;
+pub mod cpu;
+pub mod dpc;
 pub mod edge;
 pub mod explorer;
 pub mod firewall;
@@ -15,10 +17,12 @@ pub mod onedrive;
 pub mod power;
 pub mod registry;
 pub mod scheduled_tasks;
+pub mod security;
 pub mod services;
 pub mod timer;
 pub mod widgets;
 pub mod windows_update;
+
 
 use pieuvre_common::Result;
 use std::path::Path;
@@ -88,10 +92,12 @@ fn apply_gaming_profile() -> Result<()> {
 fn apply_privacy_profile() -> Result<()> {
     tracing::info!("Application profil Privacy...");
     
-    // 1. Services télémétrie complets
+    // 1. Services télémétrie complets (SOTA 24H2)
     let telemetry_services = [
         "DiagTrack", "dmwappushservice", "WerSvc", "wercplsupport",
-        "PcaSvc", "WdiSystemHost", "WdiServiceHost", "lfsvc", "MapsBroker"
+        "PcaSvc", "WdiSystemHost", "WdiServiceHost", "lfsvc", "MapsBroker",
+        // Added for 24H2
+        "CDPUserSvc", "PushToInstall", "TabletInputService", "XboxNetApiSvc"
     ];
     for svc in telemetry_services {
         if let Err(e) = services::disable_service(svc) {

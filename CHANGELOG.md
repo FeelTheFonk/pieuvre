@@ -4,6 +4,61 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.7.0] - 2025-12-22 (SOTA 2025)
+
+### Added
+
+- **security.rs** (NEW): VBS/HVCI/Memory Integrity control
+  - `disable_memory_integrity()` - 5-10% FPS gain
+  - `disable_vbs()` - Complete VBS disable
+  - `disable_spectre_meltdown()` - CPU mitigations (advanced)
+
+- **dpc.rs** (NEW): DPC Latency optimizations
+  - `disable_paging_executive()` - Keep kernel in RAM
+  - `disable_dynamic_tick()` - Consistent timer behavior
+  - `set_tsc_sync_enhanced()` - Better timer precision
+  - `disable_hpet()` - HPET control
+  - `set_interrupt_affinity_spread()` - Multi-core interrupt distribution
+
+- **cpu.rs** (NEW): CPU/Memory optimizations
+  - `disable_core_parking()` - All cores active
+  - `disable_memory_compression()` - Reduce CPU overhead (16GB+)
+  - `set_static_page_file()` - Static page file size
+
+- **network.rs** extensions:
+  - `disable_interrupt_moderation()` - Network latency reduction
+  - `disable_lso()` - Large Send Offload disable
+  - `disable_eee()` - Energy Efficient Ethernet disable
+  - `enable_rss()` - Receive Side Scaling
+  - `disable_rsc()` - Receive Segment Coalescing disable
+  - `apply_all_network_optimizations()` - One-call all tweaks
+
+- **game_mode.rs** extensions:
+  - `set_prerendered_frames()` - GPU input lag control
+  - `set_shader_cache_size()` - DirectX cache config
+  - `disable_vrr_optimizations()` - VRR control
+  - `is_hags_enabled()` - HAGS status check
+  - `apply_all_gpu_optimizations()` - One-call all GPU tweaks
+
+- **timer.rs** extension:
+  - `reset_timer_resolution()` - Restore 15.625ms default
+
+### Changed
+
+- **windows_update.rs**: Date dynamique (chrono) au lieu de hardcodée
+- **appx.rs**: +5 bloatware Windows 11 24H2 (DevHome, CrossDevice)
+- **scheduled_tasks.rs**: +5 tâches AI/Recall/Copilot 24H2
+- **lib.rs**: Services télémétrie +4 (CDPUserSvc, PushToInstall, etc.)
+
+### Technical
+
+- **20 modules** dans pieuvre-sync (was 17)
+- **~1000 lignes** nouvelles de code SOTA
+- Dépendance chrono ajoutée pour dates dynamiques
+- Build optimisé: 1.15s release
+
+
+
 ## [0.6.0] - 2025-12-22
 
 ### Removed

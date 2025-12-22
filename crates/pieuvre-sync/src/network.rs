@@ -116,3 +116,124 @@ pub fn is_nagle_disabled() -> bool {
         Err(_) => false,
     }
 }
+
+/// Disable Interrupt Moderation on all network adapters
+/// Reduces network latency at cost of higher CPU usage
+pub fn disable_interrupt_moderation() -> Result<u32> {
+    let output = Command::new("powershell")
+        .args([
+            "-NoProfile",
+            "-Command",
+            r#"Get-NetAdapterAdvancedProperty -DisplayName "*Interrupt Moderation*" | ForEach-Object { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName "Interrupt Moderation" -RegistryValue 0 -ErrorAction SilentlyContinue }"#
+        ])
+        .output()?;
+    
+    if output.status.success() {
+        tracing::info!("Interrupt Moderation disabled on all adapters");
+        Ok(1)
+    } else {
+        tracing::warn!("Could not disable Interrupt Moderation");
+        Ok(0)
+    }
+}
+
+/// Enable Interrupt Moderation (restore default)
+pub fn enable_interrupt_moderation() -> Result<()> {
+    let _ = Command::new("powershell")
+        .args([
+            "-NoProfile",
+            "-Command",
+            r#"Get-NetAdapterAdvancedProperty -DisplayName "*Interrupt Moderation*" | ForEach-Object { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName "Interrupt Moderation" -RegistryValue 1 -ErrorAction SilentlyContinue }"#
+        ])
+        .output();
+    
+    tracing::info!("Interrupt Moderation enabled");
+    Ok(())
+}
+
+/// Disable Large Send Offload (LSO) for reduced latency
+pub fn disable_lso() -> Result<()> {
+    // IPv4
+    let _ = Command::new("powershell")
+        .args([
+            "-NoProfile",
+            "-Command",
+            r#"Get-NetAdapterAdvancedProperty -DisplayName "*Large Send Offload*" | ForEach-Object { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName $_.DisplayName -RegistryValue 0 -ErrorAction SilentlyContinue }"#
+        ])
+        .output();
+    
+    tracing::info!("Large Send Offload disabled");
+    Ok(())
+}
+
+/// Enable LSO (restore default)
+pub fn enable_lso() -> Result<()> {
+    let _ = Command::new("powershell")
+        .args([
+            "-NoProfile",
+            "-Command",
+            r#"Get-NetAdapterAdvancedProperty -DisplayName "*Large Send Offload*" | ForEach-Object { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName $_.DisplayName -RegistryValue 1 -ErrorAction SilentlyContinue }"#
+        ])
+        .output();
+    
+    tracing::info!("Large Send Offload enabled");
+    Ok(())
+}
+
+/// Disable Energy Efficient Ethernet for consistent performance
+pub fn disable_eee() -> Result<()> {
+    let _ = Command::new("powershell")
+        .args([
+            "-NoProfile",
+            "-Command",
+            r#"Get-NetAdapterAdvancedProperty -DisplayName "*Energy Efficient Ethernet*" | ForEach-Object { Set-NetAdapterAdvancedProperty -Name $_.Name -DisplayName "Energy Efficient Ethernet" -RegistryValue 0 -ErrorAction SilentlyContinue }"#
+        ])
+        .output();
+    
+    tracing::info!("Energy Efficient Ethernet disabled");
+    Ok(())
+}
+
+/// Enable Receive Side Scaling (RSS) across all cores
+pub fn enable_rss() -> Result<()> {
+    let _ = Command::new("powershell")
+        .args([
+            "-NoProfile",
+            "-Command",
+            "Enable-NetAdapterRss -Name * -ErrorAction SilentlyContinue"
+        ])
+        .output();
+    
+    tracing::info!("Receive Side Scaling enabled");
+    Ok(())
+}
+
+/// Disable Receive Segment Coalescing for lower latency
+pub fn disable_rsc() -> Result<()> {
+    let _ = Command::new("powershell")
+        .args([
+            "-NoProfile",
+            "-Command",
+            "Disable-NetAdapterRsc -Name * -ErrorAction SilentlyContinue"
+        ])
+        .output();
+    
+    tracing::info!("Receive Segment Coalescing disabled");
+    Ok(())
+}
+
+/// Apply all network latency optimizations
+pub fn apply_all_network_optimizations() -> Result<u32> {
+    let mut count = 0u32;
+    
+    count += disable_nagle_algorithm()?;
+    let _ = disable_interrupt_moderation();
+    let _ = disable_lso();
+    let _ = disable_eee();
+    let _ = enable_rss();
+    let _ = disable_rsc();
+    
+    tracing::info!("All network latency optimizations applied");
+    Ok(count)
+}
+

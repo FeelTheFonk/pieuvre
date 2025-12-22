@@ -75,7 +75,7 @@ pieuvre-cli
 
 ### pieuvre-sync
 
-17 modification modules:
+20 modification modules (SOTA 2025):
 - `services.rs` - Service state management
 - `timer.rs` - Timer resolution control
 - `power.rs` - Power plan configuration
@@ -93,6 +93,9 @@ pieuvre-cli
 - `explorer.rs` - Explorer tweaks
 - `game_mode.rs` - Game mode configuration
 - `network.rs` - Network optimizations
+- `security.rs` - **VBS/HVCI/Memory Integrity** (NEW)
+- `dpc.rs` - **DPC latency optimizations** (NEW)
+- `cpu.rs` - **Core Parking/Memory** (NEW)
 
 ### pieuvre-persist
 

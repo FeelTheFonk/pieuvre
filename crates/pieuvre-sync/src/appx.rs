@@ -79,6 +79,12 @@ const BLOATWARE: &[&str] = &[
     // Copilot
     "Microsoft.Copilot",
     "Microsoft.Windows.Ai.Copilot.Provider",
+    // Windows 11 24H2 additions
+    "Microsoft.DevHome",
+    "Microsoft.CrossDevice",
+    "MicrosoftWindows.CrossDevice",
+    "Microsoft.Windows.DevHomeAzureExtension",
+    "Microsoft.Windows.DevHomeGitHubExtension",
 ];
 
 /// Supprime tous les bloatware connus

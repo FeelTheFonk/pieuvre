@@ -44,6 +44,12 @@ const TELEMETRY_TASKS: &[&str] = &[
     r"\Microsoft\Windows\WwanSvc\NotificationTask",
     // Windows Media Player
     r"\Microsoft\Windows\WMP\WMPInfoTask",
+    // Windows 11 24H2 - AI/Recall/Copilot
+    r"\Microsoft\Windows\WindowsAI\AI",
+    r"\Microsoft\Windows\Recall\Recall",
+    r"\Microsoft\Windows\Copilot\CopilotSetup",
+    r"\Microsoft\Windows\DeviceDirectoryClient\IntegratedServicesRegisterDevice",
+    r"\Microsoft\Windows\DeviceDirectoryClient\RegisterDeviceAccountChange",
 ];
 
 /// Disable all telemetry scheduled tasks
