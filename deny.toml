@@ -8,8 +8,8 @@ targets = [
 ]
 
 [licenses]
-# Disallow unlicensed crates
-unlicensed = "deny"
+# The confidence threshold for license detection
+confidence-threshold = 0.8
 # We want to allow these licenses
 allow = [
     "MIT",
@@ -21,12 +21,6 @@ allow = [
     "Unlicense",
     "Unicode-DFS-2016",
 ]
-# We don't want to allow copyleft licenses
-copyleft = "deny"
-# Allow OSI/FSF free licenses
-allow-osi-fsf-free = "either"
-# The confidence threshold for license detection
-confidence-threshold = 0.8
 
 [advisories]
 # The database of advisories is at https://github.com/rustsec/advisory-db
