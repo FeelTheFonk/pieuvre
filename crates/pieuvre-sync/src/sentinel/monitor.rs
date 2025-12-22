@@ -38,7 +38,11 @@ impl Sentinel {
             let service_name = service_name.to_string();
             std::thread::spawn(move || {
                 if let Err(e) = Self::monitor_service(&service_name) {
-                    tracing::error!("Sentinel Service Monitor error for {}: {:?}", service_name, e);
+                    tracing::error!(
+                        "Sentinel Service Monitor error for {}: {:?}",
+                        service_name,
+                        e
+                    );
                 }
             });
         }
@@ -115,7 +119,11 @@ impl Sentinel {
         // For v0.4.0, we implement a robust polling with 5s interval for services
         loop {
             if let Err(e) = crate::hardening::lock_service(service_name) {
-                tracing::error!("Sentinel failed to restore service {}: {:?}", service_name, e);
+                tracing::error!(
+                    "Sentinel failed to restore service {}: {:?}",
+                    service_name,
+                    e
+                );
             }
             std::thread::sleep(std::time::Duration::from_secs(5));
         }

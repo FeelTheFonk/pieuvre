@@ -36,7 +36,10 @@ pub fn print_header(is_laptop: bool, profile: &str) {
 pub fn print_welcome_screen() {
     println!();
     println!("  {}", style("⣠⟬ ⊚ ⟭⣄").cyan().bold());
-    println!("  {}", style(format!("PIEUVRE v{}", env!("CARGO_PKG_VERSION"))).dim());
+    println!(
+        "  {}",
+        style(format!("PIEUVRE v{}", env!("CARGO_PKG_VERSION"))).dim()
+    );
     println!();
 }
 
