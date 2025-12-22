@@ -6,7 +6,7 @@ use anyhow::Result;
 use pieuvre_persist::snapshot;
 use pieuvre_common::ChangeRecord;
 
-pub fn run(profile: &str, dry_run: bool) -> Result<()> {
+pub async fn run(profile: &str, dry_run: bool) -> Result<()> {
     println!();
     println!("================================================================");
     println!("                 PIEUVRE - Synchronisation");
@@ -32,7 +32,7 @@ pub fn run(profile: &str, dry_run: bool) -> Result<()> {
     println!("                      MODIFICATIONS");
     println!("----------------------------------------------------------------");
     
-    pieuvre_sync::apply_profile(profile, dry_run)?;
+    pieuvre_sync::apply_profile(profile, dry_run).await?;
     
     println!();
     println!("----------------------------------------------------------------");

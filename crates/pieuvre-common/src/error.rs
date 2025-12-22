@@ -34,6 +34,9 @@ pub enum PieuvreError {
 
     #[error("Fonctionnalité non supportée: {0}")]
     Unsupported(String),
+
+    #[error("Erreur interne: {0}")]
+    Internal(String),
 }
 
 pub type Result<T> = std::result::Result<T, PieuvreError>;

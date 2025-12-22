@@ -13,9 +13,11 @@ pub mod game_mode;
 pub mod hosts;
 pub mod msi;
 pub mod network;
+pub mod operation;
 pub mod onedrive;
 pub mod power;
 pub mod registry;
+pub mod rollback;
 pub mod scheduled_tasks;
 pub mod security;
 pub mod services;
@@ -28,10 +30,11 @@ mod tests;
 
 
 use pieuvre_common::Result;
+use tracing::instrument;
 use std::path::Path;
 
 /// Applique un profil d'optimisation
-pub fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
+pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
     tracing::info!("Application profil: {} (dry_run: {})", profile_name, dry_run);
     
     // Charger le profil TOML
@@ -48,9 +51,9 @@ pub fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
     
     // Appliquer selon le type de profil
     match profile_name {
-        "gaming" => apply_gaming_profile()?,
-        "privacy" => apply_privacy_profile()?,
-        "workstation" => apply_workstation_profile()?,
+        "gaming" => apply_gaming_profile().await?,
+        "privacy" => apply_privacy_profile().await?,
+        "workstation" => apply_workstation_profile().await?,
         _ => {
             tracing::warn!("Profil inconnu: {}", profile_name);
         }
@@ -59,98 +62,172 @@ pub fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
     Ok(())
 }
 
-fn apply_gaming_profile() -> Result<()> {
-    tracing::info!("Application profil Gaming...");
+async fn apply_gaming_profile() -> Result<()> {
+    tracing::info!("Application profil Gaming (Polymorphe)...");
     
-    // 1. Timer Resolution 0.5ms
-    let actual = timer::set_timer_resolution(5000)?;
-    tracing::info!("Timer resolution: {}00ns", actual / 100);
-    
-    // 2. Power plan Ultimate Performance
-    power::apply_gaming_power_config()?;
-    
-    // 3. Win32PrioritySeparation
-    registry::set_priority_separation(0x26)?;
-    
-    // 4. Services télémétrie
-    let telemetry_services = ["DiagTrack", "dmwappushservice", "WerSvc"];
-    for svc in telemetry_services {
-        if let Err(e) = services::disable_service(svc) {
-            tracing::warn!("Service {}: {}", svc, e);
-        }
-    }
-    
-    // 5. Services performance
-    let perf_services = ["SysMain", "WSearch"];
-    for svc in perf_services {
-        if let Err(e) = services::disable_service(svc) {
-            tracing::warn!("Service {}: {}", svc, e);
-        }
-    }
-    
-    tracing::info!("Profil Gaming applique");
-    Ok(())
-}
+    use crate::operation::{SyncOperation, ServiceOperation, RegistryDwordOperation};
+    use tokio::task::JoinSet;
 
-fn apply_privacy_profile() -> Result<()> {
-    tracing::info!("Application profil Privacy...");
-    
-    // 1. Services télémétrie complets (SOTA 24H2)
-    let telemetry_services = [
-        "DiagTrack", "dmwappushservice", "WerSvc", "wercplsupport",
-        "PcaSvc", "WdiSystemHost", "WdiServiceHost", "lfsvc", "MapsBroker",
-        // Added for 24H2
-        "CDPUserSvc", "PushToInstall", "TabletInputService", "XboxNetApiSvc"
+    let operations: Vec<Box<dyn SyncOperation>> = vec![
+        // 1. Timer & Priority (Registre)
+        Box::new(RegistryDwordOperation {
+            key: r"SYSTEM\CurrentControlSet\Control\PriorityControl".to_string(),
+            value: "Win32PrioritySeparation".to_string(),
+            target_data: 0x26,
+        }),
+        // 2. Services Télémétrie
+        Box::new(ServiceOperation { name: "DiagTrack".to_string(), target_start_type: 4 }),
+        Box::new(ServiceOperation { name: "dmwappushservice".to_string(), target_start_type: 4 }),
+        Box::new(ServiceOperation { name: "WerSvc".to_string(), target_start_type: 4 }),
+        // 3. Services Performance
+        Box::new(ServiceOperation { name: "SysMain".to_string(), target_start_type: 4 }),
+        Box::new(ServiceOperation { name: "WSearch".to_string(), target_start_type: 4 }),
     ];
-    for svc in telemetry_services {
-        if let Err(e) = services::disable_service(svc) {
-            tracing::warn!("Service {}: {}", svc, e);
+
+    let mut set = JoinSet::new();
+    for op in operations {
+        set.spawn(async move {
+            op.apply().await
+        });
+    }
+
+    let mut all_changes = Vec::new();
+    while let Some(res) = set.join_next().await {
+        if let Ok(Ok(changes)) = res {
+            all_changes.extend(changes);
         }
     }
+
+    // 4. Power plan (Encore spécifique car complexe)
+    let _ = tokio::task::spawn_blocking(|| power::apply_gaming_power_config()).await;
     
-    // 2. Firewall rules
-    match firewall::create_telemetry_block_rules() {
-        Ok(rules) => tracing::info!("Règles firewall: {:?}", rules),
-        Err(e) => tracing::warn!("Firewall: {}", e),
-    }
-    
-    tracing::info!("Profil Privacy applique");
+    tracing::info!("Profil Gaming applique ({} changements)", all_changes.len());
     Ok(())
 }
 
-fn apply_workstation_profile() -> Result<()> {
-    tracing::info!("Application profil Workstation...");
+#[instrument]
+async fn apply_privacy_profile() -> Result<()> {
+    tracing::info!("Application profil Privacy (Polymorphe)...");
     
-    // 1. Timer Resolution 1ms (moins agressif)
-    let _ = timer::set_timer_resolution(10000);
-    
-    // 2. Power plan High Performance (pas Ultimate)
-    power::set_power_plan(power::PowerPlan::HighPerformance)?;
-    
-    // 3. Services télémétrie seulement
-    let telemetry_services = ["DiagTrack", "dmwappushservice"];
-    for svc in telemetry_services {
-        if let Err(e) = services::disable_service(svc) {
-            tracing::warn!("Service {}: {}", svc, e);
+    use crate::operation::{SyncOperation, ServiceOperation, RegistryDwordOperation};
+    use tokio::task::JoinSet;
+
+    let operations: Vec<Box<dyn SyncOperation>> = vec![
+        // 1. Services Télémétrie (Complet)
+        Box::new(ServiceOperation { name: "DiagTrack".to_string(), target_start_type: 4 }),
+        Box::new(ServiceOperation { name: "dmwappushservice".to_string(), target_start_type: 4 }),
+        Box::new(ServiceOperation { name: "WerSvc".to_string(), target_start_type: 4 }),
+        Box::new(ServiceOperation { name: "OneSyncSvc".to_string(), target_start_type: 4 }),
+        Box::new(ServiceOperation { name: "MessagingService".to_string(), target_start_type: 4 }),
+        Box::new(ServiceOperation { name: "PhoneSvc".to_string(), target_start_type: 4 }),
+        // 2. Registre Privacy
+        Box::new(RegistryDwordOperation {
+            key: r"SOFTWARE\Policies\Microsoft\Windows\DataCollection".to_string(),
+            value: "AllowTelemetry".to_string(),
+            target_data: 0,
+        }),
+        Box::new(RegistryDwordOperation {
+            key: r"SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo".to_string(),
+            value: "Enabled".to_string(),
+            target_data: 0,
+        }),
+    ];
+
+    let mut set = JoinSet::new();
+    for op in operations {
+        set.spawn(async move { op.apply().await });
+    }
+
+    let mut all_changes = Vec::new();
+    while let Some(res) = set.join_next().await {
+        if let Ok(Ok(changes)) = res {
+            all_changes.extend(changes);
         }
     }
+
+    // 3. Hosts & Firewall (Encore spécifique)
+    let _ = tokio::task::spawn_blocking(|| hosts::add_telemetry_blocks()).await;
+    let _ = tokio::task::spawn_blocking(|| firewall::create_telemetry_block_rules()).await;
     
-    tracing::info!("Profil Workstation applique");
+    tracing::info!("Profil Privacy applique ({} changements)", all_changes.len());
     Ok(())
 }
 
-/// Réinitialise toutes les optimisations
-pub fn reset_to_defaults() -> Result<()> {
-    tracing::info!("Réinitialisation aux valeurs par défaut...");
+#[instrument]
+async fn apply_workstation_profile() -> Result<()> {
+    tracing::info!("Application profil Workstation (Polymorphe)...");
     
-    // Power plan Balanced
-    power::set_power_plan(power::PowerPlan::Balanced)?;
-    
-    // Services en mode automatique
-    let services_to_restore = ["SysMain", "WSearch"];
-    for svc in services_to_restore {
-        let _ = services::set_service_automatic(svc);
+    use crate::operation::{SyncOperation, ServiceOperation, RegistryDwordOperation};
+    use tokio::task::JoinSet;
+
+    let operations: Vec<Box<dyn SyncOperation>> = vec![
+        // 1. Timer (1ms pour workstation)
+        Box::new(RegistryDwordOperation {
+            key: r"SYSTEM\CurrentControlSet\Control\PriorityControl".to_string(),
+            value: "Win32PrioritySeparation".to_string(),
+            target_data: 0x18,
+        }),
+        // 2. Services Télémétrie (Minimal)
+        Box::new(ServiceOperation { name: "DiagTrack".to_string(), target_start_type: 4 }),
+        Box::new(ServiceOperation { name: "dmwappushservice".to_string(), target_start_type: 4 }),
+    ];
+
+    let mut set = JoinSet::new();
+    for op in operations {
+        set.spawn(async move { op.apply().await });
     }
+
+    let mut all_changes = Vec::new();
+    while let Some(res) = set.join_next().await {
+        if let Ok(Ok(changes)) = res {
+            all_changes.extend(changes);
+        }
+    }
+
+    // 3. Power plan High Performance
+    let _ = tokio::task::spawn_blocking(|| power::set_power_plan(power::PowerPlan::HighPerformance)).await;
     
+    tracing::info!("Profil Workstation applique ({} changements)", all_changes.len());
+    Ok(())
+}
+
+#[instrument]
+pub async fn reset_to_defaults() -> Result<()> {
+    tracing::info!("Reinitialisation aux valeurs par defaut (Polymorphe)...");
+    
+    use crate::operation::{SyncOperation, ServiceOperation, RegistryDwordOperation};
+    use tokio::task::JoinSet;
+
+    let operations: Vec<Box<dyn SyncOperation>> = vec![
+        // 1. Services en mode automatique (ou manuel selon le service)
+        Box::new(ServiceOperation { name: "DiagTrack".to_string(), target_start_type: 2 }),
+        Box::new(ServiceOperation { name: "dmwappushservice".to_string(), target_start_type: 3 }),
+        Box::new(ServiceOperation { name: "WerSvc".to_string(), target_start_type: 3 }),
+        Box::new(ServiceOperation { name: "SysMain".to_string(), target_start_type: 2 }),
+        Box::new(ServiceOperation { name: "WSearch".to_string(), target_start_type: 2 }),
+        // 2. Registre par défaut
+        Box::new(RegistryDwordOperation {
+            key: r"SYSTEM\CurrentControlSet\Control\PriorityControl".to_string(),
+            value: "Win32PrioritySeparation".to_string(),
+            target_data: 0x2,
+        }),
+    ];
+
+    let mut set = JoinSet::new();
+    for op in operations {
+        set.spawn(async move { op.apply().await });
+    }
+
+    let mut all_changes = Vec::new();
+    while let Some(res) = set.join_next().await {
+        if let Ok(Ok(changes)) = res {
+            all_changes.extend(changes);
+        }
+    }
+
+    // 3. Power plan Balanced
+    let _ = tokio::task::spawn_blocking(|| power::set_power_plan(power::PowerPlan::Balanced)).await;
+    
+    tracing::info!("Reinitialisation terminee ({} changements)", all_changes.len());
     Ok(())
 }

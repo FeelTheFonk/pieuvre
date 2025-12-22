@@ -5,6 +5,31 @@ Toutes les modifications notables de ce projet sont documentées ici.
 Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-12-22 (Climax)
+
+### Added
+
+#### Moteur de Synchronisation SOTA 2026
+- **Runtime Asynchrone** : Intégration de `tokio` pour une exécution massivement parallèle des optimisations.
+- **Architecture Polymorphe** : Introduction du trait `SyncOperation` unifiant la gestion des Services, du Registre et de l'Alimentation.
+- **Parallélisme Granulaire** : Utilisation de `tokio::task::JoinSet` pour réduire drastiquement le temps d'application des profils.
+- **Rollback Automatique** : Génération systématique de `ChangeRecord` pour chaque opération, permettant un retour arrière chirurgical.
+
+#### Observabilité & Diagnostic
+- **Instrumentation Native** : Décoration systématique des fonctions critiques avec `#[instrument]` via la crate `tracing`.
+- **Logging Structuré** : Traçabilité totale des opérations asynchrones avec contexte (ID d'opération, paramètres).
+- **Système d'Erreurs Enrichi** : Ajout de la variante `Internal` à `PieuvreError` pour une gestion robuste des échecs de runtime.
+
+### Changed
+- **Refactorisation Profils** : Migration du profil `Gaming` vers le nouveau modèle polymorphe (en cours pour les autres).
+- **Dépendances** : Ajout de `tokio` et `async-trait` au workspace et aux crates concernées.
+
+### Technical
+- **103 tests unitaires** validés avec le nouveau runtime asynchrone.
+- Alignement des types `ChangeRecord` avec les structures de données réelles.
+
+---
+
 ## [0.2.1] - 2025-12-22
 
 ### Added

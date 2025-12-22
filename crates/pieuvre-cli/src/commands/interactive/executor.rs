@@ -5,6 +5,7 @@
 use anyhow::Result;
 use pieuvre_common::ChangeRecord;
 use tracing::{info, warn, instrument};
+use async_trait::async_trait;
 
 /// Résultat d'exécution d'une optimisation
 #[derive(Debug)]
@@ -27,9 +28,10 @@ impl ExecutionResult {
 }
 
 /// Trait pour exécuter une optimisation
+#[async_trait]
 pub trait OptExecutor {
     /// Exécute l'optimisation et retourne le résultat
-    fn execute(&self, id: &str, changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult>;
+    async fn execute(&self, id: &str, changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult>;
 }
 
 // ============================================================================
@@ -38,9 +40,10 @@ pub trait OptExecutor {
 
 pub struct TelemetryExecutor;
 
+#[async_trait]
 impl OptExecutor for TelemetryExecutor {
     #[instrument(skip(self, changes), fields(category = "telemetry"))]
-    fn execute(&self, id: &str, changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
+    async fn execute(&self, id: &str, changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
         use pieuvre_sync::{firewall, hosts, onedrive, scheduled_tasks, services};
 
         match id {
@@ -125,9 +128,10 @@ impl OptExecutor for TelemetryExecutor {
 
 pub struct PrivacyExecutor;
 
+#[async_trait]
 impl OptExecutor for PrivacyExecutor {
     #[instrument(skip(self, _changes), fields(category = "privacy"))]
-    fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
+    async fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
         use pieuvre_sync::{context_menu, registry, widgets, windows_update};
 
         match id {
@@ -186,9 +190,10 @@ impl OptExecutor for PrivacyExecutor {
 
 pub struct PerformanceExecutor;
 
+#[async_trait]
 impl OptExecutor for PerformanceExecutor {
     #[instrument(skip(self, _changes), fields(category = "performance"))]
-    fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
+    async fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
         use pieuvre_sync::{edge, explorer, game_mode, msi, network, power, registry, services, timer};
 
         match id {
@@ -291,9 +296,10 @@ impl OptExecutor for PerformanceExecutor {
 
 pub struct SchedulerExecutor;
 
+#[async_trait]
 impl OptExecutor for SchedulerExecutor {
     #[instrument(skip(self, _changes), fields(category = "scheduler"))]
-    fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
+    async fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
         use pieuvre_sync::registry;
 
         match id {
@@ -332,9 +338,10 @@ impl OptExecutor for SchedulerExecutor {
 
 pub struct AppxExecutor;
 
+#[async_trait]
 impl OptExecutor for AppxExecutor {
     #[instrument(skip(self, _changes), fields(category = "appx"))]
-    fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
+    async fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
         use pieuvre_sync::appx;
 
         match id {
@@ -389,9 +396,10 @@ impl OptExecutor for AppxExecutor {
 
 pub struct CPUExecutor;
 
+#[async_trait]
 impl OptExecutor for CPUExecutor {
     #[instrument(skip(self, _changes), fields(category = "cpu"))]
-    fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
+    async fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
         use pieuvre_sync::cpu;
 
         match id {
@@ -423,9 +431,10 @@ impl OptExecutor for CPUExecutor {
 
 pub struct DPCExecutor;
 
+#[async_trait]
 impl OptExecutor for DPCExecutor {
     #[instrument(skip(self, _changes), fields(category = "dpc"))]
-    fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
+    async fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
         use pieuvre_sync::dpc;
 
         match id {
@@ -460,9 +469,10 @@ impl OptExecutor for DPCExecutor {
 
 pub struct SecurityExecutor;
 
+#[async_trait]
 impl OptExecutor for SecurityExecutor {
     #[instrument(skip(self, _changes), fields(category = "security"))]
-    fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
+    async fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
         use pieuvre_sync::security;
 
         match id {
@@ -490,9 +500,10 @@ impl OptExecutor for SecurityExecutor {
 
 pub struct NetworkAdvancedExecutor;
 
+#[async_trait]
 impl OptExecutor for NetworkAdvancedExecutor {
     #[instrument(skip(self, _changes), fields(category = "network_advanced"))]
-    fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
+    async fn execute(&self, id: &str, _changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult> {
         use pieuvre_sync::network;
 
         match id {

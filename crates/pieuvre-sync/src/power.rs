@@ -5,7 +5,7 @@
 
 use pieuvre_common::{PieuvreError, Result};
 use windows::Win32::System::Power::{
-    PowerGetActiveScheme, PowerSetActiveScheme,
+    PowerGetActiveScheme, PowerSetActiveScheme, PowerWriteACValueIndex,
 };
 use windows::Win32::Foundation::{LocalFree, HLOCAL};
 use windows::core::GUID;
@@ -180,52 +180,52 @@ fn create_ultimate_performance_plan() -> Result<()> {
     Ok(())
 }
 
-/// Configure les paramètres d'alimentation spécifiques
-/// Note: Utilise powercfg car PowerWriteACValueIndex nécessite des GUIDs complexes
+/// Configure les paramètres d'alimentation spécifiques via API native
 pub fn configure_power_settings(
     usb_selective_suspend: bool,
     pci_aspm: bool,
     processor_min: u8,
     processor_max: u8,
 ) -> Result<()> {
-    use std::process::Command;
-    
-    // USB Selective Suspend
-    let usb_value = if usb_selective_suspend { "1" } else { "0" };
-    let _ = Command::new("powercfg")
-        .args(["/setacvalueindex", "scheme_current", "2a737441-1930-4402-8d77-b2bebba308a3", "48e6b7a6-50f5-4782-a5d4-53bb8f07e226", usb_value])
-        .output();
-    
-    // PCI Express Link State Power Management
-    let aspm_value = if pci_aspm { "1" } else { "0" };
-    let _ = Command::new("powercfg")
-        .args(["/setacvalueindex", "scheme_current", "501a4d13-42af-4429-9fd1-a8218c268e20", "ee12f906-d277-404b-b6da-e5fa1a576df5", aspm_value])
-        .output();
-    
-    // Processor Min/Max State
-    let min_str = processor_min.to_string();
-    let max_str = processor_max.to_string();
-    let _ = Command::new("powercfg")
-        .args(["/setacvalueindex", "scheme_current", "54533251-82be-4824-96c1-47b60b740d00", "893dee8e-2bef-41e0-89c6-b55d0929964c", &min_str])
-        .output();
-    let _ = Command::new("powercfg")
-        .args(["/setacvalueindex", "scheme_current", "54533251-82be-4824-96c1-47b60b740d00", "bc5038f7-23e0-4960-96da-33abaf5935ec", &max_str])
-        .output();
-    
-    // Appliquer les changements
-    let _ = Command::new("powercfg")
-        .args(["/setactive", "scheme_current"])
-        .output();
-    
-    tracing::info!(
-        usb_suspend = usb_selective_suspend,
-        pci_aspm = pci_aspm,
-        cpu_min = processor_min,
-        cpu_max = processor_max,
-        "Paramètres power configurés"
-    );
-    
-    Ok(())
+    unsafe {
+        let mut scheme_guid_ptr: *mut GUID = std::ptr::null_mut();
+        if PowerGetActiveScheme(None, &mut scheme_guid_ptr).is_err() {
+            return Err(PieuvreError::Unsupported("Cannot get active power scheme".to_string()));
+        }
+        let scheme_guid = *scheme_guid_ptr;
+        
+        // GUIDs pour les paramètres (Source: Microsoft Documentation)
+        let subgroup_usb = parse_guid("2a737441-1930-4402-8d77-b2bebba308a3");
+        let setting_usb_suspend = parse_guid("48e6b7a6-50f5-4782-a5d4-53bb8f07e226");
+        
+        let subgroup_pci = parse_guid("501a4d13-42af-4429-9fd1-a8218c268e20");
+        let setting_pci_aspm = parse_guid("ee12f906-d277-404b-b6da-e5fa1a576df5");
+        
+        let subgroup_cpu = parse_guid("54533251-82be-4824-96c1-47b60b740d00");
+        let setting_cpu_min = parse_guid("893dee8e-2bef-41e0-89c6-b55d0929964c");
+        let setting_cpu_max = parse_guid("bc5038f7-23e0-4960-96da-33abaf5935ec");
+        
+        // Appliquer les valeurs
+        let _ = PowerWriteACValueIndex(None, &scheme_guid, Some(&subgroup_usb), Some(&setting_usb_suspend), if usb_selective_suspend { 1 } else { 0 });
+        let _ = PowerWriteACValueIndex(None, &scheme_guid, Some(&subgroup_pci), Some(&setting_pci_aspm), if pci_aspm { 1 } else { 0 });
+        let _ = PowerWriteACValueIndex(None, &scheme_guid, Some(&subgroup_cpu), Some(&setting_cpu_min), processor_min as u32);
+        let _ = PowerWriteACValueIndex(None, &scheme_guid, Some(&subgroup_cpu), Some(&setting_cpu_max), processor_max as u32);
+        
+        // Appliquer les changements
+        let _ = PowerSetActiveScheme(None, Some(&scheme_guid));
+        
+        let _ = LocalFree(Some(HLOCAL(scheme_guid_ptr as *mut std::ffi::c_void)));
+        
+        tracing::info!(
+            usb_suspend = usb_selective_suspend,
+            pci_aspm = pci_aspm,
+            cpu_min = processor_min,
+            cpu_max = processor_max,
+            "Paramètres power configurés via API native"
+        );
+        
+        Ok(())
+    }
 }
 
 /// Désactive l'économie d'énergie du CPU (performance max)

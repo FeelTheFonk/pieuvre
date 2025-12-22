@@ -21,7 +21,7 @@ pub use sections::OptItem;
 use ui::MainAction;
 
 /// Point d'entrée interactif par défaut (sans arguments CLI)
-pub fn run_default() -> Result<()> {
+pub async fn run_default() -> Result<()> {
     // 1. Écran d'accueil ASCII
     ui::print_welcome_screen();
     
@@ -35,8 +35,8 @@ pub fn run_default() -> Result<()> {
     let action = ui::show_main_menu()?;
     
     match action {
-        MainAction::Interactive(profile) => run(&profile),
-        MainAction::QuickApply(profile) => run_quick_apply(&profile),
+        MainAction::Interactive(profile) => run(&profile).await,
+        MainAction::QuickApply(profile) => run_quick_apply(&profile).await,
         MainAction::Status => super::status::run(),
         MainAction::Rollback => super::rollback::run(true, false, None),
         MainAction::Exit => {
@@ -51,7 +51,7 @@ pub fn run_default() -> Result<()> {
 }
 
 /// Application rapide d'un profil sans sélection granulaire
-pub fn run_quick_apply(profile: &str) -> Result<()> {
+pub async fn run_quick_apply(profile: &str) -> Result<()> {
     println!();
     println!("  [*] Application rapide du profil: {}", profile.to_uppercase());
     
@@ -61,7 +61,7 @@ pub fn run_quick_apply(profile: &str) -> Result<()> {
     println!("  [OK] Snapshot de sauvegarde cree: {}", &snap.id.to_string()[..8]);
     
     // Application réelle via pieuvre-sync
-    pieuvre_sync::apply_profile(profile, false)?;
+    pieuvre_sync::apply_profile(profile, false).await?;
     
     println!();
     println!("  [OK] Profil {} applique avec succes.", profile.to_uppercase());
@@ -74,7 +74,7 @@ pub fn run_quick_apply(profile: &str) -> Result<()> {
 
 /// Point d'entrée du mode interactif SOTA avec sélection granulaire
 #[instrument(skip_all, fields(profile = %profile))]
-pub fn run(profile: &str) -> Result<()> {
+pub async fn run(profile: &str) -> Result<()> {
     let is_laptop = is_laptop();
     info!(is_laptop = is_laptop, profile = profile, "Starting interactive mode");
 
@@ -193,7 +193,7 @@ pub fn run(profile: &str) -> Result<()> {
         &mut success_count,
         &mut error_count,
         &pb,
-    );
+    ).await;
 
     execute_category(
         "privacy",
@@ -203,7 +203,7 @@ pub fn run(profile: &str) -> Result<()> {
         &mut success_count,
         &mut error_count,
         &pb,
-    );
+    ).await;
 
     execute_category(
         "performance",
@@ -213,7 +213,7 @@ pub fn run(profile: &str) -> Result<()> {
         &mut success_count,
         &mut error_count,
         &pb,
-    );
+    ).await;
 
     execute_category(
         "scheduler",
@@ -223,7 +223,7 @@ pub fn run(profile: &str) -> Result<()> {
         &mut success_count,
         &mut error_count,
         &pb,
-    );
+    ).await;
 
     execute_category(
         "appx",
@@ -233,7 +233,7 @@ pub fn run(profile: &str) -> Result<()> {
         &mut success_count,
         &mut error_count,
         &pb,
-    );
+    ).await;
 
     execute_category(
         "cpu",
@@ -243,7 +243,7 @@ pub fn run(profile: &str) -> Result<()> {
         &mut success_count,
         &mut error_count,
         &pb,
-    );
+    ).await;
 
     execute_category(
         "dpc",
@@ -253,7 +253,7 @@ pub fn run(profile: &str) -> Result<()> {
         &mut success_count,
         &mut error_count,
         &pb,
-    );
+    ).await;
 
     execute_category(
         "security",
@@ -263,7 +263,7 @@ pub fn run(profile: &str) -> Result<()> {
         &mut success_count,
         &mut error_count,
         &pb,
-    );
+    ).await;
 
     execute_category(
         "network_advanced",
@@ -273,7 +273,7 @@ pub fn run(profile: &str) -> Result<()> {
         &mut success_count,
         &mut error_count,
         &pb,
-    );
+    ).await;
 
     pb.finish_with_message("Terminé");
 
@@ -315,7 +315,7 @@ fn collect_selection(opts: &[OptItem], prompt: &str) -> Result<Vec<usize>> {
 }
 
 /// Exécute toutes les options sélectionnées d'une catégorie
-fn execute_category(
+async fn execute_category(
     category: &str,
     opts: &[OptItem],
     selected: &[usize],
@@ -330,7 +330,7 @@ fn execute_category(
         let opt = &opts[idx];
         pb.set_message(opt.label.to_string());
 
-        match executor.execute(opt.id, changes) {
+        match executor.execute(opt.id, changes).await {
             Ok(result) => {
                 ui::print_operation_result(opt.id, true, &result.message);
                 *success_count += 1;

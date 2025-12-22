@@ -26,3 +26,5 @@ indicatif.workspace = true
 console.workspace = true
 chrono.workspace = true
 dialoguer.workspace = true
+tokio.workspace = true
+async-trait.workspace = true

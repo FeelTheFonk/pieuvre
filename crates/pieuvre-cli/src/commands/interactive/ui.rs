@@ -48,14 +48,9 @@ pub fn print_welcome_screen() {
     println!();
     println!("{}", style("═".repeat(68)).cyan());
     println!();
-    println!("    ██████╗ ██╗███████╗██╗   ██╗██╗   ██╗██████╗ ███████╗");
-    println!("    ██╔══██╗██║██╔════╝██║   ██║██║   ██║██╔══██╗██╔════╝");
-    println!("    ██████╔╝██║█████╗  ██║   ██║██║   ██║██████╔╝█████╗  ");
-    println!("    ██╔═══╝ ██║██╔══╝  ██║   ██║╚██╗ ██╔╝██╔══██╗██╔══╝  ");
-    println!("    ██║     ██║███████╗╚██████╔╝ ╚████╔╝ ██║  ██║███████╗");
-    println!("    ╚═╝     ╚═╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝  ╚═╝╚══════╝");
+    println!("╭╌╌╚╌╌⊚╌╌╚╌╌╮");
     println!();
-    println!("    Windows System Alignment Tool - v{}", env!("CARGO_PKG_VERSION"));
+    println!("    pieuvre. - v{}", env!("CARGO_PKG_VERSION"));
     println!();
     println!("{}", style("═".repeat(68)).cyan());
     println!();

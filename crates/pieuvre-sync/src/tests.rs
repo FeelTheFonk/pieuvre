@@ -211,28 +211,28 @@ fn test_profile_names_valid() {
     }
 }
 
-#[test]
-fn test_apply_profile_dry_run_gaming() {
-    let result = crate::apply_profile("gaming", true);
+#[tokio::test]
+async fn test_apply_profile_dry_run_gaming() {
+    let result = crate::apply_profile("gaming", true).await;
     assert!(result.is_ok(), "Dry-run gaming profile should succeed");
 }
 
-#[test]
-fn test_apply_profile_dry_run_privacy() {
-    let result = crate::apply_profile("privacy", true);
+#[tokio::test]
+async fn test_apply_profile_dry_run_privacy() {
+    let result = crate::apply_profile("privacy", true).await;
     assert!(result.is_ok(), "Dry-run privacy profile should succeed");
 }
 
-#[test]
-fn test_apply_profile_dry_run_workstation() {
-    let result = crate::apply_profile("workstation", true);
+#[tokio::test]
+async fn test_apply_profile_dry_run_workstation() {
+    let result = crate::apply_profile("workstation", true).await;
     assert!(result.is_ok(), "Dry-run workstation profile should succeed");
 }
 
-#[test]
-fn test_apply_profile_dry_run_unknown() {
+#[tokio::test]
+async fn test_apply_profile_dry_run_unknown() {
     // Un profil inconnu ne devrait pas panic
-    let result = crate::apply_profile("unknown_profile_xyz", true);
+    let result = crate::apply_profile("unknown_profile_xyz", true).await;
     assert!(result.is_ok(), "Dry-run unknown profile should succeed (no-op)");
 }
 
