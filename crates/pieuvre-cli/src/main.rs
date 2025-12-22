@@ -16,7 +16,9 @@ use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 #[command(author = "Pieuvre Contributors")]
 #[command(version)]
 #[command(about = "Outil SOTA d'alignement systeme Windows 11")]
-#[command(long_about = "Outil SOTA d'alignement systeme Windows 11.\n\nLancez sans arguments pour le mode interactif guide.")]
+#[command(
+    long_about = "Outil SOTA d'alignement systeme Windows 11.\n\nLancez sans arguments pour le mode interactif guide."
+)]
 struct Cli {
     /// Niveau de verbosité (-v, -vv, -vvv)
     #[arg(short, long, action = clap::ArgAction::Count)]

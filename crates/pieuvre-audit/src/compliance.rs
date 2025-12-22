@@ -2,8 +2,8 @@
 //!
 //! Détection de dérive (drift) par rapport aux réglages optimisés.
 
-use pieuvre_common::Result;
 use crate::registry::read_dword_value;
+use pieuvre_common::Result;
 
 /// Rapport de conformité
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -34,9 +34,12 @@ pub fn check_configuration_drift() -> Result<ComplianceReport> {
     let mut drifts = Vec::new();
 
     // 1. Vérification Timer Resolution (PriorityControl)
-    if let Ok(val) = read_dword_value(r"SYSTEM\CurrentControlSet\Control\PriorityControl", "Win32PrioritySeparation") {
+    if let Ok(val) = read_dword_value(
+        r"SYSTEM\CurrentControlSet\Control\PriorityControl",
+        "Win32PrioritySeparation",
+    ) {
         if val != 0x26 && val != 0x18 && val != 0x2 {
-             drifts.push(DriftRecord {
+            drifts.push(DriftRecord {
                 component: "Kernel".to_string(),
                 setting: "Win32PrioritySeparation".to_string(),
                 expected: "0x26 or 0x18".to_string(),
@@ -51,7 +54,10 @@ pub fn check_configuration_drift() -> Result<ComplianceReport> {
     // Mais audit est censé être read-only et indépendant.
 
     // 3. Vérification MMCSS
-    if let Ok(val) = read_dword_value(r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile", "SystemResponsiveness") {
+    if let Ok(val) = read_dword_value(
+        r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile",
+        "SystemResponsiveness",
+    ) {
         if val > 10 {
             drifts.push(DriftRecord {
                 component: "MMCSS".to_string(),

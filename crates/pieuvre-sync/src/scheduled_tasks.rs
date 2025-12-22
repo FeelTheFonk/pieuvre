@@ -55,14 +55,14 @@ const TELEMETRY_TASKS: &[&str] = &[
 /// Disable all telemetry scheduled tasks
 pub fn disable_telemetry_tasks() -> Result<Vec<String>> {
     let mut disabled = Vec::new();
-    
+
     for task in TELEMETRY_TASKS {
         if disable_task(task).is_ok() {
             disabled.push(task.to_string());
             tracing::info!("Task disabled: {}", task);
         }
     }
-    
+
     tracing::info!("Disabled {} telemetry tasks", disabled.len());
     Ok(disabled)
 }
@@ -72,7 +72,7 @@ pub fn disable_task(task_path: &str) -> Result<()> {
     let _ = Command::new("schtasks")
         .args(["/Change", "/TN", task_path, "/Disable"])
         .output()?;
-    
+
     // Task might not exist, which is fine - toujours Ok
     Ok(())
 }
@@ -82,7 +82,7 @@ pub fn enable_task(task_path: &str) -> Result<()> {
     let _ = Command::new("schtasks")
         .args(["/Change", "/TN", task_path, "/Enable"])
         .output()?;
-    
+
     Ok(())
 }
 
@@ -91,7 +91,7 @@ pub fn is_task_enabled(task_path: &str) -> bool {
     let output = Command::new("schtasks")
         .args(["/Query", "/TN", task_path, "/FO", "CSV", "/NH"])
         .output();
-    
+
     match output {
         Ok(o) => {
             let stdout = String::from_utf8_lossy(&o.stdout);

@@ -13,13 +13,16 @@ pub fn disable_paging_executive() -> Result<()> {
         .args([
             "add",
             r"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management",
-            "/v", "DisablePagingExecutive",
-            "/t", "REG_DWORD",
-            "/d", "1",
-            "/f"
+            "/v",
+            "DisablePagingExecutive",
+            "/t",
+            "REG_DWORD",
+            "/d",
+            "1",
+            "/f",
         ])
         .output();
-    
+
     tracing::info!("DisablePagingExecutive enabled - kernel stays in RAM");
     Ok(())
 }
@@ -30,13 +33,16 @@ pub fn enable_paging_executive() -> Result<()> {
         .args([
             "add",
             r"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management",
-            "/v", "DisablePagingExecutive",
-            "/t", "REG_DWORD",
-            "/d", "0",
-            "/f"
+            "/v",
+            "DisablePagingExecutive",
+            "/t",
+            "REG_DWORD",
+            "/d",
+            "0",
+            "/f",
         ])
         .output();
-    
+
     tracing::info!("DisablePagingExecutive disabled (default)");
     Ok(())
 }
@@ -47,7 +53,7 @@ pub fn disable_dynamic_tick() -> Result<()> {
     let _ = Command::new("bcdedit")
         .args(["/set", "disabledynamictick", "yes"])
         .output();
-    
+
     tracing::info!("Dynamic tick disabled - reboot required");
     Ok(())
 }
@@ -57,7 +63,7 @@ pub fn enable_dynamic_tick() -> Result<()> {
     let _ = Command::new("bcdedit")
         .args(["/set", "disabledynamictick", "no"])
         .output();
-    
+
     tracing::info!("Dynamic tick enabled (default)");
     Ok(())
 }
@@ -67,7 +73,7 @@ pub fn set_tsc_sync_enhanced() -> Result<()> {
     let _ = Command::new("bcdedit")
         .args(["/set", "tscsyncpolicy", "enhanced"])
         .output();
-    
+
     tracing::info!("TSC sync policy set to enhanced");
     Ok(())
 }
@@ -77,7 +83,7 @@ pub fn reset_tsc_sync() -> Result<()> {
     let _ = Command::new("bcdedit")
         .args(["/deletevalue", "tscsyncpolicy"])
         .output();
-    
+
     tracing::info!("TSC sync policy reset to default");
     Ok(())
 }
@@ -88,7 +94,7 @@ pub fn disable_hpet() -> Result<()> {
     let _ = Command::new("bcdedit")
         .args(["/set", "useplatformclock", "false"])
         .output();
-    
+
     tracing::info!("HPET disabled via bcdedit");
     Ok(())
 }
@@ -98,7 +104,7 @@ pub fn enable_hpet() -> Result<()> {
     let _ = Command::new("bcdedit")
         .args(["/set", "useplatformclock", "true"])
         .output();
-    
+
     tracing::info!("HPET enabled");
     Ok(())
 }
@@ -109,13 +115,16 @@ pub fn set_interrupt_affinity_spread() -> Result<()> {
         .args([
             "add",
             r"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Kernel",
-            "/v", "InterruptAffinityPolicy",
-            "/t", "REG_DWORD",
-            "/d", "2",
-            "/f"
+            "/v",
+            "InterruptAffinityPolicy",
+            "/t",
+            "REG_DWORD",
+            "/d",
+            "2",
+            "/f",
         ])
         .output();
-    
+
     tracing::info!("Interrupt affinity set to spread across cores");
     Ok(())
 }
@@ -126,11 +135,12 @@ pub fn reset_interrupt_affinity() -> Result<()> {
         .args([
             "delete",
             r"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Kernel",
-            "/v", "InterruptAffinityPolicy",
-            "/f"
+            "/v",
+            "InterruptAffinityPolicy",
+            "/f",
         ])
         .output();
-    
+
     tracing::info!("Interrupt affinity policy reset");
     Ok(())
 }
@@ -141,7 +151,7 @@ pub fn apply_all_dpc_optimizations() -> Result<()> {
     disable_dynamic_tick()?;
     set_tsc_sync_enhanced()?;
     set_interrupt_affinity_spread()?;
-    
+
     tracing::info!("All DPC latency optimizations applied - reboot required");
     Ok(())
 }
@@ -152,7 +162,7 @@ pub fn reset_all_dpc_optimizations() -> Result<()> {
     enable_dynamic_tick()?;
     reset_tsc_sync()?;
     reset_interrupt_affinity()?;
-    
+
     tracing::info!("DPC optimizations reset to defaults");
     Ok(())
 }
@@ -163,10 +173,11 @@ pub fn is_paging_executive_disabled() -> bool {
         .args([
             "query",
             r"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management",
-            "/v", "DisablePagingExecutive"
+            "/v",
+            "DisablePagingExecutive",
         ])
         .output();
-    
+
     match output {
         Ok(o) => {
             let stdout = String::from_utf8_lossy(&o.stdout);

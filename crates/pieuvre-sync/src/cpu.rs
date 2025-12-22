@@ -15,10 +15,10 @@ pub fn disable_core_parking() -> Result<()> {
             "scheme_current",
             "54533251-82be-4824-96c1-47b60b740d00",
             "0cc5b647-c1df-4637-891a-edc3318ea174",
-            "100"
+            "100",
         ])
         .output();
-    
+
     // Core Parking - Min Cores (DC)
     let _ = Command::new("powercfg")
         .args([
@@ -26,15 +26,15 @@ pub fn disable_core_parking() -> Result<()> {
             "scheme_current",
             "54533251-82be-4824-96c1-47b60b740d00",
             "0cc5b647-c1df-4637-891a-edc3318ea174",
-            "100"
+            "100",
         ])
         .output();
-    
+
     // Apply changes
     let _ = Command::new("powercfg")
         .args(["/setactive", "scheme_current"])
         .output();
-    
+
     tracing::info!("CPU Core Parking disabled - all cores active");
     Ok(())
 }
@@ -47,14 +47,14 @@ pub fn enable_core_parking() -> Result<()> {
             "scheme_current",
             "54533251-82be-4824-96c1-47b60b740d00",
             "0cc5b647-c1df-4637-891a-edc3318ea174",
-            "0"
+            "0",
         ])
         .output();
-    
+
     let _ = Command::new("powercfg")
         .args(["/setactive", "scheme_current"])
         .output();
-    
+
     tracing::info!("CPU Core Parking enabled (default)");
     Ok(())
 }
@@ -66,10 +66,10 @@ pub fn disable_memory_compression() -> Result<()> {
         .args([
             "-NoProfile",
             "-Command",
-            "Disable-MMAgent -MemoryCompression -ErrorAction SilentlyContinue"
+            "Disable-MMAgent -MemoryCompression -ErrorAction SilentlyContinue",
         ])
         .output();
-    
+
     tracing::info!("Memory Compression disabled");
     Ok(())
 }
@@ -80,10 +80,10 @@ pub fn enable_memory_compression() -> Result<()> {
         .args([
             "-NoProfile",
             "-Command",
-            "Enable-MMAgent -MemoryCompression -ErrorAction SilentlyContinue"
+            "Enable-MMAgent -MemoryCompression -ErrorAction SilentlyContinue",
         ])
         .output();
-    
+
     tracing::info!("Memory Compression enabled");
     Ok(())
 }
@@ -101,7 +101,7 @@ pub fn disable_superfetch_registry() -> Result<()> {
             "/f"
         ])
         .output();
-    
+
     let _ = Command::new("reg")
         .args([
             "add",
@@ -112,7 +112,7 @@ pub fn disable_superfetch_registry() -> Result<()> {
             "/f"
         ])
         .output();
-    
+
     tracing::info!("Superfetch/Prefetch disabled via registry");
     Ok(())
 }
@@ -121,25 +121,29 @@ pub fn disable_superfetch_registry() -> Result<()> {
 /// Recommended: 1.5x RAM for gaming
 pub fn set_static_page_file(size_mb: u32) -> Result<()> {
     let size_str = size_mb.to_string();
-    
+
     // Disable automatic management
     let _ = Command::new("wmic")
         .args([
             "computersystem",
-            "where", "name=\"%computername%\"",
-            "set", "AutomaticManagedPagefile=False"
+            "where",
+            "name=\"%computername%\"",
+            "set",
+            "AutomaticManagedPagefile=False",
         ])
         .output();
-    
+
     // Set static size on C:
     let _ = Command::new("wmic")
         .args([
             "pagefileset",
-            "where", "name=\"C:\\\\pagefile.sys\"",
-            "set", &format!("InitialSize={},MaximumSize={}", size_str, size_str)
+            "where",
+            "name=\"C:\\\\pagefile.sys\"",
+            "set",
+            &format!("InitialSize={},MaximumSize={}", size_str, size_str),
         ])
         .output();
-    
+
     tracing::info!("Page file set to static {}MB", size_mb);
     Ok(())
 }
@@ -149,11 +153,13 @@ pub fn reset_page_file() -> Result<()> {
     let _ = Command::new("wmic")
         .args([
             "computersystem",
-            "where", "name=\"%computername%\"",
-            "set", "AutomaticManagedPagefile=True"
+            "where",
+            "name=\"%computername%\"",
+            "set",
+            "AutomaticManagedPagefile=True",
         ])
         .output();
-    
+
     tracing::info!("Page file reset to automatic");
     Ok(())
 }
@@ -163,7 +169,7 @@ pub fn apply_gaming_cpu_optimizations() -> Result<()> {
     disable_core_parking()?;
     disable_memory_compression()?;
     disable_superfetch_registry()?;
-    
+
     tracing::info!("All CPU gaming optimizations applied");
     Ok(())
 }
@@ -171,13 +177,9 @@ pub fn apply_gaming_cpu_optimizations() -> Result<()> {
 /// Check if Memory Compression is enabled
 pub fn is_memory_compression_enabled() -> bool {
     let output = Command::new("powershell")
-        .args([
-            "-NoProfile",
-            "-Command",
-            "(Get-MMAgent).MemoryCompression"
-        ])
+        .args(["-NoProfile", "-Command", "(Get-MMAgent).MemoryCompression"])
         .output();
-    
+
     match output {
         Ok(o) => {
             let stdout = String::from_utf8_lossy(&o.stdout);
@@ -194,10 +196,10 @@ pub fn is_core_parking_disabled() -> bool {
             "/query",
             "scheme_current",
             "54533251-82be-4824-96c1-47b60b740d00",
-            "0cc5b647-c1df-4637-891a-edc3318ea174"
+            "0cc5b647-c1df-4637-891a-edc3318ea174",
         ])
         .output();
-    
+
     match output {
         Ok(o) => {
             let stdout = String::from_utf8_lossy(&o.stdout);

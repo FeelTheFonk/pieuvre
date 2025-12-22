@@ -6,10 +6,12 @@
 use pieuvre_common::{PieuvreError, Result};
 use windows::core::BSTR;
 use windows::Win32::Foundation::VARIANT_BOOL;
-use windows::Win32::System::Com::{CoCreateInstance, CoInitializeEx, CLSCTX_ALL, COINIT_MULTITHREADED};
 use windows::Win32::NetworkManagement::WindowsFirewall::{
-    INetFwPolicy2, INetFwRule, INetFwRules, NetFwPolicy2, NetFwRule,
-    NET_FW_ACTION_BLOCK, NET_FW_RULE_DIR_OUT,
+    INetFwPolicy2, INetFwRule, INetFwRules, NetFwPolicy2, NetFwRule, NET_FW_ACTION_BLOCK,
+    NET_FW_RULE_DIR_OUT,
+};
+use windows::Win32::System::Com::{
+    CoCreateInstance, CoInitializeEx, CLSCTX_ALL, COINIT_MULTITHREADED,
 };
 
 /// Domaines télémétrie Microsoft à bloquer (SOTA)
@@ -84,28 +86,39 @@ pub struct FirewallRule {
 pub fn create_telemetry_block_rules() -> Result<Vec<String>> {
     unsafe {
         let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
-        
+
         let policy: INetFwPolicy2 = CoCreateInstance(&NetFwPolicy2, None, CLSCTX_ALL)
             .map_err(|e| PieuvreError::Internal(format!("Failed to create NetFwPolicy2: {}", e)))?;
-            
-        let rules: INetFwRules = policy.Rules()
+
+        let rules: INetFwRules = policy
+            .Rules()
             .map_err(|e| PieuvreError::Internal(format!("Failed to get FW rules: {}", e)))?;
-            
+
         let rule_name = "Pieuvre-BlockTelemetry";
         let ip_list = TELEMETRY_IP_RANGES.join(",");
-        
+
         let rule: INetFwRule = CoCreateInstance(&NetFwRule, None, CLSCTX_ALL)
             .map_err(|e| PieuvreError::Internal(format!("Failed to create NetFwRule: {}", e)))?;
-            
-        rule.SetName(&BSTR::from(rule_name)).map_err(|e| PieuvreError::Internal(e.to_string()))?;
-        rule.SetDescription(&BSTR::from("Bloque les IPs de télémétrie Microsoft (Pieuvre SOTA)")).map_err(|e| PieuvreError::Internal(e.to_string()))?;
-        rule.SetDirection(NET_FW_RULE_DIR_OUT).map_err(|e| PieuvreError::Internal(e.to_string()))?;
-        rule.SetAction(NET_FW_ACTION_BLOCK).map_err(|e| PieuvreError::Internal(e.to_string()))?;
-        rule.SetRemoteAddresses(&BSTR::from(ip_list)).map_err(|e| PieuvreError::Internal(e.to_string()))?;
-        rule.SetEnabled(VARIANT_BOOL::from(true)).map_err(|e| PieuvreError::Internal(e.to_string()))?;
-        
-        rules.Add(&rule).map_err(|e| PieuvreError::Internal(format!("Failed to add rule: {}", e)))?;
-        
+
+        rule.SetName(&BSTR::from(rule_name))
+            .map_err(|e| PieuvreError::Internal(e.to_string()))?;
+        rule.SetDescription(&BSTR::from(
+            "Bloque les IPs de télémétrie Microsoft (Pieuvre SOTA)",
+        ))
+        .map_err(|e| PieuvreError::Internal(e.to_string()))?;
+        rule.SetDirection(NET_FW_RULE_DIR_OUT)
+            .map_err(|e| PieuvreError::Internal(e.to_string()))?;
+        rule.SetAction(NET_FW_ACTION_BLOCK)
+            .map_err(|e| PieuvreError::Internal(e.to_string()))?;
+        rule.SetRemoteAddresses(&BSTR::from(ip_list))
+            .map_err(|e| PieuvreError::Internal(e.to_string()))?;
+        rule.SetEnabled(VARIANT_BOOL::from(true))
+            .map_err(|e| PieuvreError::Internal(e.to_string()))?;
+
+        rules
+            .Add(&rule)
+            .map_err(|e| PieuvreError::Internal(format!("Failed to add rule: {}", e)))?;
+
         tracing::info!("Règle firewall créée via COM: {}", rule_name);
         Ok(vec![rule_name.to_string()])
     }
@@ -115,23 +128,24 @@ pub fn create_telemetry_block_rules() -> Result<Vec<String>> {
 pub fn remove_pieuvre_rules() -> Result<u32> {
     unsafe {
         let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
-        
+
         let policy: INetFwPolicy2 = CoCreateInstance(&NetFwPolicy2, None, CLSCTX_ALL)
             .map_err(|e| PieuvreError::Internal(format!("Failed to create NetFwPolicy2: {}", e)))?;
-            
-        let rules: INetFwRules = policy.Rules()
+
+        let rules: INetFwRules = policy
+            .Rules()
             .map_err(|e| PieuvreError::Internal(format!("Failed to get FW rules: {}", e)))?;
-            
+
         let mut removed = 0u32;
         let rule_names = ["Pieuvre-BlockTelemetry", "Pieuvre-BlockTelemetryDomains"];
-        
+
         for name in rule_names {
             if rules.Remove(&BSTR::from(name)).is_ok() {
                 removed += 1;
                 tracing::info!("Règle supprimée via COM: {}", name);
             }
         }
-        
+
         Ok(removed)
     }
 }
@@ -140,26 +154,30 @@ pub fn remove_pieuvre_rules() -> Result<u32> {
 pub fn list_pieuvre_rules() -> Result<Vec<FirewallRule>> {
     unsafe {
         let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
-        
+
         let policy: INetFwPolicy2 = CoCreateInstance(&NetFwPolicy2, None, CLSCTX_ALL)
             .map_err(|e| PieuvreError::Internal(format!("Failed to create NetFwPolicy2: {}", e)))?;
-            
-        let rules: INetFwRules = policy.Rules()
+
+        let rules: INetFwRules = policy
+            .Rules()
             .map_err(|e| PieuvreError::Internal(format!("Failed to get FW rules: {}", e)))?;
-            
+
         let mut result = Vec::new();
-        
+
         // COM Enumeration is complex in Rust, we check by name for now as it's our primary use case
         let rule_name = "Pieuvre-BlockTelemetry";
         if let Ok(rule) = rules.Item(&BSTR::from(rule_name)) {
             result.push(FirewallRule {
                 name: rule_name.to_string(),
-                description: rule.Description().map(|b| b.to_string()).unwrap_or_default(),
+                description: rule
+                    .Description()
+                    .map(|b| b.to_string())
+                    .unwrap_or_default(),
                 remote_addresses: TELEMETRY_IP_RANGES.iter().map(|s| s.to_string()).collect(),
                 enabled: rule.Enabled().map(|v| v.as_bool()).unwrap_or(false),
             });
         }
-        
+
         Ok(result)
     }
 }

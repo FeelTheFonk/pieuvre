@@ -1,16 +1,13 @@
 # Pieuvre Configuration - Profil Workstation
-
-[profile]
 name = "Workstation Optimized"
 description = "Équilibre productivité et stabilité"
 risk_level = "low"
 
 [timer]
-resolution_100ns = 10000  # 1ms - moins agressif
+resolution_100ns = 10000
 force_high_precision = false
 
 [scheduler]
-# 0x02 = Long quantum, fixed - stable pour multitâche
 win32_priority_separation = 2
 
 [power]
@@ -19,30 +16,11 @@ usb_selective_suspend = true
 pci_express_aspm = "moderate"
 
 [services]
-disable = [
-    "DiagTrack",
-    "dmwappushservice",
-    "Fax",
-    "MapsBroker",
-]
-# Garder les services utiles pour productivité
-keep = [
-    "WSearch",       # Recherche importante
-    "Spooler",       # Impression
-    "Themes",
-]
-
-[memory]
-# Optimisations mémoire conservatives
-disable_paging_executive = false
-large_system_cache = true
-
-[visual]
-# Garder effets visuels pour fluidité
-animations = true
-aero_peek = true
-taskbar_thumbnails = true
+disable = ["DiagTrack", "dmwappushservice", "Fax", "MapsBroker"]
+manual = []
+keep = ["WSearch", "Spooler", "Themes"]
 
 [telemetry]
-# Niveau basic au lieu de security only
 level = 1
+block_domains = false
+block_ips = false

@@ -12,9 +12,9 @@ use crate::Cli;
 pub fn run(shell: Shell) -> anyhow::Result<()> {
     let mut cmd = Cli::command();
     let name = cmd.get_name().to_string();
-    
+
     generate(shell, &mut cmd, name, &mut io::stdout());
-    
+
     Ok(())
 }
 
@@ -33,7 +33,7 @@ mod tests {
             Shell::PowerShell,
             Shell::Elvish,
         ];
-        
+
         for shell in shells {
             assert!(!format!("{:?}", shell).is_empty());
         }

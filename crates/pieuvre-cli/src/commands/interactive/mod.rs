@@ -24,16 +24,16 @@ use ui::MainAction;
 pub async fn run_default() -> Result<()> {
     // 1. Écran d'accueil ASCII
     ui::print_welcome_screen();
-    
+
     // 2. Vérification privilèges admin
     ui::check_admin_status();
-    
+
     // 3. Résumé rapide état système
     ui::print_quick_status();
-    
+
     // 4. Menu principal interactif
     let action = ui::show_main_menu()?;
-    
+
     match action {
         MainAction::Interactive(profile) => run(&profile).await,
         MainAction::QuickApply(profile) => run_quick_apply(&profile).await,
@@ -53,21 +53,30 @@ pub async fn run_default() -> Result<()> {
 /// Application rapide d'un profil sans sélection granulaire
 pub async fn run_quick_apply(profile: &str) -> Result<()> {
     println!();
-    println!("  [*] Application rapide du profil: {}", profile.to_uppercase());
-    
+    println!(
+        "  [*] Application rapide du profil: {}",
+        profile.to_uppercase()
+    );
+
     // Création d'un snapshot de sécurité
     let changes = Vec::<ChangeRecord>::new();
     let snap = snapshot::create(&format!("Avant profil rapide {}", profile), changes)?;
-    println!("  [OK] Snapshot de sauvegarde cree: {}", &snap.id.to_string()[..8]);
-    
+    println!(
+        "  [OK] Snapshot de sauvegarde cree: {}",
+        &snap.id.to_string()[..8]
+    );
+
     // Application réelle via pieuvre-sync
     pieuvre_sync::apply_profile(profile, false).await?;
-    
+
     println!();
-    println!("  [OK] Profil {} applique avec succes.", profile.to_uppercase());
+    println!(
+        "  [OK] Profil {} applique avec succes.",
+        profile.to_uppercase()
+    );
     println!("       Redemarrage recommande pour certaines modifications.");
     println!();
-    
+
     ui::wait_for_exit();
     Ok(())
 }
@@ -76,7 +85,11 @@ pub async fn run_quick_apply(profile: &str) -> Result<()> {
 #[instrument(skip_all, fields(profile = %profile))]
 pub async fn run(profile: &str) -> Result<()> {
     let is_laptop = is_laptop();
-    info!(is_laptop = is_laptop, profile = profile, "Starting interactive mode");
+    info!(
+        is_laptop = is_laptop,
+        profile = profile,
+        "Starting interactive mode"
+    );
 
     // Affichage header
     ui::print_header(is_laptop, profile);
@@ -135,9 +148,14 @@ pub async fn run(profile: &str) -> Result<()> {
     // RÉSUMÉ ET CONFIRMATION
     // ═══════════════════════════════════════════════════════════════════════
 
-    let total = telem_selected.len() + privacy_selected.len() + perf_selected.len()
-        + sched_selected.len() + appx_selected.len()
-        + cpu_selected.len() + dpc_selected.len() + security_selected.len()
+    let total = telem_selected.len()
+        + privacy_selected.len()
+        + perf_selected.len()
+        + sched_selected.len()
+        + appx_selected.len()
+        + cpu_selected.len()
+        + dpc_selected.len()
+        + security_selected.len()
         + net_adv_selected.len();
 
     ui::print_selection_summary_full(
@@ -193,7 +211,8 @@ pub async fn run(profile: &str) -> Result<()> {
         &mut success_count,
         &mut error_count,
         &pb,
-    ).await;
+    )
+    .await;
 
     execute_category(
         "privacy",
@@ -203,7 +222,8 @@ pub async fn run(profile: &str) -> Result<()> {
         &mut success_count,
         &mut error_count,
         &pb,
-    ).await;
+    )
+    .await;
 
     execute_category(
         "performance",
@@ -213,7 +233,8 @@ pub async fn run(profile: &str) -> Result<()> {
         &mut success_count,
         &mut error_count,
         &pb,
-    ).await;
+    )
+    .await;
 
     execute_category(
         "scheduler",
@@ -223,7 +244,8 @@ pub async fn run(profile: &str) -> Result<()> {
         &mut success_count,
         &mut error_count,
         &pb,
-    ).await;
+    )
+    .await;
 
     execute_category(
         "appx",
@@ -233,7 +255,8 @@ pub async fn run(profile: &str) -> Result<()> {
         &mut success_count,
         &mut error_count,
         &pb,
-    ).await;
+    )
+    .await;
 
     execute_category(
         "cpu",
@@ -243,7 +266,8 @@ pub async fn run(profile: &str) -> Result<()> {
         &mut success_count,
         &mut error_count,
         &pb,
-    ).await;
+    )
+    .await;
 
     execute_category(
         "dpc",
@@ -253,7 +277,8 @@ pub async fn run(profile: &str) -> Result<()> {
         &mut success_count,
         &mut error_count,
         &pb,
-    ).await;
+    )
+    .await;
 
     execute_category(
         "security",
@@ -263,7 +288,8 @@ pub async fn run(profile: &str) -> Result<()> {
         &mut success_count,
         &mut error_count,
         &pb,
-    ).await;
+    )
+    .await;
 
     execute_category(
         "network_advanced",
@@ -273,7 +299,8 @@ pub async fn run(profile: &str) -> Result<()> {
         &mut success_count,
         &mut error_count,
         &pb,
-    ).await;
+    )
+    .await;
 
     pb.finish_with_message("Terminé");
 
@@ -294,7 +321,12 @@ pub async fn run(profile: &str) -> Result<()> {
 
     // Déterminer si reboot nécessaire (DPC ou Security sélectionnés)
     let needs_reboot = !dpc_selected.is_empty() || !security_selected.is_empty();
-    ui::print_final_result_with_reboot(success_count, error_count, snapshot_id.as_deref(), needs_reboot);
+    ui::print_final_result_with_reboot(
+        success_count,
+        error_count,
+        snapshot_id.as_deref(),
+        needs_reboot,
+    );
 
     Ok(())
 }

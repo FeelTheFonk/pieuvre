@@ -1,6 +1,4 @@
 # Pieuvre Configuration - Profil Gaming
-
-[profile]
 name = "Gaming Extreme"
 description = "Latence minimale, performance maximale"
 risk_level = "high"
@@ -51,14 +49,8 @@ tcp_ack_frequency = 1
 hardware_accelerated_gpu_scheduling = true
 variable_refresh_rate = true
 
-[memory]
-disable_paging_executive = true
-large_system_cache = false
-
-# ATTENTION: Options à risque élevé
 [security]
 # VBS/HVCI: Désactivation pour gain 5-15% gaming
-# RISQUE: Réduit la sécurité contre les exploits kernel
 vbs_hvci = "disable"
 # Mitigations Spectre/Meltdown: GARDER
 spectre_meltdown = "keep"

@@ -4,8 +4,8 @@
 //! Tests en mode dry-run sans modification système.
 
 use crate::snapshot;
-use pieuvre_common::{ChangeRecord, Snapshot};
 use chrono::Utc;
+use pieuvre_common::{ChangeRecord, Snapshot};
 use uuid::Uuid;
 
 // ============================================================================
@@ -20,7 +20,7 @@ fn test_snapshot_struct_creation() {
         description: "Test snapshot".to_string(),
         changes: vec![],
     };
-    
+
     assert!(!snap.description.is_empty());
     assert!(snap.changes.is_empty());
 }
@@ -33,8 +33,14 @@ fn test_change_record_registry() {
         value_type: "REG_DWORD".to_string(),
         original_data: vec![1, 0, 0, 0], // DWORD = 1
     };
-    
-    if let ChangeRecord::Registry { key, value_name, value_type, original_data } = change {
+
+    if let ChangeRecord::Registry {
+        key,
+        value_name,
+        value_type,
+        original_data,
+    } = change
+    {
         assert!(key.contains("SOFTWARE"));
         assert_eq!(value_name, "TestValue");
         assert_eq!(value_type, "REG_DWORD");
@@ -50,8 +56,12 @@ fn test_change_record_service() {
         name: "DiagTrack".to_string(),
         original_start_type: 2, // Automatic
     };
-    
-    if let ChangeRecord::Service { name, original_start_type } = change {
+
+    if let ChangeRecord::Service {
+        name,
+        original_start_type,
+    } = change
+    {
         assert_eq!(name, "DiagTrack");
         assert_eq!(original_start_type, 2);
     } else {
@@ -64,7 +74,7 @@ fn test_change_record_firewall() {
     let change = ChangeRecord::FirewallRule {
         name: "Pieuvre-Block-Telemetry".to_string(),
     };
-    
+
     if let ChangeRecord::FirewallRule { name } = change {
         assert!(name.starts_with("Pieuvre"));
     } else {
@@ -79,8 +89,11 @@ fn test_change_record_firewall() {
 #[test]
 fn test_list_all_snapshots_returns_vec() {
     let result = snapshot::list_all();
-    assert!(result.is_ok(), "list_all should succeed even with empty dir");
-    
+    assert!(
+        result.is_ok(),
+        "list_all should succeed even with empty dir"
+    );
+
     // Peut être vide si aucun snapshot n'existe
     let _snapshots = result.unwrap();
 }
@@ -122,26 +135,24 @@ fn test_snapshot_serialization_roundtrip() {
         id: Uuid::new_v4(),
         timestamp: Utc::now(),
         description: "Test roundtrip".to_string(),
-        changes: vec![
-            ChangeRecord::Service {
-                name: "TestService".to_string(),
-                original_start_type: 3,
-            },
-        ],
+        changes: vec![ChangeRecord::Service {
+            name: "TestService".to_string(),
+            original_start_type: 3,
+        }],
     };
-    
+
     // Serialize
     let json = serde_json::to_string_pretty(&original);
     assert!(json.is_ok(), "Snapshot should serialize to JSON");
-    
+
     let json_str = json.unwrap();
     assert!(json_str.contains("TestService"));
     assert!(json_str.contains("Test roundtrip"));
-    
+
     // Deserialize
     let restored: Result<Snapshot, _> = serde_json::from_str(&json_str);
     assert!(restored.is_ok(), "Snapshot should deserialize from JSON");
-    
+
     let restored_snap = restored.unwrap();
     assert_eq!(restored_snap.id, original.id);
     assert_eq!(restored_snap.description, original.description);
@@ -156,9 +167,9 @@ fn test_snapshot_json_format() {
         description: "JSON format test".to_string(),
         changes: vec![],
     };
-    
+
     let json = serde_json::to_string(&snap).unwrap();
-    
+
     assert!(json.contains("550e8400"));
     assert!(json.contains("JSON format test"));
     assert!(json.contains("changes"));
@@ -171,13 +182,19 @@ fn test_snapshot_json_format() {
 #[test]
 fn test_restore_nonexistent_snapshot_fails() {
     let result = snapshot::restore("nonexistent-snapshot-id-12345");
-    assert!(result.is_err(), "Restore of non-existent snapshot should fail");
+    assert!(
+        result.is_err(),
+        "Restore of non-existent snapshot should fail"
+    );
 }
 
 #[test]
 fn test_delete_nonexistent_snapshot_fails() {
     let result = snapshot::delete("nonexistent-snapshot-id-67890");
-    assert!(result.is_err(), "Delete of non-existent snapshot should fail");
+    assert!(
+        result.is_err(),
+        "Delete of non-existent snapshot should fail"
+    );
 }
 
 // ============================================================================
@@ -192,7 +209,7 @@ fn test_empty_description() {
         description: String::new(),
         changes: vec![],
     };
-    
+
     assert!(snap.description.is_empty());
 }
 
@@ -204,7 +221,7 @@ fn test_unicode_description() {
         description: "テスト スナップショット 🚀".to_string(),
         changes: vec![],
     };
-    
+
     let json = serde_json::to_string(&snap).unwrap();
     assert!(json.contains("スナップショット"));
 }
@@ -218,16 +235,16 @@ fn test_large_changes_vector() {
             original_start_type: 3,
         });
     }
-    
+
     let snap = Snapshot {
         id: Uuid::new_v4(),
         timestamp: Utc::now(),
         description: "Large changes test".to_string(),
         changes,
     };
-    
+
     assert_eq!(snap.changes.len(), 100);
-    
+
     let json = serde_json::to_string(&snap).unwrap();
     assert!(json.contains("Service99"));
 }

@@ -3,8 +3,8 @@
 //! Application des profils d'optimisation.
 
 use anyhow::Result;
-use pieuvre_persist::snapshot;
 use pieuvre_common::ChangeRecord;
+use pieuvre_persist::snapshot;
 
 pub async fn run(profile: &str, dry_run: bool) -> Result<()> {
     println!();
@@ -12,11 +12,18 @@ pub async fn run(profile: &str, dry_run: bool) -> Result<()> {
     println!("                 PIEUVRE - Synchronisation");
     println!("================================================================");
     println!();
-    
+
     println!("  Profil: {}", profile.to_uppercase());
-    println!("  Mode:   {}", if dry_run { "SIMULATION (aucune modification)" } else { "APPLICATION REELLE" });
+    println!(
+        "  Mode:   {}",
+        if dry_run {
+            "SIMULATION (aucune modification)"
+        } else {
+            "APPLICATION REELLE"
+        }
+    );
     println!();
-    
+
     if !dry_run {
         // Creer un snapshot avant les modifications
         println!("[*] Creation snapshot de sauvegarde...");
@@ -27,28 +34,31 @@ pub async fn run(profile: &str, dry_run: bool) -> Result<()> {
         }
         println!();
     }
-    
+
     println!("----------------------------------------------------------------");
     println!("                      MODIFICATIONS");
     println!("----------------------------------------------------------------");
-    
+
     pieuvre_sync::apply_profile(profile, dry_run).await?;
-    
+
     println!();
     println!("----------------------------------------------------------------");
-    
+
     if dry_run {
         println!();
         println!("[OK] Simulation terminee. Pour appliquer reellement:");
         println!("     pieuvre sync --profile {}", profile);
     } else {
         println!();
-        println!("[OK] Profil {} applique avec succes!", profile.to_uppercase());
+        println!(
+            "[OK] Profil {} applique avec succes!",
+            profile.to_uppercase()
+        );
         println!();
         println!("Note: Un snapshot a ete cree. Pour annuler:");
         println!("      pieuvre rollback --last");
     }
-    
+
     println!();
     Ok(())
 }

@@ -1,19 +1,19 @@
 //! Modifications registre atomiques
 
 use pieuvre_common::{PieuvreError, Result};
-use windows::Win32::System::Registry::{
-    RegOpenKeyExW, RegSetValueExW, RegCloseKey, RegDeleteValueW, RegEnumKeyExW,
-    RegQueryValueExW, RegCreateKeyExW, RegDeleteTreeW, HKEY_LOCAL_MACHINE, HKEY,
-    KEY_SET_VALUE, KEY_READ, REG_DWORD, REG_SZ, REG_OPTION_NON_VOLATILE, KEY_WRITE,
-};
 use windows::core::{PCWSTR, PWSTR};
+use windows::Win32::System::Registry::{
+    RegCloseKey, RegCreateKeyExW, RegDeleteTreeW, RegDeleteValueW, RegEnumKeyExW, RegOpenKeyExW,
+    RegQueryValueExW, RegSetValueExW, HKEY, HKEY_LOCAL_MACHINE, KEY_READ, KEY_SET_VALUE, KEY_WRITE,
+    REG_DWORD, REG_OPTION_NON_VOLATILE, REG_SZ,
+};
 
 /// Écrit une valeur DWORD dans le registre
 pub fn set_dword_value(subkey: &str, value_name: &str, value: u32) -> Result<()> {
     unsafe {
         let mut hkey = Default::default();
         let subkey_wide: Vec<u16> = subkey.encode_utf16().chain(std::iter::once(0)).collect();
-        
+
         let result = RegCreateKeyExW(
             HKEY_LOCAL_MACHINE,
             PCWSTR(subkey_wide.as_ptr()),
@@ -25,14 +25,20 @@ pub fn set_dword_value(subkey: &str, value_name: &str, value: u32) -> Result<()>
             &mut hkey,
             None,
         );
-        
+
         if result.is_err() {
-            return Err(PieuvreError::Registry(format!("Cannot create/open key: {}", subkey)));
+            return Err(PieuvreError::Registry(format!(
+                "Cannot create/open key: {}",
+                subkey
+            )));
         }
-        
-        let value_wide: Vec<u16> = value_name.encode_utf16().chain(std::iter::once(0)).collect();
+
+        let value_wide: Vec<u16> = value_name
+            .encode_utf16()
+            .chain(std::iter::once(0))
+            .collect();
         let data_bytes = value.to_le_bytes();
-        
+
         let result = RegSetValueExW(
             hkey,
             PCWSTR(value_wide.as_ptr()),
@@ -40,13 +46,16 @@ pub fn set_dword_value(subkey: &str, value_name: &str, value: u32) -> Result<()>
             REG_DWORD,
             Some(&data_bytes),
         );
-        
+
         let _ = RegCloseKey(hkey);
-        
+
         if result.is_err() {
-            return Err(PieuvreError::Registry(format!("Cannot set value: {}", value_name)));
+            return Err(PieuvreError::Registry(format!(
+                "Cannot set value: {}",
+                value_name
+            )));
         }
-        
+
         tracing::debug!("Registre: {}\\{} = {}", subkey, value_name, value);
         Ok(())
     }
@@ -57,7 +66,7 @@ pub fn set_string_value(subkey: &str, value_name: &str, value: &str) -> Result<(
     unsafe {
         let mut hkey = Default::default();
         let subkey_wide: Vec<u16> = subkey.encode_utf16().chain(std::iter::once(0)).collect();
-        
+
         let result = RegCreateKeyExW(
             HKEY_LOCAL_MACHINE,
             PCWSTR(subkey_wide.as_ptr()),
@@ -69,28 +78,40 @@ pub fn set_string_value(subkey: &str, value_name: &str, value: &str) -> Result<(
             &mut hkey,
             None,
         );
-        
+
         if result.is_err() {
-            return Err(PieuvreError::Registry(format!("Cannot create/open key: {}", subkey)));
+            return Err(PieuvreError::Registry(format!(
+                "Cannot create/open key: {}",
+                subkey
+            )));
         }
-        
-        let value_wide: Vec<u16> = value_name.encode_utf16().chain(std::iter::once(0)).collect();
+
+        let value_wide: Vec<u16> = value_name
+            .encode_utf16()
+            .chain(std::iter::once(0))
+            .collect();
         let data_wide: Vec<u16> = value.encode_utf16().chain(std::iter::once(0)).collect();
-        
+
         let result = RegSetValueExW(
             hkey,
             PCWSTR(value_wide.as_ptr()),
             Some(0),
             REG_SZ,
-            Some(std::slice::from_raw_parts(data_wide.as_ptr() as *const u8, data_wide.len() * 2)),
+            Some(std::slice::from_raw_parts(
+                data_wide.as_ptr() as *const u8,
+                data_wide.len() * 2,
+            )),
         );
-        
+
         let _ = RegCloseKey(hkey);
-        
+
         if result.is_err() {
-            return Err(PieuvreError::Registry(format!("Cannot set value: {}", value_name)));
+            return Err(PieuvreError::Registry(format!(
+                "Cannot set value: {}",
+                value_name
+            )));
         }
-        
+
         tracing::debug!("Registre: {}\\{} = {}", subkey, value_name, value);
         Ok(())
     }
@@ -101,12 +122,16 @@ pub fn delete_key_recursive(subkey: &str) -> Result<()> {
     unsafe {
         let subkey_wide: Vec<u16> = subkey.encode_utf16().chain(std::iter::once(0)).collect();
         let result = RegDeleteTreeW(HKEY_LOCAL_MACHINE, PCWSTR(subkey_wide.as_ptr()));
-        
+
         if result.is_err() {
             // Si la clé n'existe pas, on considère cela comme un succès (YAGNI/Fail Fast)
             let err_code = result.0 as u32;
-            if err_code != 2 { // ERROR_FILE_NOT_FOUND
-                return Err(PieuvreError::Registry(format!("Failed to delete key recursive {}: {:?}", subkey, result)));
+            if err_code != 2 {
+                // ERROR_FILE_NOT_FOUND
+                return Err(PieuvreError::Registry(format!(
+                    "Failed to delete key recursive {}: {:?}",
+                    subkey, result
+                )));
             }
         }
         Ok(())
@@ -118,7 +143,7 @@ pub fn delete_value(subkey: &str, value_name: &str) -> Result<()> {
     unsafe {
         let mut hkey = Default::default();
         let subkey_wide: Vec<u16> = subkey.encode_utf16().chain(std::iter::once(0)).collect();
-        
+
         let result = RegOpenKeyExW(
             HKEY_LOCAL_MACHINE,
             PCWSTR(subkey_wide.as_ptr()),
@@ -126,14 +151,17 @@ pub fn delete_value(subkey: &str, value_name: &str) -> Result<()> {
             KEY_SET_VALUE,
             &mut hkey,
         );
-        
+
         if result.is_err() {
             return Ok(()); // La clé n'existe pas, donc la valeur non plus
         }
-        
-        let value_wide: Vec<u16> = value_name.encode_utf16().chain(std::iter::once(0)).collect();
+
+        let value_wide: Vec<u16> = value_name
+            .encode_utf16()
+            .chain(std::iter::once(0))
+            .collect();
         let _ = RegDeleteValueW(hkey, PCWSTR(value_wide.as_ptr()));
-        
+
         let _ = RegCloseKey(hkey);
         Ok(())
     }
@@ -144,7 +172,7 @@ pub fn list_subkeys(subkey: &str) -> Result<Vec<String>> {
     unsafe {
         let mut hkey = Default::default();
         let subkey_wide: Vec<u16> = subkey.encode_utf16().chain(std::iter::once(0)).collect();
-        
+
         let result = RegOpenKeyExW(
             HKEY_LOCAL_MACHINE,
             PCWSTR(subkey_wide.as_ptr()),
@@ -152,15 +180,18 @@ pub fn list_subkeys(subkey: &str) -> Result<Vec<String>> {
             KEY_READ,
             &mut hkey,
         );
-        
+
         if result.is_err() {
-            return Err(PieuvreError::Registry(format!("Cannot open key for reading: {}", subkey)));
+            return Err(PieuvreError::Registry(format!(
+                "Cannot open key for reading: {}",
+                subkey
+            )));
         }
-        
+
         let mut subkeys = Vec::new();
         let mut index = 0;
         let mut name_buffer = vec![0u16; 256];
-        
+
         loop {
             let mut name_len = name_buffer.len() as u32;
             let result = RegEnumKeyExW(
@@ -173,16 +204,16 @@ pub fn list_subkeys(subkey: &str) -> Result<Vec<String>> {
                 None,
                 None,
             );
-            
+
             if result.is_err() {
                 break;
             }
-            
+
             let name = String::from_utf16_lossy(&name_buffer[..name_len as usize]);
             subkeys.push(name);
             index += 1;
         }
-        
+
         let _ = RegCloseKey(hkey);
         Ok(subkeys)
     }
@@ -197,7 +228,7 @@ fn read_dword_value_from_hive(hive: HKEY, subkey: &str, value_name: &str) -> Res
     unsafe {
         let mut hkey = Default::default();
         let subkey_wide: Vec<u16> = subkey.encode_utf16().chain(std::iter::once(0)).collect();
-        
+
         let result = RegOpenKeyExW(
             hive,
             PCWSTR(subkey_wide.as_ptr()),
@@ -205,16 +236,22 @@ fn read_dword_value_from_hive(hive: HKEY, subkey: &str, value_name: &str) -> Res
             KEY_READ,
             &mut hkey,
         );
-        
+
         if result.is_err() {
-            return Err(PieuvreError::Registry(format!("Cannot open key: {}", subkey)));
+            return Err(PieuvreError::Registry(format!(
+                "Cannot open key: {}",
+                subkey
+            )));
         }
-        
-        let value_wide: Vec<u16> = value_name.encode_utf16().chain(std::iter::once(0)).collect();
+
+        let value_wide: Vec<u16> = value_name
+            .encode_utf16()
+            .chain(std::iter::once(0))
+            .collect();
         let mut data = 0u32;
         let mut data_size = std::mem::size_of::<u32>() as u32;
         let mut value_type = REG_DWORD;
-        
+
         let result = RegQueryValueExW(
             hkey,
             PCWSTR(value_wide.as_ptr()),
@@ -223,13 +260,16 @@ fn read_dword_value_from_hive(hive: HKEY, subkey: &str, value_name: &str) -> Res
             Some(&mut data as *mut u32 as *mut u8),
             Some(&mut data_size),
         );
-        
+
         let _ = RegCloseKey(hkey);
-        
+
         if result.is_err() {
-            return Err(PieuvreError::Registry(format!("Cannot read value: {}", value_name)));
+            return Err(PieuvreError::Registry(format!(
+                "Cannot read value: {}",
+                value_name
+            )));
         }
-        
+
         Ok(data)
     }
 }
@@ -239,22 +279,30 @@ pub fn read_string_value(subkey: &str, value_name: &str) -> Result<String> {
     unsafe {
         let mut hkey = Default::default();
         let subkey_wide: Vec<u16> = subkey.encode_utf16().chain(std::iter::once(0)).collect();
-        
+
         if RegOpenKeyExW(
             HKEY_LOCAL_MACHINE,
             PCWSTR(subkey_wide.as_ptr()),
             Some(0),
             KEY_READ,
             &mut hkey,
-        ).is_err() {
-            return Err(PieuvreError::Registry(format!("Cannot open key: {}", subkey)));
+        )
+        .is_err()
+        {
+            return Err(PieuvreError::Registry(format!(
+                "Cannot open key: {}",
+                subkey
+            )));
         }
-        
-        let value_wide: Vec<u16> = value_name.encode_utf16().chain(std::iter::once(0)).collect();
+
+        let value_wide: Vec<u16> = value_name
+            .encode_utf16()
+            .chain(std::iter::once(0))
+            .collect();
         let mut buffer = vec![0u8; 1024];
         let mut data_size = buffer.len() as u32;
         let mut value_type = REG_SZ;
-        
+
         let result = RegQueryValueExW(
             hkey,
             PCWSTR(value_wide.as_ptr()),
@@ -263,19 +311,23 @@ pub fn read_string_value(subkey: &str, value_name: &str) -> Result<String> {
             Some(buffer.as_mut_ptr()),
             Some(&mut data_size),
         );
-        
+
         let _ = RegCloseKey(hkey);
-        
+
         if result.is_err() {
-            return Err(PieuvreError::Registry(format!("Cannot read value: {}", value_name)));
+            return Err(PieuvreError::Registry(format!(
+                "Cannot read value: {}",
+                value_name
+            )));
         }
-        
+
         // Convertir UTF-16 en String
         let chars = data_size as usize / 2;
-        let s = String::from_utf16_lossy(
-            std::slice::from_raw_parts(buffer.as_ptr() as *const u16, chars.saturating_sub(1))
-        );
-        
+        let s = String::from_utf16_lossy(std::slice::from_raw_parts(
+            buffer.as_ptr() as *const u16,
+            chars.saturating_sub(1),
+        ));
+
         Ok(s)
     }
 }
@@ -285,19 +337,20 @@ pub fn key_exists(subkey: &str) -> bool {
     unsafe {
         let mut hkey = Default::default();
         let subkey_wide: Vec<u16> = subkey.encode_utf16().chain(std::iter::once(0)).collect();
-        
+
         let exists = RegOpenKeyExW(
             HKEY_LOCAL_MACHINE,
             PCWSTR(subkey_wide.as_ptr()),
             Some(0),
             KEY_READ,
             &mut hkey,
-        ).is_ok();
-        
+        )
+        .is_ok();
+
         if exists {
             let _ = RegCloseKey(hkey);
         }
-        
+
         exists
     }
 }
@@ -395,21 +448,22 @@ pub fn disable_cortana() -> Result<()> {
 /// Configure MMCSS pour gaming (SystemResponsiveness = 10, NetworkThrottling = OFF)
 pub fn configure_mmcss_gaming() -> Result<()> {
     let mmcss_path = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile";
-    
+
     // SystemResponsiveness: 10 = reserve only 10% for background (vs 20% default)
     set_dword_value(mmcss_path, "SystemResponsiveness", 10)?;
-    
+
     // NetworkThrottlingIndex: 0xFFFFFFFF = disable throttling
     set_dword_value(mmcss_path, "NetworkThrottlingIndex", 0xFFFFFFFF)?;
-    
+
     tracing::info!("MMCSS gaming configured: SystemResponsiveness=10, NetworkThrottling=OFF");
     Ok(())
 }
 
 /// Configure priorite taches gaming
 pub fn configure_games_priority() -> Result<()> {
-    let games_path = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games";
-    
+    let games_path =
+        r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games";
+
     // GPU Priority: 8 (max)
     set_dword_value(games_path, "GPU Priority", 8)?;
     // Priority: 6 (high)
@@ -418,7 +472,7 @@ pub fn configure_games_priority() -> Result<()> {
     set_dword_value(games_path, "Background Priority", 1)?;
     // SFIO Rate: 4
     set_dword_value(games_path, "SFIO Rate", 4)?;
-    
+
     tracing::info!("Games task priority configured: GPU=8, Priority=6");
     Ok(())
 }
@@ -490,13 +544,13 @@ pub fn disable_recall() -> Result<()> {
         "DisableAIDataAnalysis",
         1,
     )?;
-    
+
     set_dword_value(
         r"SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
         "TurnOffSavingSnapshots",
         1,
     )?;
-    
+
     tracing::info!("Windows Recall disabled");
     Ok(())
 }
@@ -516,19 +570,19 @@ pub fn set_group_policy_telemetry(level: u32) -> Result<()> {
         "AllowTelemetry",
         level,
     )?;
-    
+
     set_dword_value(
         r"SOFTWARE\Policies\Microsoft\Windows\DataCollection",
         "AllowDeviceNameInTelemetry",
         0,
     )?;
-    
+
     set_dword_value(
         r"SOFTWARE\Policies\Microsoft\Windows\CloudContent",
         "DisableTailoredExperiencesWithDiagnosticData",
         1,
     )?;
-    
+
     tracing::info!("Group Policy Telemetry set to {}", level);
     Ok(())
 }

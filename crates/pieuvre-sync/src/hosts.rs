@@ -68,63 +68,59 @@ const TELEMETRY_HOSTS: &[&str] = &[
 
 /// Add telemetry block entries to hosts file
 pub fn add_telemetry_blocks() -> Result<u32> {
-    let hosts_content = fs::read_to_string(HOSTS_PATH)
-        .map_err(PieuvreError::Io)?;
-    
+    let hosts_content = fs::read_to_string(HOSTS_PATH).map_err(PieuvreError::Io)?;
+
     // Check if already added
     if hosts_content.contains(PIEUVRE_MARKER_START) {
         tracing::info!("Hosts block already exists");
         return Ok(0);
     }
-    
+
     // Build block section
     let mut block = String::new();
     block.push('\n');
     block.push_str(PIEUVRE_MARKER_START);
     block.push('\n');
-    
+
     for domain in TELEMETRY_HOSTS {
         block.push_str(&format!("0.0.0.0 {}\n", domain));
         block.push_str(&format!("0.0.0.0 www.{}\n", domain));
     }
-    
+
     block.push_str(PIEUVRE_MARKER_END);
     block.push('\n');
-    
+
     // Append to hosts
     let new_content = format!("{}{}", hosts_content, block);
-    fs::write(HOSTS_PATH, new_content)
-        .map_err(PieuvreError::Io)?;
-    
+    fs::write(HOSTS_PATH, new_content).map_err(PieuvreError::Io)?;
+
     tracing::info!("Added {} domains to hosts file", TELEMETRY_HOSTS.len());
     Ok(TELEMETRY_HOSTS.len() as u32)
 }
 
 /// Remove Pieuvre entries from hosts file
 pub fn remove_telemetry_blocks() -> Result<()> {
-    let hosts_content = fs::read_to_string(HOSTS_PATH)
-        .map_err(PieuvreError::Io)?;
-    
+    let hosts_content = fs::read_to_string(HOSTS_PATH).map_err(PieuvreError::Io)?;
+
     if !hosts_content.contains(PIEUVRE_MARKER_START) {
         tracing::info!("No Pieuvre hosts block found");
         return Ok(());
     }
-    
+
     // Find and remove block
     let start = hosts_content.find(PIEUVRE_MARKER_START);
     let end = hosts_content.find(PIEUVRE_MARKER_END);
-    
+
     if let (Some(s), Some(e)) = (start, end) {
         let before = &hosts_content[..s];
         let after = &hosts_content[e + PIEUVRE_MARKER_END.len()..];
         let new_content = format!("{}{}", before.trim_end(), after);
-        
-        fs::write(HOSTS_PATH, new_content)
-            .map_err(PieuvreError::Io)?;
-        
+
+        fs::write(HOSTS_PATH, new_content).map_err(PieuvreError::Io)?;
+
         tracing::info!("Removed Pieuvre hosts block");
     }
-    
+
     Ok(())
 }
 

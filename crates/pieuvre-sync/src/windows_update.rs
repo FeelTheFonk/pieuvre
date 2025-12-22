@@ -11,17 +11,19 @@ pub fn pause_updates() -> Result<()> {
     let date_str = pause_date.format("%Y-%m-%d").to_string();
 
     let ux_settings = r"SOFTWARE\Microsoft\WindowsUpdate\UX\Settings";
-    
+
     // Pause feature updates
-    let _ = crate::registry::set_string_value(ux_settings, "PauseFeatureUpdatesStartTime", &date_str);
-    
+    let _ =
+        crate::registry::set_string_value(ux_settings, "PauseFeatureUpdatesStartTime", &date_str);
+
     // Pause quality updates
-    let _ = crate::registry::set_string_value(ux_settings, "PauseQualityUpdatesStartTime", &date_str);
-    
+    let _ =
+        crate::registry::set_string_value(ux_settings, "PauseQualityUpdatesStartTime", &date_str);
+
     // Disable auto-restart
     let au_key = r"SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU";
     let _ = crate::registry::set_dword_value(au_key, "NoAutoRebootWithLoggedOnUsers", 1);
-    
+
     tracing::info!("Windows Updates paused for 35 days");
     Ok(())
 }
@@ -30,11 +32,11 @@ pub fn pause_updates() -> Result<()> {
 pub fn disable_driver_updates() -> Result<()> {
     let wu_policy = r"SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate";
     let _ = crate::registry::set_dword_value(wu_policy, "ExcludeWUDriversInQualityUpdate", 1);
-    
+
     // Also via Device Installation Settings
     let driver_search = r"SOFTWARE\Microsoft\Windows\CurrentVersion\DriverSearching";
     let _ = crate::registry::set_dword_value(driver_search, "SearchOrderConfig", 0);
-    
+
     tracing::info!("Automatic driver updates disabled");
     Ok(())
 }
@@ -43,7 +45,7 @@ pub fn disable_driver_updates() -> Result<()> {
 pub fn enable_driver_updates() -> Result<()> {
     let wu_policy = r"SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate";
     let _ = crate::registry::delete_value(wu_policy, "ExcludeWUDriversInQualityUpdate");
-    
+
     tracing::info!("Automatic driver updates enabled");
     Ok(())
 }
@@ -51,6 +53,6 @@ pub fn enable_driver_updates() -> Result<()> {
 /// Check if updates are paused
 pub fn is_updates_paused() -> bool {
     let ux_settings = r"SOFTWARE\Microsoft\WindowsUpdate\UX\Settings";
-    crate::registry::key_exists(ux_settings) && 
-    crate::registry::read_string_value(ux_settings, "PauseFeatureUpdatesStartTime").is_ok()
+    crate::registry::key_exists(ux_settings)
+        && crate::registry::read_string_value(ux_settings, "PauseFeatureUpdatesStartTime").is_ok()
 }

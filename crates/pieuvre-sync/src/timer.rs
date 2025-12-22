@@ -11,7 +11,7 @@ extern "system" {
         SetResolution: u8,
         CurrentResolution: *mut u32,
     ) -> i32;
-    
+
     fn NtQueryTimerResolution(
         MinimumResolution: *mut u32,
         MaximumResolution: *mut u32,
@@ -24,9 +24,9 @@ pub fn get_timer_resolution() -> Result<TimerResolutionInfo> {
     let mut min = 0u32;
     let mut max = 0u32;
     let mut current = 0u32;
-    
+
     let status = unsafe { NtQueryTimerResolution(&mut min, &mut max, &mut current) };
-    
+
     if status >= 0 {
         Ok(TimerResolutionInfo {
             minimum_100ns: min,
@@ -34,19 +34,22 @@ pub fn get_timer_resolution() -> Result<TimerResolutionInfo> {
             current_100ns: current,
         })
     } else {
-        Err(PieuvreError::Unsupported(format!("NtQueryTimerResolution: {}", status)))
+        Err(PieuvreError::Unsupported(format!(
+            "NtQueryTimerResolution: {}",
+            status
+        )))
     }
 }
 
 /// Configure la résolution timer
-/// 
+///
 /// # Arguments
 /// * `resolution_100ns` - Résolution en unités de 100ns (5000 = 0.5ms, 10000 = 1ms)
 pub fn set_timer_resolution(resolution_100ns: u32) -> Result<u32> {
     let mut actual = 0u32;
-    
+
     let status = unsafe { NtSetTimerResolution(resolution_100ns, 1, &mut actual) };
-    
+
     if status >= 0 {
         tracing::info!(
             "Timer resolution: {}00ns -> {}00ns",
@@ -55,7 +58,10 @@ pub fn set_timer_resolution(resolution_100ns: u32) -> Result<u32> {
         );
         Ok(actual)
     } else {
-        Err(PieuvreError::Unsupported(format!("NtSetTimerResolution: {}", status)))
+        Err(PieuvreError::Unsupported(format!(
+            "NtSetTimerResolution: {}",
+            status
+        )))
     }
 }
 
@@ -74,17 +80,17 @@ impl TimerResolutionInfo {
     pub fn current_ms(&self) -> f64 {
         self.current_100ns as f64 / 10000.0
     }
-    
+
     /// Convertit la résolution minimale (la plus grossière) en millisecondes
     pub fn min_ms(&self) -> f64 {
         self.minimum_100ns as f64 / 10000.0
     }
-    
+
     /// Convertit la résolution maximale (la plus fine) en millisecondes
     pub fn max_ms(&self) -> f64 {
         self.maximum_100ns as f64 / 10000.0
     }
-    
+
     /// Convertit la résolution maximale (la plus fine) en millisecondes
     pub fn best_ms(&self) -> f64 {
         self.maximum_100ns as f64 / 10000.0
@@ -95,14 +101,16 @@ impl TimerResolutionInfo {
 pub fn reset_timer_resolution() -> Result<u32> {
     // 156250 = 15.625ms en unités de 100ns
     let mut actual = 0u32;
-    
+
     let status = unsafe { NtSetTimerResolution(156250, 0, &mut actual) };
-    
+
     if status >= 0 {
         tracing::info!("Timer resolution reset to default (15.625ms)");
         Ok(actual)
     } else {
-        Err(PieuvreError::Unsupported(format!("NtSetTimerResolution reset: {}", status)))
+        Err(PieuvreError::Unsupported(format!(
+            "NtSetTimerResolution reset: {}",
+            status
+        )))
     }
 }
-

@@ -14,14 +14,21 @@ use super::*;
 #[test]
 fn test_cli_module_compiles() {
     // Si ce test compile, le module CLI est syntaxiquement correct
-    assert!(true);
 }
 
 #[test]
 fn test_cli_has_all_commands() {
     // Vérifier que toutes les commandes sont définies
-    let commands = ["audit", "analyze", "sync", "status", "rollback", "verify", "interactive"];
-    
+    let commands = [
+        "audit",
+        "analyze",
+        "sync",
+        "status",
+        "rollback",
+        "verify",
+        "interactive",
+    ];
+
     for cmd in commands {
         assert!(!cmd.is_empty(), "Command {} should exist", cmd);
     }
@@ -136,13 +143,8 @@ fn test_interactive_opt_item_safe() {
 #[test]
 fn test_verbose_levels() {
     // 0 = warn, 1 = info, 2 = debug, 3+ = trace
-    let levels = [
-        (0u8, "warn"),
-        (1u8, "info"),
-        (2u8, "debug"),
-        (3u8, "trace"),
-    ];
-    
+    let levels = [(0u8, "warn"), (1u8, "info"), (2u8, "debug"), (3u8, "trace")];
+
     for (level, expected) in levels {
         let filter = match level {
             0 => "warn",

@@ -2,38 +2,50 @@
 //!
 //! Permet d'isoler les drivers à haute latence sur des coeurs spécifiques.
 
-use pieuvre_common::Result;
 use crate::registry::set_dword_value;
+use pieuvre_common::Result;
 
 pub struct InterruptSteering;
 
 impl InterruptSteering {
     /// Configure l'affinité d'un driver spécifique
     pub fn set_driver_affinity(driver_name: &str, mask: u64) -> Result<()> {
-        let path = format!(r#"System\CurrentControlSet\Enum\{}\Device Parameters\Interrupt Management\Affinity Policy"#, driver_name);
-        
+        let path = format!(
+            r#"System\CurrentControlSet\Enum\{}\Device Parameters\Interrupt Management\Affinity Policy"#,
+            driver_name
+        );
+
         set_dword_value(&path, "AssignmentSetOverride", mask as u32)?;
         set_dword_value(&path, "DevicePolicy", 4)?; // IrqPolicySpecifiedProcessors
-        
+
         tracing::info!("Affinité configurée pour {}: mask={:x}", driver_name, mask);
         Ok(())
     }
 
     /// Politique hybride appliquée: P={:x}, E={:x}
     pub fn apply_hybrid_policy(p_core_mask: u64, e_core_mask: u64) -> Result<()> {
-        tracing::info!("Politique hybride appliquée: P={:x}, E={:x}", p_core_mask, e_core_mask);
+        tracing::info!(
+            "Politique hybride appliquée: P={:x}, E={:x}",
+            p_core_mask,
+            e_core_mask
+        );
         Ok(())
     }
 
     /// Ajuste dynamiquement l'affinité des drivers à haute latence (SOTA)
     pub fn steer_high_latency_drivers(threshold_us: u64, target_mask: u64) -> Result<()> {
         let stats = pieuvre_audit::etw::monitor::LatencyMonitor::global().get_all_stats();
-        
+
         for (driver_name, stat) in stats {
             if stat.dpc_max_us > threshold_us || stat.isr_max_us > threshold_us {
-                tracing::warn!("Haute latence détectée pour {}: DPC={}us, ISR={}us. Steering vers mask {:x}", 
-                    driver_name, stat.dpc_max_us, stat.isr_max_us, target_mask);
-                
+                tracing::warn!(
+                    "Haute latence détectée pour {}: DPC={}us, ISR={}us. Steering vers mask {:x}",
+                    driver_name,
+                    stat.dpc_max_us,
+                    stat.isr_max_us,
+                    target_mask
+                );
+
                 // Tentative de steering si le nom ressemble à un driver (pas une adresse hex)
                 if !driver_name.starts_with("0x") {
                     if let Err(e) = Self::set_driver_affinity(&driver_name, target_mask) {
@@ -42,7 +54,7 @@ impl InterruptSteering {
                 }
             }
         }
-        
+
         Ok(())
     }
 }

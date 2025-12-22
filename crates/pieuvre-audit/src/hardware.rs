@@ -4,25 +4,25 @@
 //! GPU via DXGI pour VRAM précis, Storage via DeviceIoControl pour NVMe/SSD.
 
 use pieuvre_common::{CpuInfo, GpuInfo, HardwareInfo, MemoryInfo, Result, StorageInfo};
-use windows::Win32::System::SystemInformation::{
-    GetLogicalProcessorInformationEx, GlobalMemoryStatusEx, MEMORYSTATUSEX,
-    RelationProcessorCore, SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX,
-};
+use std::arch::x86_64::__cpuid;
+use windows::core::{HSTRING, PCWSTR};
 use windows::Win32::Graphics::Dxgi::{
-    CreateDXGIFactory1, IDXGIFactory1, IDXGIAdapter1,
-    DXGI_ADAPTER_DESC1, DXGI_ADAPTER_FLAG_SOFTWARE,
+    CreateDXGIFactory1, IDXGIAdapter1, IDXGIFactory1, DXGI_ADAPTER_DESC1,
+    DXGI_ADAPTER_FLAG_SOFTWARE,
 };
 use windows::Win32::Storage::FileSystem::{
-    CreateFileW, GetDiskFreeSpaceExW, GetLogicalDrives, GetDriveTypeW,
-    FILE_SHARE_READ, FILE_SHARE_WRITE, OPEN_EXISTING,
+    CreateFileW, GetDiskFreeSpaceExW, GetDriveTypeW, GetLogicalDrives, FILE_SHARE_READ,
+    FILE_SHARE_WRITE, OPEN_EXISTING,
 };
 use windows::Win32::System::Ioctl::{
+    PropertyStandardQuery, StorageAdapterProperty, StorageDeviceSeekPenaltyProperty,
     IOCTL_STORAGE_QUERY_PROPERTY,
-    StorageDeviceSeekPenaltyProperty, StorageAdapterProperty, PropertyStandardQuery,
+};
+use windows::Win32::System::SystemInformation::{
+    GetLogicalProcessorInformationEx, GlobalMemoryStatusEx, RelationProcessorCore, MEMORYSTATUSEX,
+    SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX,
 };
 use windows::Win32::System::IO::DeviceIoControl;
-use windows::core::{HSTRING, PCWSTR};
-use std::arch::x86_64::__cpuid;
 
 /// Collecte toutes les informations matérielles
 pub fn probe_hardware() -> Result<HardwareInfo> {
@@ -38,7 +38,7 @@ pub fn probe_hardware() -> Result<HardwareInfo> {
 /// Utilise pour les warnings power/timer
 pub fn is_laptop() -> bool {
     use windows::Win32::System::Power::{GetSystemPowerStatus, SYSTEM_POWER_STATUS};
-    
+
     unsafe {
         let mut status = SYSTEM_POWER_STATUS::default();
         if GetSystemPowerStatus(&mut status).is_ok() {
@@ -63,21 +63,20 @@ fn probe_cpu() -> Result<CpuInfo> {
     unsafe {
         let mut length = 0u32;
         let _ = GetLogicalProcessorInformationEx(RelationProcessorCore, None, &mut length);
-        
+
         if length > 0 {
             let mut buffer = vec![0u8; length as usize];
             let ptr = buffer.as_mut_ptr() as *mut SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX;
-            
-            if GetLogicalProcessorInformationEx(
-                RelationProcessorCore,
-                Some(ptr),
-                &mut length,
-            ).is_ok() {
+
+            if GetLogicalProcessorInformationEx(RelationProcessorCore, Some(ptr), &mut length)
+                .is_ok()
+            {
                 let mut offset = 0usize;
                 while offset < length as usize {
-                    let info = &*(buffer.as_ptr().add(offset) as *const SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
+                    let info = &*(buffer.as_ptr().add(offset)
+                        as *const SYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX);
                     physical_cores += 1;
-                    
+
                     // EfficiencyClass: 0 = E-Core, 1+ = P-Core (Intel 12th+)
                     let efficiency = info.Anonymous.Processor.EfficiencyClass;
                     if efficiency == 0 {
@@ -85,20 +84,20 @@ fn probe_cpu() -> Result<CpuInfo> {
                     } else {
                         p_cores.push(physical_cores - 1);
                     }
-                    
+
                     offset += info.Size as usize;
                 }
             }
         }
     }
-    
+
     let logical_cores = std::thread::available_parallelism()
         .map(|p| p.get() as u32)
         .unwrap_or(1);
-    
+
     // Hybrid detection: both P and E cores present
     let is_hybrid = !p_cores.is_empty() && !e_cores.is_empty();
-    
+
     Ok(CpuInfo {
         vendor,
         model_name,
@@ -118,12 +117,21 @@ fn detect_cpu_via_cpuid() -> (String, String) {
             // Get vendor string (EAX=0)
             let result = __cpuid(0);
             let vendor_bytes: [u8; 12] = [
-                result.ebx as u8, (result.ebx >> 8) as u8, (result.ebx >> 16) as u8, (result.ebx >> 24) as u8,
-                result.edx as u8, (result.edx >> 8) as u8, (result.edx >> 16) as u8, (result.edx >> 24) as u8,
-                result.ecx as u8, (result.ecx >> 8) as u8, (result.ecx >> 16) as u8, (result.ecx >> 24) as u8,
+                result.ebx as u8,
+                (result.ebx >> 8) as u8,
+                (result.ebx >> 16) as u8,
+                (result.ebx >> 24) as u8,
+                result.edx as u8,
+                (result.edx >> 8) as u8,
+                (result.edx >> 16) as u8,
+                (result.edx >> 24) as u8,
+                result.ecx as u8,
+                (result.ecx >> 8) as u8,
+                (result.ecx >> 16) as u8,
+                (result.ecx >> 24) as u8,
             ];
             let vendor = String::from_utf8_lossy(&vendor_bytes).to_string();
-            
+
             // Get brand string (EAX=0x80000002-0x80000004)
             let mut brand = String::new();
             for i in 0x80000002u32..=0x80000004u32 {
@@ -137,20 +145,23 @@ fn detect_cpu_via_cpuid() -> (String, String) {
                     }
                 }
             }
-            
+
             let vendor_name = match vendor.trim() {
                 s if s.contains("GenuineIntel") => "Intel".to_string(),
                 s if s.contains("AuthenticAMD") => "AMD".to_string(),
                 _ => vendor.trim().to_string(),
             };
-            
+
             (vendor_name, brand.trim().to_string())
         }
     }
-    
+
     #[cfg(not(target_arch = "x86_64"))]
     {
-        ("Unknown".to_string(), std::env::var("PROCESSOR_IDENTIFIER").unwrap_or_else(|_| "Unknown".into()))
+        (
+            "Unknown".to_string(),
+            std::env::var("PROCESSOR_IDENTIFIER").unwrap_or_else(|_| "Unknown".into()),
+        )
     }
 }
 
@@ -160,9 +171,9 @@ fn probe_memory() -> Result<MemoryInfo> {
             dwLength: std::mem::size_of::<MEMORYSTATUSEX>() as u32,
             ..Default::default()
         };
-        
+
         GlobalMemoryStatusEx(&mut status)?;
-        
+
         Ok(MemoryInfo {
             total_bytes: status.ullTotalPhys,
             available_bytes: status.ullAvailPhys,
@@ -173,34 +184,37 @@ fn probe_memory() -> Result<MemoryInfo> {
 /// Probe storage avec détection SSD/NVMe et taille réelle
 fn probe_storage() -> Result<Vec<StorageInfo>> {
     let mut drives = Vec::new();
-    
+
     unsafe {
         const DRIVE_FIXED: u32 = 3;
-        
+
         let drive_mask = GetLogicalDrives();
-        
+
         for i in 0..26u32 {
             if (drive_mask & (1 << i)) != 0 {
                 let letter = (b'A' + i as u8) as char;
-                let path: Vec<u16> = format!("{}:\\", letter).encode_utf16().chain(std::iter::once(0)).collect();
-                
+                let path: Vec<u16> = format!("{}:\\", letter)
+                    .encode_utf16()
+                    .chain(std::iter::once(0))
+                    .collect();
+
                 let drive_type = GetDriveTypeW(PCWSTR(path.as_ptr()));
-                
+
                 if drive_type == DRIVE_FIXED {
                     let device_id = format!("{}:", letter);
-                    
+
                     // Récupérer taille via GetDiskFreeSpaceExW
                     let size_bytes = get_disk_size(&device_id);
-                    
+
                     // Détecter SSD via seek penalty (IOCTL)
                     let is_ssd = !has_seek_penalty(&device_id);
-                    
+
                     // Détecter NVMe via BusType ou heuristique
                     let is_nvme = detect_nvme(&device_id);
-                    
+
                     // Récupérer modèle via registre
                     let model = get_disk_model(&device_id, letter);
-                    
+
                     drives.push(StorageInfo {
                         device_id,
                         model,
@@ -212,24 +226,29 @@ fn probe_storage() -> Result<Vec<StorageInfo>> {
             }
         }
     }
-    
+
     Ok(drives)
 }
 
 /// Récupère la taille totale d'un disque
 fn get_disk_size(device_id: &str) -> u64 {
     unsafe {
-        let path: Vec<u16> = format!("{}\\", device_id).encode_utf16().chain(std::iter::once(0)).collect();
+        let path: Vec<u16> = format!("{}\\", device_id)
+            .encode_utf16()
+            .chain(std::iter::once(0))
+            .collect();
         let mut total_bytes = 0u64;
         let mut _free_bytes = 0u64;
         let mut _free_to_caller = 0u64;
-        
+
         if GetDiskFreeSpaceExW(
             PCWSTR(path.as_ptr()),
             Some(&mut _free_to_caller),
             Some(&mut total_bytes),
             Some(&mut _free_bytes),
-        ).is_ok() {
+        )
+        .is_ok()
+        {
             total_bytes
         } else {
             0
@@ -242,7 +261,7 @@ fn has_seek_penalty(device_id: &str) -> bool {
     unsafe {
         let physical_path = format!(r"\\.\{}", device_id);
         let path_wide = HSTRING::from(&physical_path);
-        
+
         let handle = match CreateFileW(
             &path_wide,
             0, // Query only, pas besoin de read/write
@@ -255,7 +274,7 @@ fn has_seek_penalty(device_id: &str) -> bool {
             Ok(h) => h,
             Err(_) => return true, // Assume HDD si on ne peut pas ouvrir
         };
-        
+
         // Préparer la query pour StorageDeviceSeekPenaltyProperty
         #[repr(C)]
         struct StoragePropertyQuerySeek {
@@ -263,28 +282,28 @@ fn has_seek_penalty(device_id: &str) -> bool {
             query_type: u32,
             additional_parameters: [u8; 1],
         }
-        
+
         #[repr(C)]
         struct DeviceSeekPenaltyDescriptor {
             version: u32,
             size: u32,
             incurs_seek_penalty: u8,
         }
-        
+
         let query = StoragePropertyQuerySeek {
             property_id: StorageDeviceSeekPenaltyProperty.0 as u32,
             query_type: PropertyStandardQuery.0 as u32,
             additional_parameters: [0],
         };
-        
+
         let mut result = DeviceSeekPenaltyDescriptor {
             version: 0,
             size: 0,
             incurs_seek_penalty: 1,
         };
-        
+
         let mut bytes_returned = 0u32;
-        
+
         let success = DeviceIoControl(
             handle,
             IOCTL_STORAGE_QUERY_PROPERTY,
@@ -295,9 +314,9 @@ fn has_seek_penalty(device_id: &str) -> bool {
             Some(&mut bytes_returned),
             None,
         );
-        
+
         let _ = windows::Win32::Foundation::CloseHandle(handle);
-        
+
         if success.is_ok() && bytes_returned > 0 {
             result.incurs_seek_penalty != 0
         } else {
@@ -311,7 +330,7 @@ fn detect_nvme(device_id: &str) -> bool {
     unsafe {
         let physical_path = format!(r"\\.\{}", device_id);
         let path_wide = HSTRING::from(&physical_path);
-        
+
         let handle = match CreateFileW(
             &path_wide,
             0,
@@ -324,14 +343,14 @@ fn detect_nvme(device_id: &str) -> bool {
             Ok(h) => h,
             Err(_) => return false,
         };
-        
+
         #[repr(C)]
         struct StoragePropertyQuery {
             property_id: u32,
             query_type: u32,
             additional_parameters: [u8; 1],
         }
-        
+
         #[repr(C)]
         struct StorageAdapterDescriptor {
             version: u32,
@@ -349,16 +368,16 @@ fn detect_nvme(device_id: &str) -> bool {
             srb_type: u8,
             address_type: u8,
         }
-        
+
         let query = StoragePropertyQuery {
             property_id: StorageAdapterProperty.0 as u32,
             query_type: PropertyStandardQuery.0 as u32,
             additional_parameters: [0],
         };
-        
+
         let mut result: StorageAdapterDescriptor = std::mem::zeroed();
         let mut bytes_returned = 0u32;
-        
+
         let success = DeviceIoControl(
             handle,
             IOCTL_STORAGE_QUERY_PROPERTY,
@@ -369,9 +388,9 @@ fn detect_nvme(device_id: &str) -> bool {
             Some(&mut bytes_returned),
             None,
         );
-        
+
         let _ = windows::Win32::Foundation::CloseHandle(handle);
-        
+
         // BusTypeNvme = 17
         success.is_ok() && result.bus_type == 17
     }
@@ -390,7 +409,7 @@ fn get_disk_model(device_id: &str, _letter: char) -> String {
 /// Probe GPU via DXGI - détection VRAM précise et multi-GPU
 fn probe_gpu() -> Result<Vec<GpuInfo>> {
     let mut gpus = Vec::new();
-    
+
     unsafe {
         // Créer la factory DXGI
         let factory: IDXGIFactory1 = match CreateDXGIFactory1() {
@@ -400,15 +419,15 @@ fn probe_gpu() -> Result<Vec<GpuInfo>> {
                 return probe_gpu_registry();
             }
         };
-        
+
         let mut adapter_index = 0u32;
-        
+
         loop {
             let adapter: IDXGIAdapter1 = match factory.EnumAdapters1(adapter_index) {
                 Ok(a) => a,
                 Err(_) => break, // Plus d'adaptateurs
             };
-            
+
             let desc: DXGI_ADAPTER_DESC1 = match adapter.GetDesc1() {
                 Ok(d) => d,
                 Err(_) => {
@@ -416,38 +435,40 @@ fn probe_gpu() -> Result<Vec<GpuInfo>> {
                     continue;
                 }
             };
-            
+
             // Exclure les adaptateurs software (comme Microsoft Basic Render Driver)
             if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE.0 as u32) == 0 {
                 // Convertir le nom (UTF-16 avec null terminator)
-                let name_end = desc.Description.iter()
+                let name_end = desc
+                    .Description
+                    .iter()
                     .position(|&c| c == 0)
                     .unwrap_or(desc.Description.len());
                 let name = String::from_utf16_lossy(&desc.Description[..name_end]);
-                
+
                 // Détecter le vendor via VendorId
                 let vendor = detect_vendor_from_id(desc.VendorId);
-                
+
                 // VRAM = DedicatedVideoMemory (pour GPU discret)
                 // Pour iGPU, SharedSystemMemory est plus pertinent mais on prend Dedicated
                 let vram_bytes = desc.DedicatedVideoMemory as u64;
-                
+
                 gpus.push(GpuInfo {
                     name: name.trim().to_string(),
                     vendor,
                     vram_bytes,
                 });
             }
-            
+
             adapter_index += 1;
         }
     }
-    
+
     // Si aucun GPU trouvé via DXGI, fallback au registre
     if gpus.is_empty() {
         return probe_gpu_registry();
     }
-    
+
     Ok(gpus)
 }
 
@@ -466,29 +487,37 @@ fn detect_vendor_from_id(vendor_id: u32) -> String {
 /// Fallback: détection GPU via registre
 fn probe_gpu_registry() -> Result<Vec<GpuInfo>> {
     use windows::Win32::System::Registry::{
-        RegOpenKeyExW, RegCloseKey, RegEnumKeyExW,
-        HKEY_LOCAL_MACHINE, KEY_READ,
+        RegCloseKey, RegEnumKeyExW, RegOpenKeyExW, HKEY_LOCAL_MACHINE, KEY_READ,
     };
-    
+
     let mut gpus = Vec::new();
-    
+
     unsafe {
         // Énumérer tous les adaptateurs (0000, 0001, etc.)
-        let base_key: Vec<u16> = r"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}"
-            .encode_utf16()
-            .chain(std::iter::once(0))
-            .collect();
-        
+        let base_key: Vec<u16> =
+            r"SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}"
+                .encode_utf16()
+                .chain(std::iter::once(0))
+                .collect();
+
         let mut hkey = Default::default();
-        if RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(base_key.as_ptr()), Some(0), KEY_READ, &mut hkey).is_err() {
+        if RegOpenKeyExW(
+            HKEY_LOCAL_MACHINE,
+            PCWSTR(base_key.as_ptr()),
+            Some(0),
+            KEY_READ,
+            &mut hkey,
+        )
+        .is_err()
+        {
             return Ok(gpus);
         }
-        
+
         let mut index = 0u32;
         loop {
             let mut name_buffer = vec![0u16; 256];
             let mut name_len = name_buffer.len() as u32;
-            
+
             if RegEnumKeyExW(
                 hkey,
                 index,
@@ -498,10 +527,12 @@ fn probe_gpu_registry() -> Result<Vec<GpuInfo>> {
                 None,
                 None,
                 None,
-            ).is_err() {
+            )
+            .is_err()
+            {
                 break;
             }
-            
+
             // Ouvrir la sous-clé (ex: 0000, 0001)
             let subkey_name = String::from_utf16_lossy(&name_buffer[..name_len as usize]);
             if subkey_name.chars().all(|c| c.is_ascii_digit()) {
@@ -509,41 +540,51 @@ fn probe_gpu_registry() -> Result<Vec<GpuInfo>> {
                     r"SYSTEM\CurrentControlSet\Control\Class\{{4d36e968-e325-11ce-bfc1-08002be10318}}\{}",
                     subkey_name
                 );
-                
+
                 if let Some(gpu) = read_gpu_from_registry(&full_path) {
                     gpus.push(gpu);
                 }
             }
-            
+
             index += 1;
         }
-        
+
         let _ = RegCloseKey(hkey);
     }
-    
+
     Ok(gpus)
 }
 
 /// Lit les informations GPU depuis une clé registre
 fn read_gpu_from_registry(key_path: &str) -> Option<GpuInfo> {
     use windows::Win32::System::Registry::{
-        RegOpenKeyExW, RegQueryValueExW, RegCloseKey,
-        HKEY_LOCAL_MACHINE, KEY_READ,
+        RegCloseKey, RegOpenKeyExW, RegQueryValueExW, HKEY_LOCAL_MACHINE, KEY_READ,
     };
-    
+
     unsafe {
         let key_wide: Vec<u16> = key_path.encode_utf16().chain(std::iter::once(0)).collect();
-        
+
         let mut hkey = Default::default();
-        if RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(key_wide.as_ptr()), Some(0), KEY_READ, &mut hkey).is_err() {
+        if RegOpenKeyExW(
+            HKEY_LOCAL_MACHINE,
+            PCWSTR(key_wide.as_ptr()),
+            Some(0),
+            KEY_READ,
+            &mut hkey,
+        )
+        .is_err()
+        {
             return None;
         }
-        
+
         // Lire DriverDesc
-        let value_name: Vec<u16> = "DriverDesc".encode_utf16().chain(std::iter::once(0)).collect();
+        let value_name: Vec<u16> = "DriverDesc"
+            .encode_utf16()
+            .chain(std::iter::once(0))
+            .collect();
         let mut buffer = vec![0u8; 512];
         let mut size = buffer.len() as u32;
-        
+
         let name = if RegQueryValueExW(
             hkey,
             PCWSTR(value_name.as_ptr()),
@@ -551,17 +592,22 @@ fn read_gpu_from_registry(key_path: &str) -> Option<GpuInfo> {
             None,
             Some(buffer.as_mut_ptr()),
             Some(&mut size),
-        ).is_ok() {
-            String::from_utf16_lossy(
-                std::slice::from_raw_parts(buffer.as_ptr() as *const u16, (size as usize / 2).saturating_sub(1))
-            ).trim().to_string()
+        )
+        .is_ok()
+        {
+            String::from_utf16_lossy(std::slice::from_raw_parts(
+                buffer.as_ptr() as *const u16,
+                (size as usize / 2).saturating_sub(1),
+            ))
+            .trim()
+            .to_string()
         } else {
             let _ = RegCloseKey(hkey);
             return None;
         };
-        
+
         let _ = RegCloseKey(hkey);
-        
+
         // Détecter vendor depuis le nom
         let vendor = if name.to_lowercase().contains("nvidia") {
             "NVIDIA"
@@ -572,7 +618,7 @@ fn read_gpu_from_registry(key_path: &str) -> Option<GpuInfo> {
         } else {
             "Unknown"
         };
-        
+
         Some(GpuInfo {
             name,
             vendor: vendor.to_string(),

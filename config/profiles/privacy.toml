@@ -1,6 +1,4 @@
 # Pieuvre Configuration - Profil Privacy
-
-[profile]
 name = "Privacy Maximum"
 description = "Télémétrie zéro, vie privée maximale"
 risk_level = "medium"
@@ -8,6 +6,8 @@ risk_level = "medium"
 [telemetry]
 # 0 = Security only (minimum absolu)
 level = 0
+block_domains = true
+block_ips = true
 
 [services]
 disable = [
@@ -22,10 +22,7 @@ disable = [
     "WdiSystemHost",
     "WdiServiceHost",
 ]
-
-[firewall]
-block_telemetry_domains = true
-block_telemetry_ips = true
+manual = []
 
 [registry]
 # Désactiver les fonctionnalités invasives
@@ -60,3 +57,5 @@ remove = [
 [network]
 # Hosts file additions pour bloquer télémétrie
 block_hosts = true
+nagle_algorithm = true
+network_throttling_index = 10

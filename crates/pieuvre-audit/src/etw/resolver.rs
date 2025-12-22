@@ -2,10 +2,10 @@
 //!
 //! Mappe les adresses de routine noyau aux noms de drivers (.sys).
 
-use windows::Win32::System::ProcessStatus::{EnumDeviceDrivers, GetDeviceDriverBaseNameW};
+use once_cell::sync::Lazy;
 use std::collections::BTreeMap;
 use std::sync::{Arc, RwLock};
-use once_cell::sync::Lazy;
+use windows::Win32::System::ProcessStatus::{EnumDeviceDrivers, GetDeviceDriverBaseNameW};
 
 /// Information sur un driver chargé
 #[derive(Debug, Clone)]
@@ -19,9 +19,8 @@ pub struct DriverResolver {
     modules: BTreeMap<usize, String>,
 }
 
-static RESOLVER: Lazy<Arc<RwLock<DriverResolver>>> = Lazy::new(|| {
-    Arc::new(RwLock::new(DriverResolver::new()))
-});
+static RESOLVER: Lazy<Arc<RwLock<DriverResolver>>> =
+    Lazy::new(|| Arc::new(RwLock::new(DriverResolver::new())));
 
 impl DriverResolver {
     pub fn global() -> Arc<RwLock<Self>> {
@@ -29,7 +28,9 @@ impl DriverResolver {
     }
 
     fn new() -> Self {
-        let mut resolver = Self { modules: BTreeMap::new() };
+        let mut resolver = Self {
+            modules: BTreeMap::new(),
+        };
         let _ = resolver.refresh();
         resolver
     }
@@ -45,25 +46,27 @@ impl DriverResolver {
 
             let count = bytes_needed as usize / std::mem::size_of::<*mut std::ffi::c_void>();
             let mut drivers = vec![std::ptr::null_mut::<std::ffi::c_void>(); count];
-            
+
             if EnumDeviceDrivers(drivers.as_mut_ptr(), bytes_needed, &mut bytes_needed).is_err() {
                 return Err(anyhow::anyhow!("Failed to enum device drivers"));
             }
 
             self.modules.clear();
             for &base in &drivers {
-                if base.is_null() { continue; }
-                
+                if base.is_null() {
+                    continue;
+                }
+
                 let mut name_buffer = vec![0u16; 256];
                 // GetDeviceDriverBaseNameW(ImageBase: *const c_void, lpBaseName: PWSTR, nSize: u32)
                 let len = GetDeviceDriverBaseNameW(base, &mut name_buffer);
-                
+
                 if len > 0 {
                     let name = String::from_utf16_lossy(&name_buffer[..len as usize]);
                     self.modules.insert(base as usize, name);
                 }
             }
-            
+
             tracing::debug!("DriverResolver: {} modules chargés", self.modules.len());
             Ok(())
         }

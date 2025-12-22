@@ -18,8 +18,8 @@ pub mod hardening;
 pub mod hosts;
 pub mod msi;
 pub mod network;
-pub mod operation;
 pub mod onedrive;
+pub mod operation;
 pub mod power;
 pub mod registry;
 pub mod rollback;
@@ -33,29 +33,65 @@ pub mod windows_update;
 #[cfg(test)]
 mod tests;
 
-
+use crate::operation::{RegistryDwordOperation, ServiceOperation, SyncOperation};
 use pieuvre_common::Result;
 use tracing::instrument;
-use crate::operation::{SyncOperation, ServiceOperation, RegistryDwordOperation};
 
 /// Applique un profil d'optimisation
 pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
-    tracing::info!("Application profil: {} (dry_run: {})", profile_name, dry_run);
-    
+    tracing::info!(
+        "Application profil: {} (dry_run: {})",
+        profile_name,
+        dry_run
+    );
+
     // Charger le profil TOML
-    let profile_path = format!("config/profiles/{}.toml", profile_name);
-    let content = std::fs::read_to_string(&profile_path)
-        .map_err(|e| pieuvre_common::PieuvreError::Internal(format!("Erreur lecture profil {}: {}", profile_name, e)))?;
-    
-    let profile: pieuvre_common::Profile = ::toml::from_str(&content)
-        .map_err(|e| pieuvre_common::PieuvreError::Internal(format!("Erreur parsing profil {}: {}", profile_name, e)))?;
+    let mut profile_path =
+        std::path::PathBuf::from(format!("config/profiles/{}.toml", profile_name));
+
+    // Si on est dans un sous-crate (ex: tests), on remonte d'un niveau
+    if !profile_path.exists() {
+        let alt_path =
+            std::path::PathBuf::from(format!("../../config/profiles/{}.toml", profile_name));
+        if alt_path.exists() {
+            profile_path = alt_path;
+        }
+    }
+
+    let content = match std::fs::read_to_string(&profile_path) {
+        Ok(c) => c,
+        Err(e) if dry_run && e.kind() == std::io::ErrorKind::NotFound => {
+            tracing::warn!(
+                "Profil {} non trouvé en mode dry-run, continuation...",
+                profile_name
+            );
+            return Ok(());
+        }
+        Err(e) => {
+            return Err(pieuvre_common::PieuvreError::Internal(format!(
+                "Erreur lecture profil {} ({:?}): {}",
+                profile_name, profile_path, e
+            )));
+        }
+    };
+
+    let profile: pieuvre_common::Profile = ::toml::from_str(&content).map_err(|e| {
+        pieuvre_common::PieuvreError::Internal(format!(
+            "Erreur parsing profil {}: {}",
+            profile_name, e
+        ))
+    })?;
 
     if dry_run {
-        tracing::info!("[DRY-RUN] Simulation de l'application du profil {}", profile.name);
+        tracing::info!(
+            "[DRY-RUN] Simulation de l'application du profil {}",
+            profile.name
+        );
     }
 
     // 0. Sondage matériel SOTA
-    let hw = tokio::task::spawn_blocking(pieuvre_audit::hardware::probe_hardware).await
+    let hw = tokio::task::spawn_blocking(pieuvre_audit::hardware::probe_hardware)
+        .await
         .map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))??;
 
     let mut operations: Vec<Box<dyn SyncOperation>> = Vec::new();
@@ -80,10 +116,16 @@ pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
     // 2. Services
     if let Some(services) = &profile.services {
         for name in &services.disable {
-            operations.push(Box::new(ServiceOperation { name: name.clone(), target_start_type: 4 }));
+            operations.push(Box::new(ServiceOperation {
+                name: name.clone(),
+                target_start_type: 4,
+            }));
         }
         for name in &services.manual {
-            operations.push(Box::new(ServiceOperation { name: name.clone(), target_start_type: 3 }));
+            operations.push(Box::new(ServiceOperation {
+                name: name.clone(),
+                target_start_type: 3,
+            }));
         }
     }
 
@@ -107,19 +149,67 @@ pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
             }
         };
 
-        add_reg(r"SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo", "Enabled", reg.advertising_id);
-        add_reg(r"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location", "Value", reg.location_tracking);
-        add_reg(r"SOFTWARE\Policies\Microsoft\Windows\System", "PublishUserActivities", reg.activity_history);
-        add_reg(r"SOFTWARE\Microsoft\Windows\CurrentVersion\Search", "CanCortanaBeEnabled", reg.cortana);
-        add_reg(r"SOFTWARE\Policies\Microsoft\Windows\Explorer", "DisableSearchBoxSuggestions", reg.web_search.map(|v| !v));
-        add_reg(r"SOFTWARE\Policies\Microsoft\Windows\CloudContent", "DisableTailoredExperiences", reg.tailored_experiences.map(|v| !v));
-        add_reg(r"SOFTWARE\Policies\Microsoft\Windows\DataCollection", "AllowDiagnosticDataViewer", reg.diagnostic_data_viewer);
-        add_reg(r"SOFTWARE\Policies\Microsoft\Windows\AppCompat", "DisableInventory", reg.app_launch_tracking.map(|v| !v));
-        add_reg(r"SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager", "SystemPaneSuggestionsEnabled", reg.suggested_content.map(|v| v));
-        add_reg(r"SOFTWARE\Policies\Microsoft\Windows\System", "EnableActivityFeed", reg.timeline);
-        add_reg(r"SOFTWARE\Microsoft\InputPersonalization", "RestrictImplicitTextCollection", reg.input_personalization.map(|v| !v));
-        add_reg(r"SOFTWARE\Microsoft\InputPersonalization", "RestrictImplicitInkCollection", reg.input_personalization.map(|v| !v));
-        
+        add_reg(
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo",
+            "Enabled",
+            reg.advertising_id,
+        );
+        add_reg(
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location",
+            "Value",
+            reg.location_tracking,
+        );
+        add_reg(
+            r"SOFTWARE\Policies\Microsoft\Windows\System",
+            "PublishUserActivities",
+            reg.activity_history,
+        );
+        add_reg(
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\Search",
+            "CanCortanaBeEnabled",
+            reg.cortana,
+        );
+        add_reg(
+            r"SOFTWARE\Policies\Microsoft\Windows\Explorer",
+            "DisableSearchBoxSuggestions",
+            reg.web_search.map(|v| !v),
+        );
+        add_reg(
+            r"SOFTWARE\Policies\Microsoft\Windows\CloudContent",
+            "DisableTailoredExperiences",
+            reg.tailored_experiences.map(|v| !v),
+        );
+        add_reg(
+            r"SOFTWARE\Policies\Microsoft\Windows\DataCollection",
+            "AllowDiagnosticDataViewer",
+            reg.diagnostic_data_viewer,
+        );
+        add_reg(
+            r"SOFTWARE\Policies\Microsoft\Windows\AppCompat",
+            "DisableInventory",
+            reg.app_launch_tracking.map(|v| !v),
+        );
+        add_reg(
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\ContentDeliveryManager",
+            "SystemPaneSuggestionsEnabled",
+            reg.suggested_content,
+        );
+        add_reg(
+            r"SOFTWARE\Policies\Microsoft\Windows\System",
+            "EnableActivityFeed",
+            reg.timeline,
+        );
+        add_reg(
+            r"SOFTWARE\Microsoft\InputPersonalization",
+            "RestrictImplicitTextCollection",
+            reg.input_personalization.map(|v| !v),
+        );
+        add_reg(
+            r"SOFTWARE\Microsoft\InputPersonalization",
+            "RestrictImplicitInkCollection",
+            reg.input_personalization.map(|v| !v),
+        );
+
         if let Some(freq) = reg.feedback_frequency {
             operations.push(Box::new(RegistryDwordOperation {
                 key: r"SOFTWARE\Policies\Microsoft\Windows\DataCollection".to_string(),
@@ -149,7 +239,11 @@ pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
         operations.push(Box::new(RegistryDwordOperation {
             key: r"SYSTEM\CurrentControlSet\Control\GraphicsDrivers".to_string(),
             value: "HwSchMode".to_string(),
-            target_data: if gpu.hardware_accelerated_gpu_scheduling { 2 } else { 1 },
+            target_data: if gpu.hardware_accelerated_gpu_scheduling {
+                2
+            } else {
+                1
+            },
         }));
     }
 
@@ -195,13 +289,14 @@ pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
     if let Some(power_cfg) = &profile.power {
         if !dry_run {
             let plan_name = power_cfg.plan.clone();
-            let _ = tokio::task::spawn_blocking(move || {
-                match plan_name.as_str() {
-                    "ultimate_performance" => crate::power::apply_gaming_power_config(),
-                    "high_performance" => crate::power::set_power_plan(crate::power::PowerPlan::HighPerformance),
-                    _ => crate::power::set_power_plan(crate::power::PowerPlan::Balanced),
+            let _ = tokio::task::spawn_blocking(move || match plan_name.as_str() {
+                "ultimate_performance" => crate::power::apply_gaming_power_config(),
+                "high_performance" => {
+                    crate::power::set_power_plan(crate::power::PowerPlan::HighPerformance)
                 }
-            }).await;
+                _ => crate::power::set_power_plan(crate::power::PowerPlan::Balanced),
+            })
+            .await;
         }
     }
 
@@ -212,25 +307,44 @@ pub async fn apply_profile(profile_name: &str, dry_run: bool) -> Result<()> {
             let _ = crate::hardening::lock_registry_key(key);
         }
     }
-    
-    tracing::info!("Profil {} appliqué avec succès ({} changements)", profile.name, all_changes.len());
+
+    tracing::info!(
+        "Profil {} appliqué avec succès ({} changements)",
+        profile.name,
+        all_changes.len()
+    );
     Ok(())
 }
 
 #[instrument]
 pub async fn reset_to_defaults() -> Result<()> {
     tracing::info!("Reinitialisation aux valeurs par defaut (Polymorphe)...");
-    
-    use crate::operation::{SyncOperation, ServiceOperation, RegistryDwordOperation};
+
+    use crate::operation::{RegistryDwordOperation, ServiceOperation, SyncOperation};
     use tokio::task::JoinSet;
 
     let operations: Vec<Box<dyn SyncOperation>> = vec![
         // 1. Services en mode automatique (ou manuel selon le service)
-        Box::new(ServiceOperation { name: "DiagTrack".to_string(), target_start_type: 2 }),
-        Box::new(ServiceOperation { name: "dmwappushservice".to_string(), target_start_type: 3 }),
-        Box::new(ServiceOperation { name: "WerSvc".to_string(), target_start_type: 3 }),
-        Box::new(ServiceOperation { name: "SysMain".to_string(), target_start_type: 2 }),
-        Box::new(ServiceOperation { name: "WSearch".to_string(), target_start_type: 2 }),
+        Box::new(ServiceOperation {
+            name: "DiagTrack".to_string(),
+            target_start_type: 2,
+        }),
+        Box::new(ServiceOperation {
+            name: "dmwappushservice".to_string(),
+            target_start_type: 3,
+        }),
+        Box::new(ServiceOperation {
+            name: "WerSvc".to_string(),
+            target_start_type: 3,
+        }),
+        Box::new(ServiceOperation {
+            name: "SysMain".to_string(),
+            target_start_type: 2,
+        }),
+        Box::new(ServiceOperation {
+            name: "WSearch".to_string(),
+            target_start_type: 2,
+        }),
         // 2. Registre par défaut
         Box::new(RegistryDwordOperation {
             key: r"SYSTEM\CurrentControlSet\Control\PriorityControl".to_string(),
@@ -253,7 +367,10 @@ pub async fn reset_to_defaults() -> Result<()> {
 
     // 3. Power plan Balanced
     let _ = tokio::task::spawn_blocking(|| power::set_power_plan(power::PowerPlan::Balanced)).await;
-    
-    tracing::info!("Reinitialisation terminee ({} changements)", all_changes.len());
+
+    tracing::info!(
+        "Reinitialisation terminee ({} changements)",
+        all_changes.len()
+    );
     Ok(())
 }

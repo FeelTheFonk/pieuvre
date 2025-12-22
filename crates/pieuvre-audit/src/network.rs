@@ -95,25 +95,27 @@ pub fn inspect_network() -> Result<NetworkStatus> {
     let mut endpoints = Vec::new();
     let mut blocked = 0;
     let mut reachable = 0;
-    
+
     for domain in MS_TELEMETRY_DOMAINS {
         let resolved_ips = resolve_domain(domain);
-        let is_blocked = resolved_ips.is_empty() || 
-                         resolved_ips.iter().any(|ip| ip.starts_with("0.0.0.0") || ip.starts_with("127.0.0.1"));
-        
+        let is_blocked = resolved_ips.is_empty()
+            || resolved_ips
+                .iter()
+                .any(|ip| ip.starts_with("0.0.0.0") || ip.starts_with("127.0.0.1"));
+
         if is_blocked {
             blocked += 1;
         } else {
             reachable += 1;
         }
-        
+
         endpoints.push(TelemetryEndpoint {
             domain: domain.to_string(),
             resolved_ips,
             is_blocked,
         });
     }
-    
+
     Ok(NetworkStatus {
         telemetry_endpoints: endpoints,
         blocked_count: blocked,
@@ -132,7 +134,9 @@ fn resolve_domain(domain: &str) -> Vec<String> {
 /// Vérifie si un domaine est dans la liste télémétrie
 pub fn is_telemetry_domain(domain: &str) -> bool {
     let lower = domain.to_lowercase();
-    MS_TELEMETRY_DOMAINS.iter().any(|d| lower.contains(&d.to_lowercase()))
+    MS_TELEMETRY_DOMAINS
+        .iter()
+        .any(|d| lower.contains(&d.to_lowercase()))
 }
 
 /// Retourne la liste des domaines télémétrie pour blocage

@@ -55,27 +55,37 @@ const SYSTEM_CRITICAL: &[&str] = &[
 /// Scan les packages Appx installés
 pub fn scan_packages() -> Result<Vec<AppxInfo>> {
     let mut packages = Vec::new();
-    
+
     // Utiliser PowerShell pour lister les packages (méthode plus simple que WinRT direct)
     // En production, utiliser Windows::Management::Deployment::PackageManager
-    
+
     // Pour l'instant, récupérer depuis le registre
-    use windows::Win32::System::Registry::{RegOpenKeyExW, RegEnumKeyExW, RegCloseKey, HKEY_CURRENT_USER, KEY_READ};
     use windows::core::PCWSTR;
-    
+    use windows::Win32::System::Registry::{
+        RegCloseKey, RegEnumKeyExW, RegOpenKeyExW, HKEY_CURRENT_USER, KEY_READ,
+    };
+
     unsafe {
         let subkey: Vec<u16> = r"Software\Classes\Local Settings\Software\Microsoft\Windows\CurrentVersion\AppModel\Repository\Packages"
             .encode_utf16()
             .chain(std::iter::once(0))
             .collect();
-        
+
         let mut hkey = Default::default();
-        if RegOpenKeyExW(HKEY_CURRENT_USER, PCWSTR(subkey.as_ptr()), Some(0), KEY_READ, &mut hkey).is_ok() {
+        if RegOpenKeyExW(
+            HKEY_CURRENT_USER,
+            PCWSTR(subkey.as_ptr()),
+            Some(0),
+            KEY_READ,
+            &mut hkey,
+        )
+        .is_ok()
+        {
             let mut index = 0u32;
             loop {
                 let mut name_buffer = vec![0u16; 512];
                 let mut name_len = name_buffer.len() as u32;
-                
+
                 let result = RegEnumKeyExW(
                     hkey,
                     index,
@@ -86,19 +96,23 @@ pub fn scan_packages() -> Result<Vec<AppxInfo>> {
                     None,
                     None,
                 );
-                
+
                 if result.is_err() {
                     break;
                 }
-                
+
                 let full_name = String::from_utf16_lossy(&name_buffer[..name_len as usize]);
-                
+
                 // Extraire le nom du package (partie avant le _)
-                let name = full_name.split('_').next().unwrap_or(&full_name).to_string();
-                
+                let name = full_name
+                    .split('_')
+                    .next()
+                    .unwrap_or(&full_name)
+                    .to_string();
+
                 let category = categorize_package(&name);
                 let removal_risk = assess_removal_risk(&name);
-                
+
                 packages.push(AppxInfo {
                     name: name.clone(),
                     full_name,
@@ -108,26 +122,29 @@ pub fn scan_packages() -> Result<Vec<AppxInfo>> {
                     category,
                     removal_risk,
                 });
-                
+
                 index += 1;
-                
+
                 // Limiter à 200 packages pour éviter explosion
                 if index > 200 {
                     break;
                 }
             }
-            
+
             let _ = RegCloseKey(hkey);
         }
     }
-    
+
     Ok(packages)
 }
 
 fn categorize_package(name: &str) -> AppxCategory {
     let lower = name.to_lowercase();
-    
-    if lower.starts_with("microsoft.windows") || lower.starts_with("microsoft.ui") || lower.contains("runtime") {
+
+    if lower.starts_with("microsoft.windows")
+        || lower.starts_with("microsoft.ui")
+        || lower.contains("runtime")
+    {
         AppxCategory::System
     } else if lower.contains("xbox") || lower.contains("gaming") {
         AppxCategory::Gaming
@@ -151,14 +168,14 @@ fn assess_removal_risk(name: &str) -> RemovalRisk {
             return RemovalRisk::Critical;
         }
     }
-    
+
     // Bloatware connu = safe
     for bloat in KNOWN_BLOATWARE {
         if name.to_lowercase().starts_with(&bloat.to_lowercase()) {
             return RemovalRisk::Safe;
         }
     }
-    
+
     // Par défaut, prudence
     if name.starts_with("Microsoft.") {
         RemovalRisk::Caution
@@ -169,8 +186,13 @@ fn assess_removal_risk(name: &str) -> RemovalRisk {
 
 /// Retourne la liste des bloatwares détectés
 pub fn get_bloatware(packages: &[AppxInfo]) -> Vec<&AppxInfo> {
-    packages.iter()
-        .filter(|p| p.removal_risk == RemovalRisk::Safe && 
-                    KNOWN_BLOATWARE.iter().any(|b| p.name.to_lowercase().starts_with(&b.to_lowercase())))
+    packages
+        .iter()
+        .filter(|p| {
+            p.removal_risk == RemovalRisk::Safe
+                && KNOWN_BLOATWARE
+                    .iter()
+                    .any(|b| p.name.to_lowercase().starts_with(&b.to_lowercase()))
+        })
         .collect()
 }

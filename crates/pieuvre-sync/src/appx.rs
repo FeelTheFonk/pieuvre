@@ -8,16 +8,19 @@ use std::process::Command;
 /// Supprime un package AppX par son nom
 pub fn remove_package(name: &str) -> Result<()> {
     tracing::info!("Suppression package: {}", name);
-    
+
     // Utiliser PowerShell pour supprimer
     let output = Command::new("powershell")
         .args([
             "-NoProfile",
             "-Command",
-            &format!("Get-AppxPackage -Name '*{}*' | Remove-AppxPackage -ErrorAction SilentlyContinue", name),
+            &format!(
+                "Get-AppxPackage -Name '*{}*' | Remove-AppxPackage -ErrorAction SilentlyContinue",
+                name
+            ),
         ])
-        .output()?;  // io::Error est From pour PieuvreError
-    
+        .output()?; // io::Error est From pour PieuvreError
+
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         // Ignorer erreur "not found" car normal si deja supprime
@@ -25,7 +28,7 @@ pub fn remove_package(name: &str) -> Result<()> {
             tracing::warn!("AppX {}: {}", name, stderr);
         }
     }
-    
+
     Ok(())
 }
 
@@ -90,7 +93,7 @@ const BLOATWARE: &[&str] = &[
 /// Supprime tous les bloatware connus
 pub fn remove_bloatware() -> Result<Vec<String>> {
     let mut removed = Vec::new();
-    
+
     for pkg in BLOATWARE {
         match remove_package(pkg) {
             Ok(_) => {
@@ -101,7 +104,7 @@ pub fn remove_bloatware() -> Result<Vec<String>> {
             }
         }
     }
-    
+
     tracing::info!("Bloatware: {} packages traites", removed.len());
     Ok(removed)
 }
@@ -116,14 +119,14 @@ pub fn remove_xbox_packages() -> Result<Vec<String>> {
         "Microsoft.XboxSpeechToTextOverlay",
         "Microsoft.GamingApp",
     ];
-    
+
     let mut removed = Vec::new();
     for pkg in xbox {
         if remove_package(pkg).is_ok() {
             removed.push(pkg.to_string());
         }
     }
-    
+
     Ok(removed)
 }
 
@@ -136,7 +139,7 @@ pub fn is_package_installed(name: &str) -> bool {
             &format!("(Get-AppxPackage -Name '*{}*') -ne $null", name),
         ])
         .output();
-    
+
     match output {
         Ok(o) => {
             let stdout = String::from_utf8_lossy(&o.stdout);
@@ -152,50 +155,84 @@ pub fn is_package_installed(name: &str) -> bool {
 
 /// Supprime les apps Bing
 pub fn remove_bing_apps() -> Result<Vec<String>> {
-    let pkgs = &["Microsoft.BingNews", "Microsoft.BingWeather", "Microsoft.BingFinance", 
-                 "Microsoft.BingSports", "Microsoft.BingSearch"];
+    let pkgs = &[
+        "Microsoft.BingNews",
+        "Microsoft.BingWeather",
+        "Microsoft.BingFinance",
+        "Microsoft.BingSports",
+        "Microsoft.BingSearch",
+    ];
     remove_packages_list(pkgs)
 }
 
 /// Supprime les apps productivite
 pub fn remove_ms_productivity() -> Result<Vec<String>> {
-    let pkgs = &["Microsoft.Todos", "Microsoft.People", "Microsoft.MicrosoftOfficeHub",
-                 "Microsoft.YourPhone", "Microsoft.MicrosoftStickyNotes"];
+    let pkgs = &[
+        "Microsoft.Todos",
+        "Microsoft.People",
+        "Microsoft.MicrosoftOfficeHub",
+        "Microsoft.YourPhone",
+        "Microsoft.MicrosoftStickyNotes",
+    ];
     remove_packages_list(pkgs)
 }
 
 /// Supprime les apps media
 pub fn remove_ms_media() -> Result<Vec<String>> {
-    let pkgs = &["Microsoft.ZuneMusic", "Microsoft.ZuneVideo", "Clipchamp.Clipchamp"];
+    let pkgs = &[
+        "Microsoft.ZuneMusic",
+        "Microsoft.ZuneVideo",
+        "Clipchamp.Clipchamp",
+    ];
     remove_packages_list(pkgs)
 }
 
 /// Supprime les apps communication
 pub fn remove_ms_communication() -> Result<Vec<String>> {
-    let pkgs = &["Microsoft.windowscommunicationsapps", "Microsoft.SkypeApp", 
-                 "MicrosoftTeams", "Microsoft.OutlookForWindows"];
+    let pkgs = &[
+        "Microsoft.windowscommunicationsapps",
+        "Microsoft.SkypeApp",
+        "MicrosoftTeams",
+        "Microsoft.OutlookForWindows",
+    ];
     remove_packages_list(pkgs)
 }
 
 /// Supprime les apps legacy
 pub fn remove_ms_legacy() -> Result<Vec<String>> {
-    let pkgs = &["Microsoft.Paint3D", "Microsoft.3DBuilder", "Microsoft.Print3D",
-                 "Microsoft.MixedReality.Portal", "Microsoft.OneConnect", "Microsoft.Wallet"];
+    let pkgs = &[
+        "Microsoft.Paint3D",
+        "Microsoft.3DBuilder",
+        "Microsoft.Print3D",
+        "Microsoft.MixedReality.Portal",
+        "Microsoft.OneConnect",
+        "Microsoft.Wallet",
+    ];
     remove_packages_list(pkgs)
 }
 
 /// Supprime les outils Microsoft
 pub fn remove_ms_tools() -> Result<Vec<String>> {
-    let pkgs = &["Microsoft.WindowsFeedbackHub", "Microsoft.GetHelp", "Microsoft.Getstarted",
-                 "MicrosoftCorporationII.QuickAssist", "Microsoft.WindowsMaps"];
+    let pkgs = &[
+        "Microsoft.WindowsFeedbackHub",
+        "Microsoft.GetHelp",
+        "Microsoft.Getstarted",
+        "MicrosoftCorporationII.QuickAssist",
+        "Microsoft.WindowsMaps",
+    ];
     remove_packages_list(pkgs)
 }
 
 /// Supprime les apps third-party
 pub fn remove_third_party() -> Result<Vec<String>> {
-    let pkgs = &["SpotifyAB.SpotifyMusic", "Disney.37853FC22B2CE", 
-                 "king.com.CandyCrushSaga", "king.com.CandyCrushSodaSaga",
-                 "FACEBOOK.FACEBOOK", "AdobeSystemsIncorporated.AdobePhotoshopExpress"];
+    let pkgs = &[
+        "SpotifyAB.SpotifyMusic",
+        "Disney.37853FC22B2CE",
+        "king.com.CandyCrushSaga",
+        "king.com.CandyCrushSodaSaga",
+        "FACEBOOK.FACEBOOK",
+        "AdobeSystemsIncorporated.AdobePhotoshopExpress",
+    ];
     remove_packages_list(pkgs)
 }
 

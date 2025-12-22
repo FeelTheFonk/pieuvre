@@ -35,32 +35,62 @@ pub enum RiskLevel {
 impl OptItem {
     /// Crée une option safe par défaut activée
     pub const fn safe(id: &'static str, label: &'static str) -> Self {
-        Self { id, label, default: true, risk: RiskLevel::Safe }
+        Self {
+            id,
+            label,
+            default: true,
+            risk: RiskLevel::Safe,
+        }
     }
 
     /// Crée une option safe par défaut désactivée
     pub const fn safe_off(id: &'static str, label: &'static str) -> Self {
-        Self { id, label, default: false, risk: RiskLevel::Safe }
+        Self {
+            id,
+            label,
+            default: false,
+            risk: RiskLevel::Safe,
+        }
     }
 
     /// Crée une option conditionnelle
     pub const fn conditional(id: &'static str, label: &'static str, default: bool) -> Self {
-        Self { id, label, default, risk: RiskLevel::Conditional }
+        Self {
+            id,
+            label,
+            default,
+            risk: RiskLevel::Conditional,
+        }
     }
 
     /// Crée une option performance
     pub const fn perf(id: &'static str, label: &'static str) -> Self {
-        Self { id, label, default: true, risk: RiskLevel::Performance }
+        Self {
+            id,
+            label,
+            default: true,
+            risk: RiskLevel::Performance,
+        }
     }
 
     /// Crée une option warning (laptop)
     pub const fn warning(id: &'static str, label: &'static str) -> Self {
-        Self { id, label, default: false, risk: RiskLevel::Warning }
+        Self {
+            id,
+            label,
+            default: false,
+            risk: RiskLevel::Warning,
+        }
     }
 
     /// Crée une option critique (sécurité système)
     pub const fn critical(id: &'static str, label: &'static str) -> Self {
-        Self { id, label, default: false, risk: RiskLevel::Critical }
+        Self {
+            id,
+            label,
+            default: false,
+            risk: RiskLevel::Critical,
+        }
     }
 }
 
@@ -81,7 +111,10 @@ pub fn telemetry_section() -> Vec<OptItem> {
         OptItem::conditional("lfsvc", "lfsvc - Geolocation", true),
         OptItem::safe("mapsbroker", "MapsBroker - Maps download"),
         OptItem::safe("firewall", "Firewall - Bloquer domaines telemetrie"),
-        OptItem::safe("sched_tasks", "Scheduled Tasks - Desactiver taches telemetrie"),
+        OptItem::safe(
+            "sched_tasks",
+            "Scheduled Tasks - Desactiver taches telemetrie",
+        ),
         OptItem::safe_off("hosts", "Hosts file - Bloquer domaines DNS natif"),
         OptItem::conditional("onedrive", "OneDrive - Desinstaller completement", false),
     ]
@@ -126,10 +159,19 @@ pub fn performance_section(is_laptop: bool) -> Vec<OptItem> {
 
     // Power Plan
     if is_laptop {
-        opts.push(OptItem::warning("power_ultimate", "Ultimate Performance - Usure batterie"));
-        opts.push(OptItem::safe("power_high", "High Performance - Recommande laptop"));
+        opts.push(OptItem::warning(
+            "power_ultimate",
+            "Ultimate Performance - Usure batterie",
+        ));
+        opts.push(OptItem::safe(
+            "power_high",
+            "High Performance - Recommande laptop",
+        ));
     } else {
-        opts.push(OptItem::safe("power_ultimate", "Power Plan: Ultimate Performance"));
+        opts.push(OptItem::safe(
+            "power_ultimate",
+            "Power Plan: Ultimate Performance",
+        ));
     }
 
     // Options communes
@@ -183,7 +225,10 @@ pub fn scheduler_section() -> Vec<OptItem> {
 pub fn appx_section() -> Vec<OptItem> {
     vec![
         OptItem::safe("bing_apps", "Apps Bing (News, Weather, Finance, Sports)"),
-        OptItem::safe("ms_productivity", "Apps productivite (Todos, People, OfficeHub)"),
+        OptItem::safe(
+            "ms_productivity",
+            "Apps productivite (Todos, People, OfficeHub)",
+        ),
         OptItem::safe("ms_media", "Apps media (ZuneMusic, ZuneVideo, Clipchamp)"),
         OptItem::conditional("ms_communication", "Mail/Calendar, Skype, Teams", false),
         OptItem::safe("ms_legacy", "Apps legacy (Paint3D, 3DBuilder, Print3D)"),
@@ -205,14 +250,26 @@ pub fn cpu_section(is_laptop: bool) -> Vec<OptItem> {
     let mut opts = Vec::with_capacity(5);
 
     if is_laptop {
-        opts.push(OptItem::warning("core_parking", "Desactiver Core Parking - Impact batterie"));
+        opts.push(OptItem::warning(
+            "core_parking",
+            "Desactiver Core Parking - Impact batterie",
+        ));
     } else {
-        opts.push(OptItem::safe("core_parking", "Desactiver Core Parking - Tous cores actifs"));
+        opts.push(OptItem::safe(
+            "core_parking",
+            "Desactiver Core Parking - Tous cores actifs",
+        ));
     }
 
     opts.extend([
-        OptItem::safe_off("memory_compression", "Desactiver Memory Compression (16GB+ RAM)"),
-        OptItem::safe_off("superfetch_registry", "Desactiver Superfetch/Prefetch via registre"),
+        OptItem::safe_off(
+            "memory_compression",
+            "Desactiver Memory Compression (16GB+ RAM)",
+        ),
+        OptItem::safe_off(
+            "superfetch_registry",
+            "Desactiver Superfetch/Prefetch via registre",
+        ),
         OptItem::conditional("static_pagefile", "Page File statique (1.5x RAM)", false),
     ]);
 
@@ -227,10 +284,17 @@ pub fn cpu_section(is_laptop: bool) -> Vec<OptItem> {
 pub fn dpc_section() -> Vec<OptItem> {
     vec![
         OptItem::perf("paging_executive", "DisablePagingExecutive - Kernel en RAM"),
-        OptItem::conditional("dynamic_tick", "Desactiver Dynamic Tick - Reboot requis", false),
+        OptItem::conditional(
+            "dynamic_tick",
+            "Desactiver Dynamic Tick - Reboot requis",
+            false,
+        ),
         OptItem::perf("tsc_sync", "TSC Sync Enhanced - Precision timer"),
         OptItem::conditional("hpet", "Desactiver HPET - Tester avec LatencyMon", false),
-        OptItem::safe_off("interrupt_affinity", "Interrupt Affinity Spread - Distribution cores"),
+        OptItem::safe_off(
+            "interrupt_affinity",
+            "Interrupt Affinity Spread - Distribution cores",
+        ),
     ]
 }
 
@@ -255,7 +319,10 @@ pub fn security_section() -> Vec<OptItem> {
 /// Retourne les options de la section Network Avancé
 pub fn network_advanced_section() -> Vec<OptItem> {
     vec![
-        OptItem::perf("interrupt_moderation", "Desactiver Interrupt Moderation - Latence"),
+        OptItem::perf(
+            "interrupt_moderation",
+            "Desactiver Interrupt Moderation - Latence",
+        ),
         OptItem::safe_off("lso", "Desactiver Large Send Offload (LSO)"),
         OptItem::safe_off("eee", "Desactiver Energy Efficient Ethernet"),
         OptItem::safe("rss", "Activer Receive Side Scaling (RSS)"),
@@ -285,14 +352,18 @@ mod tests {
         all_ids.extend(dpc_section().iter().map(|o| o.id));
         all_ids.extend(security_section().iter().map(|o| o.id));
         all_ids.extend(network_advanced_section().iter().map(|o| o.id));
-        
+
         let unique_count = {
             let mut sorted = all_ids.clone();
             sorted.sort();
             sorted.dedup();
             sorted.len()
         };
-        
-        assert_eq!(all_ids.len(), unique_count, "Duplicate IDs found in sections");
+
+        assert_eq!(
+            all_ids.len(),
+            unique_count,
+            "Duplicate IDs found in sections"
+        );
     }
 }

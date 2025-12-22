@@ -4,19 +4,17 @@
 //! Utilise SDDL (Security Descriptor Definition Language) pour une précision maximale.
 
 use pieuvre_common::{PieuvreError, Result};
-use windows::Win32::Foundation::{HANDLE, LUID, LocalFree, HLOCAL};
-use windows::Win32::Security::{
-    DACL_SECURITY_INFORMATION, PROTECTED_DACL_SECURITY_INFORMATION,
-    PSECURITY_DESCRIPTOR,
-    TOKEN_ADJUST_PRIVILEGES, TOKEN_QUERY, LUID_AND_ATTRIBUTES,
-    TOKEN_PRIVILEGES, SE_PRIVILEGE_ENABLED, LookupPrivilegeValueW,
-    AdjustTokenPrivileges,
-};
-use windows::Win32::Security::Authorization::{
-    SetNamedSecurityInfoW, SE_REGISTRY_KEY, SE_SERVICE,
-    ConvertStringSecurityDescriptorToSecurityDescriptorW,
-};
 use windows::core::PCWSTR;
+use windows::Win32::Foundation::{LocalFree, HANDLE, HLOCAL, LUID};
+use windows::Win32::Security::Authorization::{
+    ConvertStringSecurityDescriptorToSecurityDescriptorW, SetNamedSecurityInfoW, SE_REGISTRY_KEY,
+    SE_SERVICE,
+};
+use windows::Win32::Security::{
+    AdjustTokenPrivileges, LookupPrivilegeValueW, DACL_SECURITY_INFORMATION, LUID_AND_ATTRIBUTES,
+    PROTECTED_DACL_SECURITY_INFORMATION, PSECURITY_DESCRIPTOR, SE_PRIVILEGE_ENABLED,
+    TOKEN_ADJUST_PRIVILEGES, TOKEN_PRIVILEGES, TOKEN_QUERY,
+};
 use windows::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
 
 const SDDL_REVISION_1: u32 = 1;
@@ -46,7 +44,10 @@ fn apply_sddl_service(service_name: &str, sddl: &str) -> Result<()> {
         let _ = enable_privilege("SeTakeOwnershipPrivilege");
         let _ = enable_privilege("SeRestorePrivilege");
 
-        let service_name_wide: Vec<u16> = service_name.encode_utf16().chain(std::iter::once(0)).collect();
+        let service_name_wide: Vec<u16> = service_name
+            .encode_utf16()
+            .chain(std::iter::once(0))
+            .collect();
         let sddl_wide: Vec<u16> = sddl.encode_utf16().chain(std::iter::once(0)).collect();
 
         let mut sd: PSECURITY_DESCRIPTOR = PSECURITY_DESCRIPTOR::default();
@@ -55,7 +56,8 @@ fn apply_sddl_service(service_name: &str, sddl: &str) -> Result<()> {
             SDDL_REVISION_1,
             &mut sd,
             None,
-        ).map_err(|e| PieuvreError::Internal(format!("SDDL conversion failed: {}", e)))?;
+        )
+        .map_err(|e| PieuvreError::Internal(format!("SDDL conversion failed: {}", e)))?;
 
         let mut dacl = std::ptr::null_mut();
         let mut dacl_present = 0i32;
@@ -80,7 +82,10 @@ fn apply_sddl_service(service_name: &str, sddl: &str) -> Result<()> {
 
         let _ = LocalFree(Some(HLOCAL(sd.0 as *mut _)));
         if result.is_err() {
-            return Err(PieuvreError::Internal(format!("Failed to lock service {}: {:?}", service_name, result)));
+            return Err(PieuvreError::Internal(format!(
+                "Failed to lock service {}: {:?}",
+                service_name, result
+            )));
         }
 
         tracing::info!(service = %service_name, "Service verrouillé avec succès");
@@ -98,18 +103,21 @@ fn apply_sddl(key_path: &str, sddl: &str) -> Result<()> {
         let sddl_wide: Vec<u16> = sddl.encode_utf16().chain(std::iter::once(0)).collect();
 
         let mut sd: PSECURITY_DESCRIPTOR = PSECURITY_DESCRIPTOR::default();
-        
+
         ConvertStringSecurityDescriptorToSecurityDescriptorW(
             PCWSTR(sddl_wide.as_ptr()),
             SDDL_REVISION_1,
             &mut sd,
             None,
-        ).map_err(|e| PieuvreError::Internal(format!("SDDL conversion failed for {}: {}", sddl, e)))?;
+        )
+        .map_err(|e| {
+            PieuvreError::Internal(format!("SDDL conversion failed for {}: {}", sddl, e))
+        })?;
 
         // Extraire le DACL du Security Descriptor
         // Note: Dans windows-rs 0.62, BOOL est souvent projeté comme bool dans les arguments de sortie
         // ou via un type spécifique. Si BOOL n'est pas trouvé, on utilise i32 pour le pointeur brut.
-        let mut dacl_present = 0i32; 
+        let mut dacl_present = 0i32;
         let mut dacl = std::ptr::null_mut();
         let mut dacl_defaulted = 0i32;
 
@@ -122,7 +130,9 @@ fn apply_sddl(key_path: &str, sddl: &str) -> Result<()> {
 
         if res_dacl.is_err() {
             let _ = LocalFree(Some(HLOCAL(sd.0 as *mut _)));
-            return Err(PieuvreError::Internal("Failed to get DACL from SD".to_string()));
+            return Err(PieuvreError::Internal(
+                "Failed to get DACL from SD".to_string(),
+            ));
         }
 
         let result = SetNamedSecurityInfoW(
@@ -138,7 +148,10 @@ fn apply_sddl(key_path: &str, sddl: &str) -> Result<()> {
         let _ = LocalFree(Some(HLOCAL(sd.0 as *mut _)));
 
         if result.is_err() {
-            return Err(PieuvreError::Internal(format!("SetNamedSecurityInfo failed for {}: {:?}", full_path, result)));
+            return Err(PieuvreError::Internal(format!(
+                "SetNamedSecurityInfo failed for {}: {:?}",
+                full_path, result
+            )));
         }
 
         tracing::info!(path = %full_path, sddl = %sddl, "ACL appliquée avec succès");
@@ -149,15 +162,25 @@ fn apply_sddl(key_path: &str, sddl: &str) -> Result<()> {
 fn enable_privilege(privilege_name: &str) -> Result<()> {
     unsafe {
         let mut token: HANDLE = HANDLE::default();
-        OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &mut token)
-            .map_err(|e| PieuvreError::Internal(format!("Failed to open process token: {}", e)))?;
+        OpenProcessToken(
+            GetCurrentProcess(),
+            TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
+            &mut token,
+        )
+        .map_err(|e| PieuvreError::Internal(format!("Failed to open process token: {}", e)))?;
 
         let mut luid = LUID::default();
-        let priv_name_wide: Vec<u16> = privilege_name.encode_utf16().chain(std::iter::once(0)).collect();
-        
+        let priv_name_wide: Vec<u16> = privilege_name
+            .encode_utf16()
+            .chain(std::iter::once(0))
+            .collect();
+
         if LookupPrivilegeValueW(None, PCWSTR(priv_name_wide.as_ptr()), &mut luid).is_err() {
             let _ = windows::Win32::Foundation::CloseHandle(token);
-            return Err(PieuvreError::Internal(format!("LookupPrivilegeValue failed for {}", privilege_name)));
+            return Err(PieuvreError::Internal(format!(
+                "LookupPrivilegeValue failed for {}",
+                privilege_name
+            )));
         }
 
         let tp = TOKEN_PRIVILEGES {
@@ -168,19 +191,15 @@ fn enable_privilege(privilege_name: &str) -> Result<()> {
             }],
         };
 
-        let result = AdjustTokenPrivileges(
-            token,
-            false,
-            Some(&tp),
-            0,
-            None,
-            None,
-        );
+        let result = AdjustTokenPrivileges(token, false, Some(&tp), 0, None, None);
 
         let _ = windows::Win32::Foundation::CloseHandle(token);
 
         if result.is_err() {
-            return Err(PieuvreError::Internal(format!("AdjustTokenPrivileges failed for {}", privilege_name)));
+            return Err(PieuvreError::Internal(format!(
+                "AdjustTokenPrivileges failed for {}",
+                privilege_name
+            )));
         }
 
         Ok(())
@@ -208,6 +227,6 @@ pub const CRITICAL_SERVICES: &[&str] = &[
     "SysMain",
     "WSearch",
     "WerSvc",
-    "NvTelemetryContainer", // NVIDIA Telemetry
+    "NvTelemetryContainer",                     // NVIDIA Telemetry
     "Intel(R) Content Protection HECI Service", // Intel
 ];

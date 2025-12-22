@@ -1,12 +1,12 @@
 //! Tests unitaires pour pieuvre-audit
-//! 
+//!
 //! Tests en mode dry-run/lecture seule pour valider toutes les fonctionnalités.
 
 use crate::{
-    hardware, services, registry, security, appx, network,
-    full_audit, security_audit, is_laptop, network_audit,
+    appx, full_audit, hardware, is_laptop, network, network_audit, registry, security,
+    security_audit, services,
 };
-use pieuvre_common::{ServiceStartType, ServiceStatus, ServiceCategory, RemovalRisk};
+use pieuvre_common::{RemovalRisk, ServiceCategory, ServiceStartType, ServiceStatus};
 
 // ========================================================================
 // TESTS HARDWARE
@@ -16,18 +16,27 @@ use pieuvre_common::{ServiceStartType, ServiceStatus, ServiceCategory, RemovalRi
 fn test_probe_hardware_returns_valid_data() {
     let result = hardware::probe_hardware();
     assert!(result.is_ok(), "probe_hardware should succeed");
-    
+
     let hw = result.unwrap();
-    
+
     // CPU doit avoir au moins 1 core
-    assert!(hw.cpu.logical_cores >= 1, "Should have at least 1 logical core");
+    assert!(
+        hw.cpu.logical_cores >= 1,
+        "Should have at least 1 logical core"
+    );
     assert!(!hw.cpu.vendor.is_empty(), "CPU vendor should not be empty");
-    assert!(!hw.cpu.model_name.is_empty(), "CPU model_name should not be empty");
-    
+    assert!(
+        !hw.cpu.model_name.is_empty(),
+        "CPU model_name should not be empty"
+    );
+
     // RAM doit être > 0
     assert!(hw.memory.total_bytes > 0, "Total RAM should be > 0");
     assert!(hw.memory.available_bytes > 0, "Available RAM should be > 0");
-    assert!(hw.memory.available_bytes <= hw.memory.total_bytes, "Available <= Total");
+    assert!(
+        hw.memory.available_bytes <= hw.memory.total_bytes,
+        "Available <= Total"
+    );
 }
 
 #[test]
@@ -40,7 +49,7 @@ fn test_is_laptop_returns_bool() {
 fn test_gpu_detection() {
     let result = hardware::probe_hardware();
     assert!(result.is_ok());
-    
+
     let hw = result.unwrap();
     // GPU peut être vide sur certains systèmes (VM sans GPU)
     for gpu in &hw.gpu {
@@ -53,11 +62,14 @@ fn test_gpu_detection() {
 fn test_storage_detection() {
     let result = hardware::probe_hardware();
     assert!(result.is_ok());
-    
+
     let hw = result.unwrap();
     // Au moins un disque fixe attendu
-    assert!(!hw.storage.is_empty(), "Should detect at least one storage device");
-    
+    assert!(
+        !hw.storage.is_empty(),
+        "Should detect at least one storage device"
+    );
+
     for drive in &hw.storage {
         assert!(!drive.device_id.is_empty(), "Device ID should not be empty");
     }
@@ -71,16 +83,17 @@ fn test_storage_detection() {
 fn test_inspect_services_returns_list() {
     let result = services::inspect_services();
     assert!(result.is_ok(), "inspect_services should succeed");
-    
+
     let svcs = result.unwrap();
     assert!(!svcs.is_empty(), "Should detect services");
-    
+
     // Ces services doivent exister sur tout Windows
     let common_services = ["EventLog", "PlugPlay", "RpcSs"];
     for expected in common_services {
         assert!(
             svcs.iter().any(|s| s.name.eq_ignore_ascii_case(expected)),
-            "Should find {} service", expected
+            "Should find {} service",
+            expected
         );
     }
 }
@@ -89,20 +102,23 @@ fn test_inspect_services_returns_list() {
 fn test_service_start_type_not_all_manual() {
     let result = services::inspect_services();
     assert!(result.is_ok());
-    
+
     let svcs = result.unwrap();
-    
-    let manual_count = svcs.iter()
+
+    let manual_count = svcs
+        .iter()
         .filter(|s| matches!(s.start_type, ServiceStartType::Manual))
         .count();
-    
+
     let total = svcs.len();
     let manual_ratio = manual_count as f64 / total as f64;
-    
+
     // Si > 80% sont Manual, c'est probablement un bug
     assert!(
         manual_ratio < 0.8,
-        "Too many services are Manual ({}/{})", manual_count, total
+        "Too many services are Manual ({}/{})",
+        manual_count,
+        total
     );
 }
 
@@ -110,10 +126,12 @@ fn test_service_start_type_not_all_manual() {
 fn test_service_categories_diverse() {
     let result = services::inspect_services();
     assert!(result.is_ok());
-    
+
     let svcs = result.unwrap();
-    
-    let has_system = svcs.iter().any(|s| matches!(s.category, ServiceCategory::System));
+
+    let has_system = svcs
+        .iter()
+        .any(|s| matches!(s.category, ServiceCategory::System));
     assert!(has_system, "Should categorize some services as System");
 }
 
@@ -121,10 +139,10 @@ fn test_service_categories_diverse() {
 fn test_get_active_telemetry_services() {
     let result = services::inspect_services();
     assert!(result.is_ok());
-    
+
     let svcs = result.unwrap();
     let telemetry = services::get_active_telemetry_services(&svcs);
-    
+
     for svc in telemetry {
         assert!(matches!(svc.category, ServiceCategory::Telemetry));
         assert!(matches!(svc.status, ServiceStatus::Running));
@@ -139,30 +157,39 @@ fn test_get_active_telemetry_services() {
 fn test_get_telemetry_status() {
     let result = registry::get_telemetry_status();
     assert!(result.is_ok(), "get_telemetry_status should succeed");
-    
+
     let status = result.unwrap();
-    assert!(status.data_collection_level <= 3, 
-        "Data collection level should be 0-3, got {}", status.data_collection_level);
+    assert!(
+        status.data_collection_level <= 3,
+        "Data collection level should be 0-3, got {}",
+        status.data_collection_level
+    );
 }
 
 #[test]
 fn test_get_defender_status() {
     let result = registry::get_defender_status();
     assert!(result.is_ok(), "get_defender_status should succeed");
-    
+
     let status = result.unwrap();
-    assert!(status.sample_submission <= 3,
-        "Sample submission should be 0-3, got {}", status.sample_submission);
+    assert!(
+        status.sample_submission <= 3,
+        "Sample submission should be 0-3, got {}",
+        status.sample_submission
+    );
 }
 
 #[test]
 fn test_get_uac_status() {
     let result = registry::get_uac_status();
     assert!(result.is_ok(), "get_uac_status should succeed");
-    
+
     let status = result.unwrap();
-    assert!(status.consent_prompt_behavior <= 5,
-        "Consent prompt should be 0-5, got {}", status.consent_prompt_behavior);
+    assert!(
+        status.consent_prompt_behavior <= 5,
+        "Consent prompt should be 0-5, got {}",
+        status.consent_prompt_behavior
+    );
 }
 
 #[test]
@@ -173,10 +200,7 @@ fn test_get_firewall_status() {
 
 #[test]
 fn test_read_dword_invalid_key() {
-    let result = registry::read_dword_value(
-        r"SOFTWARE\NonExistent\Key\Path",
-        "NonExistentValue"
-    );
+    let result = registry::read_dword_value(r"SOFTWARE\NonExistent\Key\Path", "NonExistentValue");
     assert!(result.is_err(), "Should fail for non-existent key");
 }
 
@@ -184,7 +208,7 @@ fn test_read_dword_invalid_key() {
 fn test_key_exists() {
     let exists = registry::key_exists(r"SOFTWARE\Microsoft\Windows NT\CurrentVersion");
     assert!(exists, "Windows NT CurrentVersion key should exist");
-    
+
     let not_exists = registry::key_exists(r"SOFTWARE\NonExistent\Key\12345");
     assert!(!not_exists, "Non-existent key should return false");
 }
@@ -202,22 +226,31 @@ fn test_is_secure_boot_enabled() {
 fn test_audit_security() {
     let result = security::audit_security();
     assert!(result.is_ok(), "audit_security should succeed");
-    
+
     let audit = result.unwrap();
-    assert!(audit.security_score <= 100, 
-        "Security score should be <= 100, got {}", audit.security_score);
+    assert!(
+        audit.security_score <= 100,
+        "Security score should be <= 100, got {}",
+        audit.security_score
+    );
 }
 
 #[test]
 fn test_security_recommendations_valid() {
     let result = security::audit_security();
     assert!(result.is_ok());
-    
+
     let audit = result.unwrap();
-    
+
     for rec in &audit.recommendations {
-        assert!(!rec.title.is_empty(), "Recommendation title should not be empty");
-        assert!(!rec.category.is_empty(), "Recommendation category should not be empty");
+        assert!(
+            !rec.title.is_empty(),
+            "Recommendation title should not be empty"
+        );
+        assert!(
+            !rec.category.is_empty(),
+            "Recommendation category should not be empty"
+        );
     }
 }
 
@@ -256,7 +289,7 @@ fn test_count_by_severity() {
             remediation: "Test".into(),
         },
     ];
-    
+
     let (critical, high, medium, low) = security::count_by_severity(&recs);
     assert_eq!(critical, 1);
     assert_eq!(high, 1);
@@ -279,7 +312,7 @@ fn test_get_bloatware() {
     let result = appx::scan_packages();
     if let Ok(packages) = result {
         let bloat = appx::get_bloatware(&packages);
-        
+
         for pkg in bloat {
             assert!(matches!(pkg.removal_risk, RemovalRisk::Safe));
         }
@@ -294,7 +327,7 @@ fn test_get_bloatware() {
 fn test_get_telemetry_domains() {
     let domains = network::get_telemetry_domains();
     assert!(!domains.is_empty(), "Should have telemetry domains list");
-    
+
     assert!(domains.iter().any(|d: &&str| d.contains("microsoft.com")));
     assert!(domains.iter().any(|d: &&str| d.contains("telemetry")));
 }
@@ -303,9 +336,13 @@ fn test_get_telemetry_domains() {
 fn test_get_telemetry_ip_ranges() {
     let ranges = network::get_telemetry_ip_ranges();
     assert!(!ranges.is_empty(), "Should have IP ranges list");
-    
+
     for range in ranges {
-        assert!(range.contains('/'), "IP range should be in CIDR format: {}", range);
+        assert!(
+            range.contains('/'),
+            "IP range should be in CIDR format: {}",
+            range
+        );
     }
 }
 
@@ -325,9 +362,9 @@ fn test_is_telemetry_domain() {
 fn test_full_audit() {
     let result = full_audit();
     assert!(result.is_ok(), "full_audit should succeed");
-    
+
     let report = result.unwrap();
-    
+
     assert!(!report.system.os_version.is_empty());
     assert!(report.system.build_number > 0);
     assert!(report.hardware.cpu.logical_cores >= 1);

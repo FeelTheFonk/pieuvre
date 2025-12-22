@@ -2,9 +2,9 @@
 //!
 //! Centralise les statistiques de latence DPC/ISR pour l'affichage et l'analyse.
 
+use crate::etw::parser::LatencyStats;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, OnceLock};
-use crate::etw::parser::LatencyStats;
 
 static MONITOR: OnceLock<Arc<LatencyMonitor>> = OnceLock::new();
 
@@ -16,11 +16,13 @@ pub struct LatencyMonitor {
 impl LatencyMonitor {
     /// Récupère l'instance unique du moniteur
     pub fn global() -> Arc<Self> {
-        MONITOR.get_or_init(|| {
-            Arc::new(Self {
-                stats: Arc::new(Mutex::new(HashMap::new())),
+        MONITOR
+            .get_or_init(|| {
+                Arc::new(Self {
+                    stats: Arc::new(Mutex::new(HashMap::new())),
+                })
             })
-        }).clone()
+            .clone()
     }
 
     /// Met à jour les statistiques pour un driver/routine
@@ -52,7 +54,10 @@ impl LatencyMonitor {
 
     /// Récupère la latence maximale observée
     pub fn get_max_latency(&self) -> u64 {
-        self.stats.lock().unwrap().values()
+        self.stats
+            .lock()
+            .unwrap()
+            .values()
             .map(|s| s.dpc_max_us.max(s.isr_max_us))
             .max()
             .unwrap_or(0)

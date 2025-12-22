@@ -20,28 +20,56 @@ pub fn run(live: bool) -> Result<()> {
 }
 
 fn render_dashboard() -> Result<()> {
-    println!("{}", style("┌──────────────────────────────────────────────────────────────────┐").cyan());
-    println!("{}", style("│                 PIEUVRE - DASHBOARD SYSTÈME SOTA                 │").cyan().bold());
-    println!("{}", style("└──────────────────────────────────────────────────────────────────┘").cyan());
+    println!(
+        "{}",
+        style("┌──────────────────────────────────────────────────────────────────┐").cyan()
+    );
+    println!(
+        "{}",
+        style("│                 PIEUVRE - DASHBOARD SYSTÈME SOTA                 │")
+            .cyan()
+            .bold()
+    );
+    println!(
+        "{}",
+        style("└──────────────────────────────────────────────────────────────────┘").cyan()
+    );
     println!();
-    
+
     // 1. HARDWARE & KERNEL
     println!("  {}", style("KERNEL & LATENCY").bold().underlined());
     match timer::get_timer_resolution() {
         Ok(info) => {
             let res = info.current_ms();
-            let color = if res <= 0.55 { "green" } else if res <= 1.0 { "yellow" } else { "red" };
-            println!("    Timer Resolution:  {}", style(format!("{:.4}ms", res)).color256(match color { "green" => 10, "yellow" => 11, _ => 9 }));
+            let color = if res <= 0.55 {
+                "green"
+            } else if res <= 1.0 {
+                "yellow"
+            } else {
+                "red"
+            };
+            println!(
+                "    Timer Resolution:  {}",
+                style(format!("{:.4}ms", res)).color256(match color {
+                    "green" => 10,
+                    "yellow" => 11,
+                    _ => 9,
+                })
+            );
         }
         Err(_) => println!("    Timer Resolution:  {}", style("Inconnu").red()),
     }
-    
-    let msi_status = if pieuvre_sync::msi::is_msi_enabled_on_gpu() { style("ACTIF").green() } else { style("OFF").dim() };
+
+    let msi_status = if pieuvre_sync::msi::is_msi_enabled_on_gpu() {
+        style("ACTIF").green()
+    } else {
+        style("OFF").dim()
+    };
     println!("    GPU MSI Mode:      {}", msi_status);
 
     match pieuvre_audit::registry::read_dword_value(
         r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile",
-        "SystemResponsiveness"
+        "SystemResponsiveness",
     ) {
         Ok(v) => println!("    Responsiveness:    {}% (Gaming)", style(v).green()),
         Err(_) => println!("    Responsiveness:    20% (Default)"),
@@ -52,15 +80,30 @@ fn render_dashboard() -> Result<()> {
     println!("  {}", style("PRIVACY & TELEMETRY").bold().underlined());
     match pieuvre_audit::registry::get_telemetry_status() {
         Ok(status) => {
-            let diag = if status.diagtrack_enabled { style("ACTIF").red() } else { style("OFF").green() };
+            let diag = if status.diagtrack_enabled {
+                style("ACTIF").red()
+            } else {
+                style("OFF").green()
+            };
             println!("    DiagTrack Svc:     {}", diag);
-            println!("    Telemetry Level:   {}", style(status.data_collection_level).yellow());
-            let adv = if status.advertising_id_enabled { style("ACTIF").red() } else { style("OFF").green() };
+            println!(
+                "    Telemetry Level:   {}",
+                style(status.data_collection_level).yellow()
+            );
+            let adv = if status.advertising_id_enabled {
+                style("ACTIF").red()
+            } else {
+                style("OFF").green()
+            };
             println!("    Advertising ID:    {}", adv);
         }
         Err(_) => println!("    Telemetry:         {}", style("Erreur lecture").red()),
     }
-    let hosts_active = if pieuvre_sync::hosts::is_hosts_blocking_active() { style("ACTIF").green() } else { style("OFF").dim() };
+    let hosts_active = if pieuvre_sync::hosts::is_hosts_blocking_active() {
+        style("ACTIF").green()
+    } else {
+        style("OFF").dim()
+    };
     println!("    Hosts Blocking:    {}", hosts_active);
     println!();
 
@@ -68,14 +111,26 @@ fn render_dashboard() -> Result<()> {
     println!("  {}", style("SECURITY HARDENING").bold().underlined());
     let defender = pieuvre_audit::registry::get_defender_status().ok();
     if let Some(d) = defender {
-        let tp = if d.tamper_protection { style("ON").green() } else { style("OFF").red() };
+        let tp = if d.tamper_protection {
+            style("ON").green()
+        } else {
+            style("OFF").red()
+        };
         println!("    Tamper Protection: {}", tp);
-        let rt = if d.realtime_protection { style("ON").green() } else { style("OFF").red() };
+        let rt = if d.realtime_protection {
+            style("ON").green()
+        } else {
+            style("OFF").red()
+        };
         println!("    Real-time Guard:   {}", rt);
     }
     let uac = pieuvre_audit::registry::get_uac_status().ok();
     if let Some(u) = uac {
-        let uac_st = if u.enabled { style("ON").green() } else { style("OFF").red() };
+        let uac_st = if u.enabled {
+            style("ON").green()
+        } else {
+            style("OFF").red()
+        };
         println!("    UAC Status:        {}", uac_st);
     }
     println!();
@@ -93,19 +148,38 @@ fn render_dashboard() -> Result<()> {
     println!();
 
     // 5. TOP OFFENDERS (LATENCY ETW)
-    println!("  {}", style("LATENCY TOP OFFENDERS (LIVE ETW)").bold().underlined());
+    println!(
+        "  {}",
+        style("LATENCY TOP OFFENDERS (LIVE ETW)")
+            .bold()
+            .underlined()
+    );
     let stats = pieuvre_audit::etw::monitor::LatencyMonitor::global().get_all_stats();
     let mut stats_vec: Vec<_> = stats.into_iter().collect();
     stats_vec.sort_by(|a, b| b.1.dpc_max_us.cmp(&a.1.dpc_max_us));
 
     if stats_vec.is_empty() {
-        println!("    {}", style("Aucune donnée ETW (lancez un audit ou attendez)").dim());
+        println!(
+            "    {}",
+            style("Aucune donnée ETW (lancez un audit ou attendez)").dim()
+        );
     } else {
         for (driver, stat) in stats_vec.iter().take(5) {
-            let color = if stat.dpc_max_us > 500 { "red" } else if stat.dpc_max_us > 100 { "yellow" } else { "green" };
-            println!("    {:18} DPC Max: {}us | Count: {}", 
+            let color = if stat.dpc_max_us > 500 {
+                "red"
+            } else if stat.dpc_max_us > 100 {
+                "yellow"
+            } else {
+                "green"
+            };
+            println!(
+                "    {:18} DPC Max: {}us | Count: {}",
                 style(driver).cyan(),
-                style(format!("{:>4}", stat.dpc_max_us)).color256(match color { "red" => 9, "yellow" => 11, _ => 10 }),
+                style(format!("{:>4}", stat.dpc_max_us)).color256(match color {
+                    "red" => 9,
+                    "yellow" => 11,
+                    _ => 10,
+                }),
                 style(stat.dpc_count).dim()
             );
         }
@@ -118,7 +192,8 @@ fn render_dashboard() -> Result<()> {
         Ok(snapshots) => {
             println!("    Snapshots:         {}", style(snapshots.len()).green());
             if let Some(last) = snapshots.first() {
-                println!("    Dernier:           {} ({})", 
+                println!(
+                    "    Dernier:           {} ({})",
                     style(last.timestamp.format("%d/%m %H:%M")).dim(),
                     style(&last.description).italic()
                 );
@@ -126,10 +201,14 @@ fn render_dashboard() -> Result<()> {
         }
         Err(_) => println!("    Snapshots:         0"),
     }
-    
+
     println!();
-    println!("{}", style("────────────────────────────────────────────────────────────────────").dim());
-    println!("  {} Utilisez {} pour un audit complet ou {} pour optimiser.",
+    println!(
+        "{}",
+        style("────────────────────────────────────────────────────────────────────").dim()
+    );
+    println!(
+        "  {} Utilisez {} pour un audit complet ou {} pour optimiser.",
         style("TIP:").yellow().bold(),
         style("pieuvre audit").cyan(),
         style("pieuvre interactive").cyan()

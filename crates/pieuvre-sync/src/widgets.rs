@@ -12,35 +12,41 @@ pub fn disable_widgets() -> Result<()> {
         .args([
             "add",
             r"HKLM\SOFTWARE\Policies\Microsoft\Dsh",
-            "/v", "AllowNewsAndInterests",
-            "/t", "REG_DWORD",
-            "/d", "0",
-            "/f"
+            "/v",
+            "AllowNewsAndInterests",
+            "/t",
+            "REG_DWORD",
+            "/d",
+            "0",
+            "/f",
         ])
         .output();
-    
+
     // Disable taskbar widgets button
     let _ = Command::new("reg")
         .args([
             "add",
             r"HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
-            "/v", "TaskbarDa",
-            "/t", "REG_DWORD",
-            "/d", "0",
-            "/f"
+            "/v",
+            "TaskbarDa",
+            "/t",
+            "REG_DWORD",
+            "/d",
+            "0",
+            "/f",
         ])
         .output();
-    
+
     // Disable Widgets service startup
     let _ = Command::new("sc")
         .args(["config", "Widgets", "start=", "disabled"])
         .output();
-    
+
     // Kill widget process
     let _ = Command::new("taskkill")
         .args(["/F", "/IM", "Widgets.exe"])
         .output();
-    
+
     tracing::info!("Widgets disabled");
     Ok(())
 }
@@ -51,22 +57,26 @@ pub fn enable_widgets() -> Result<()> {
         .args([
             "delete",
             r"HKLM\SOFTWARE\Policies\Microsoft\Dsh",
-            "/v", "AllowNewsAndInterests",
-            "/f"
+            "/v",
+            "AllowNewsAndInterests",
+            "/f",
         ])
         .output();
-    
+
     let _ = Command::new("reg")
         .args([
             "add",
             r"HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced",
-            "/v", "TaskbarDa",
-            "/t", "REG_DWORD",
-            "/d", "1",
-            "/f"
+            "/v",
+            "TaskbarDa",
+            "/t",
+            "REG_DWORD",
+            "/d",
+            "1",
+            "/f",
         ])
         .output();
-    
+
     tracing::info!("Widgets enabled");
     Ok(())
 }
@@ -77,10 +87,11 @@ pub fn is_widgets_disabled() -> bool {
         .args([
             "query",
             r"HKLM\SOFTWARE\Policies\Microsoft\Dsh",
-            "/v", "AllowNewsAndInterests"
+            "/v",
+            "AllowNewsAndInterests",
         ])
         .output();
-    
+
     match output {
         Ok(o) => {
             let stdout = String::from_utf8_lossy(&o.stdout);

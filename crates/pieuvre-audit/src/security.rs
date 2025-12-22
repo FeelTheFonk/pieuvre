@@ -3,9 +3,8 @@
 //! Audit complet de la posture sécurité: Defender, Firewall, UAC, SecureBoot.
 
 use crate::registry::{
-    DefenderStatus, FirewallStatus, UacStatus,
-    get_defender_status, get_firewall_status, get_uac_status,
-    is_secure_boot_enabled, is_credential_guard_enabled,
+    get_defender_status, get_firewall_status, get_uac_status, is_credential_guard_enabled,
+    is_secure_boot_enabled, DefenderStatus, FirewallStatus, UacStatus,
 };
 use pieuvre_common::Result;
 use serde::{Deserialize, Serialize};
@@ -59,10 +58,10 @@ pub fn audit_security() -> Result<SecurityAudit> {
     let secure_boot = is_secure_boot_enabled();
     let credential_guard = is_credential_guard_enabled();
     let bitlocker = check_bitlocker_status();
-    
+
     let mut recommendations = Vec::new();
     let mut score = 100u32;
-    
+
     // Analyser Defender
     if !defender.antispyware_enabled {
         score = score.saturating_sub(25);
@@ -74,7 +73,7 @@ pub fn audit_security() -> Result<SecurityAudit> {
             remediation: "Activer Windows Defender dans les paramètres de sécurité.".into(),
         });
     }
-    
+
     if !defender.realtime_protection {
         score = score.saturating_sub(20);
         recommendations.push(SecurityRecommendation {
@@ -85,7 +84,7 @@ pub fn audit_security() -> Result<SecurityAudit> {
             remediation: "Activer la protection en temps réel dans Windows Security.".into(),
         });
     }
-    
+
     if !defender.tamper_protection {
         score = score.saturating_sub(10);
         recommendations.push(SecurityRecommendation {
@@ -96,21 +95,25 @@ pub fn audit_security() -> Result<SecurityAudit> {
             remediation: "Activer Tamper Protection dans Windows Security.".into(),
         });
     }
-    
+
     if !defender.exclusion_paths.is_empty() {
         let count = defender.exclusion_paths.len();
         if count > 5 {
             score = score.saturating_sub(5);
         }
         recommendations.push(SecurityRecommendation {
-            severity: if count > 10 { Severity::Medium } else { Severity::Low },
+            severity: if count > 10 {
+                Severity::Medium
+            } else {
+                Severity::Low
+            },
             category: "Defender".into(),
             title: format!("{} exclusions de chemin configurées", count),
             description: "Vérifier que ces exclusions sont légitimes.".into(),
             remediation: "Auditer les exclusions dans Windows Security > Virus protection.".into(),
         });
     }
-    
+
     // Analyser Firewall
     if !firewall.public_enabled {
         score = score.saturating_sub(15);
@@ -122,7 +125,7 @@ pub fn audit_security() -> Result<SecurityAudit> {
             remediation: "Activer le firewall pour le profil Public.".into(),
         });
     }
-    
+
     if !firewall.private_enabled {
         score = score.saturating_sub(10);
         recommendations.push(SecurityRecommendation {
@@ -133,7 +136,7 @@ pub fn audit_security() -> Result<SecurityAudit> {
             remediation: "Activer le firewall pour le profil Privé.".into(),
         });
     }
-    
+
     // Analyser UAC
     if !uac.enabled {
         score = score.saturating_sub(15);
@@ -141,11 +144,12 @@ pub fn audit_security() -> Result<SecurityAudit> {
             severity: Severity::Critical,
             category: "UAC".into(),
             title: "UAC désactivé".into(),
-            description: "Les applications peuvent s'exécuter avec privilèges sans confirmation.".into(),
+            description: "Les applications peuvent s'exécuter avec privilèges sans confirmation."
+                .into(),
             remediation: "Activer UAC dans les paramètres de contrôle de compte.".into(),
         });
     }
-    
+
     if !uac.secure_desktop {
         score = score.saturating_sub(5);
         recommendations.push(SecurityRecommendation {
@@ -156,7 +160,7 @@ pub fn audit_security() -> Result<SecurityAudit> {
             remediation: "Activer PromptOnSecureDesktop dans les stratégies locales.".into(),
         });
     }
-    
+
     // Secure Boot
     if !secure_boot {
         score = score.saturating_sub(10);
@@ -168,7 +172,7 @@ pub fn audit_security() -> Result<SecurityAudit> {
             remediation: "Activer Secure Boot dans le BIOS/UEFI.".into(),
         });
     }
-    
+
     // Credential Guard
     if !credential_guard {
         recommendations.push(SecurityRecommendation {
@@ -179,7 +183,7 @@ pub fn audit_security() -> Result<SecurityAudit> {
             remediation: "Activer Credential Guard via Group Policy (Enterprise).".into(),
         });
     }
-    
+
     // BitLocker
     if !bitlocker {
         recommendations.push(SecurityRecommendation {
@@ -190,7 +194,7 @@ pub fn audit_security() -> Result<SecurityAudit> {
             remediation: "Activer BitLocker dans les paramètres de sécurité.".into(),
         });
     }
-    
+
     Ok(SecurityAudit {
         defender,
         firewall,
@@ -207,12 +211,13 @@ pub fn audit_security() -> Result<SecurityAudit> {
 fn check_bitlocker_status() -> bool {
     // Vérifier via WMI serait plus précis
     // Pour l'instant, check registre indirect
-    crate::registry::key_exists(
-        r"SYSTEM\CurrentControlSet\Control\BitlockerStatus"
-    ) && crate::registry::read_dword_value(
-        r"SYSTEM\CurrentControlSet\Control\BitlockerStatus",
-        "BootStatus"
-    ).unwrap_or(0) != 0
+    crate::registry::key_exists(r"SYSTEM\CurrentControlSet\Control\BitlockerStatus")
+        && crate::registry::read_dword_value(
+            r"SYSTEM\CurrentControlSet\Control\BitlockerStatus",
+            "BootStatus",
+        )
+        .unwrap_or(0)
+            != 0
 }
 
 /// Retourne un résumé texte du score
@@ -227,10 +232,24 @@ pub fn score_to_grade(score: u32) -> &'static str {
 }
 
 /// Compte les recommandations par sévérité
-pub fn count_by_severity(recommendations: &[SecurityRecommendation]) -> (usize, usize, usize, usize) {
-    let critical = recommendations.iter().filter(|r| r.severity == Severity::Critical).count();
-    let high = recommendations.iter().filter(|r| r.severity == Severity::High).count();
-    let medium = recommendations.iter().filter(|r| r.severity == Severity::Medium).count();
-    let low = recommendations.iter().filter(|r| matches!(r.severity, Severity::Low | Severity::Info)).count();
+pub fn count_by_severity(
+    recommendations: &[SecurityRecommendation],
+) -> (usize, usize, usize, usize) {
+    let critical = recommendations
+        .iter()
+        .filter(|r| r.severity == Severity::Critical)
+        .count();
+    let high = recommendations
+        .iter()
+        .filter(|r| r.severity == Severity::High)
+        .count();
+    let medium = recommendations
+        .iter()
+        .filter(|r| r.severity == Severity::Medium)
+        .count();
+    let low = recommendations
+        .iter()
+        .filter(|r| matches!(r.severity, Severity::Low | Severity::Info))
+        .count();
     (critical, high, medium, low)
 }

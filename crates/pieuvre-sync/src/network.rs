@@ -8,14 +8,14 @@ use pieuvre_common::Result;
 /// Reduces latency for online gaming by sending TCP packets immediately
 pub fn disable_nagle_algorithm() -> Result<u32> {
     let mut modified = 0u32;
-    
+
     // Get all network interfaces via registry
     let interfaces_key = r"SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces";
     let subkeys = crate::registry::list_subkeys(interfaces_key)?;
-    
+
     for guid in subkeys {
         let key_path = format!(r"{}\{}", interfaces_key, guid);
-        
+
         // Set TcpNoDelay
         if crate::registry::set_dword_value(&key_path, "TcpNoDelay", 1).is_ok() {
             // Set TcpAckFrequency
@@ -23,7 +23,7 @@ pub fn disable_nagle_algorithm() -> Result<u32> {
             modified += 1;
         }
     }
-    
+
     tracing::info!("Nagle disabled on {} interfaces", modified);
     Ok(modified)
 }
@@ -32,13 +32,13 @@ pub fn disable_nagle_algorithm() -> Result<u32> {
 pub fn enable_nagle_algorithm() -> Result<()> {
     let interfaces_key = r"SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces";
     let subkeys = crate::registry::list_subkeys(interfaces_key)?;
-    
+
     for guid in subkeys {
         let key_path = format!(r"{}\{}", interfaces_key, guid);
         let _ = crate::registry::delete_value(&key_path, "TcpNoDelay");
         let _ = crate::registry::delete_value(&key_path, "TcpAckFrequency");
     }
-    
+
     tracing::info!("Nagle re-enabled (default)");
     Ok(())
 }
@@ -109,36 +109,44 @@ pub fn disable_rsc() -> Result<()> {
 /// Helper interne pour modifier les propriétés avancées via le registre (SOTA Native)
 fn set_advanced_property(property_name: &str, value: &str) -> Result<u32> {
     let mut modified = 0u32;
-    let class_key = r"SYSTEM\CurrentControlSet\Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}";
-    
+    let class_key =
+        r"SYSTEM\CurrentControlSet\Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}";
+
     let subkeys = crate::registry::list_subkeys(class_key)?;
     for subkey in subkeys {
-        if subkey == "Properties" { continue; }
+        if subkey == "Properties" {
+            continue;
+        }
         let key_path = format!(r"{}\{}", class_key, subkey);
-        
+
         // Vérifier si c'est une carte réseau valide (DriverDesc présent)
         if crate::registry::read_string_value(&key_path, "DriverDesc").is_ok()
-            && crate::registry::set_string_value(&key_path, property_name, value).is_ok() {
-                modified += 1;
+            && crate::registry::set_string_value(&key_path, property_name, value).is_ok()
+        {
+            modified += 1;
         }
     }
-    
-    tracing::debug!("Property {} set to {} on {} adapters", property_name, value, modified);
+
+    tracing::debug!(
+        "Property {} set to {} on {} adapters",
+        property_name,
+        value,
+        modified
+    );
     Ok(modified)
 }
 
 /// Apply all network latency optimizations
 pub fn apply_all_network_optimizations() -> Result<u32> {
     let mut count = 0u32;
-    
+
     count += disable_nagle_algorithm()?;
     let _ = disable_interrupt_moderation();
     let _ = disable_lso();
     let _ = disable_eee();
     let _ = enable_rss();
     let _ = disable_rsc();
-    
+
     tracing::info!("All network latency optimizations applied");
     Ok(count)
 }
-
