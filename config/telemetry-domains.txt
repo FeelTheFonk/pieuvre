@@ -1,0 +1,71 @@
+# Telemetry Domains - Pieuvre SOTA 2026
+#
+# Liste des domaines Microsoft à bloquer pour la télémétrie.
+# Format: un domaine par ligne, commentaires avec #
+#
+# Sources:
+# - Microsoft documentation
+# - Sophia Script reference
+# - Community research
+
+# === Telemetry Core ===
+vortex.data.microsoft.com
+vortex-win.data.microsoft.com
+telecommand.telemetry.microsoft.com
+telemetry.microsoft.com
+watson.telemetry.microsoft.com
+watson.microsoft.com
+settings-win.data.microsoft.com
+settings.data.microsoft.com
+self.events.data.microsoft.com
+v10.events.data.microsoft.com
+v20.events.data.microsoft.com
+diagnostic.data.microsoft.com
+activity.windows.com
+
+# === Events / Watson ===
+umwatson.events.data.microsoft.com
+ceuswatcab01.blob.core.windows.net
+ceuswatcab02.blob.core.windows.net
+
+# === NCSI / Connectivity Check ===
+# Note: Désactiver peut affecter détection réseau
+dns.msftncsi.com
+www.msftconnecttest.com
+
+# === SmartScreen ===
+# Note: Désactiver réduit sécurité navigation
+smartscreen.microsoft.com
+smartscreen-prod.microsoft.com
+
+# === Spotlight / Ads ===
+arc.msn.com
+ris.api.iris.microsoft.com
+g.live.com
+c.msn.com
+c.microsoft.com
+ntp.msn.com
+
+# === Copilot / AI ===
+copilot.microsoft.com
+sydney.bing.com
+
+# === IP Ranges (CIDR) ===
+# Ces plages peuvent être utilisées pour règles firewall
+# 13.64.0.0/11
+# 13.96.0.0/13
+# 20.33.0.0/16
+# 20.40.0.0/13
+# 20.128.0.0/16
+# 23.96.0.0/13
+# 40.64.0.0/10
+# 40.76.0.0/14
+# 51.104.0.0/15
+# 52.96.0.0/12
+# 52.112.0.0/14
+# 104.40.0.0/13
+# 104.208.0.0/13
+# 131.253.0.0/16
+# 134.170.0.0/16
+# 157.55.0.0/16
+# 204.79.195.0/24

@@ -9,7 +9,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/pieuvre/pieuvre"
@@ -31,8 +31,8 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 uuid = { version = "1.0", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 
-# Windows APIs
-windows = { version = "0.58", features = [
+# Windows APIs - SOTA 2026
+windows = { version = "0.62", features = [
     "Win32_Foundation",
     "Win32_System_Registry",
     "Win32_System_Services",
@@ -47,17 +47,22 @@ windows = { version = "0.58", features = [
     "Win32_Storage_FileSystem",
     "Win32_Graphics_Dxgi",
 ]}
-windows-sys = "0.59"
+windows-sys = "0.61"
 
 # Registry parsing
 nt_hive2 = "4.2"
 memmap2 = "0.9"
 
-# CLI
-clap = { version = "4.5", features = ["derive", "env"] }
+# CLI - SOTA 2026
+clap = { version = "4.5.23", features = ["derive", "env"] }
+clap_complete = "4.5"
 indicatif = "0.17"
 console = "0.15"
 dialoguer = "0.11"
+
+# Compression & Checksums - SOTA 2026
+zstd = "0.13"
+sha2 = "0.10"
 
 # Testing
 tempfile = "3.0"

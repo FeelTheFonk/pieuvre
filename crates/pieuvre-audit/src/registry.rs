@@ -96,62 +96,62 @@ impl Default for DefenderStatus {
 
 /// Audit complet de Windows Defender
 pub fn get_defender_status() -> Result<DefenderStatus> {
-    let mut status = DefenderStatus::default();
-    
-    // AntiSpyware global
-    status.antispyware_enabled = read_dword_value(
-        r"SOFTWARE\Microsoft\Windows Defender",
-        "DisableAntiSpyware"
-    ).unwrap_or(0) == 0;
-    
-    // Real-time protection
-    status.realtime_protection = read_dword_value(
-        r"SOFTWARE\Microsoft\Windows Defender\Real-Time Protection",
-        "DisableRealtimeMonitoring"
-    ).unwrap_or(0) == 0;
-    
-    // Behavior monitoring
-    status.behavior_monitoring = read_dword_value(
-        r"SOFTWARE\Microsoft\Windows Defender\Real-Time Protection",
-        "DisableBehaviorMonitoring"
-    ).unwrap_or(0) == 0;
-    
-    // Tamper protection
-    status.tamper_protection = read_dword_value(
-        r"SOFTWARE\Microsoft\Windows Defender\Features",
-        "TamperProtection"
-    ).unwrap_or(0) != 0;
-    
-    // Cloud protection (MAPS)
-    status.cloud_protection = read_dword_value(
-        r"SOFTWARE\Microsoft\Windows Defender\Spynet",
-        "SpynetReporting"
-    ).unwrap_or(0) != 0;
-    
-    // Sample submission level
-    status.sample_submission = read_dword_value(
-        r"SOFTWARE\Microsoft\Windows Defender\Spynet",
-        "SubmitSamplesConsent"
-    ).unwrap_or(1);
-    
-    // PUA protection
-    status.pua_protection = read_dword_value(
-        r"SOFTWARE\Microsoft\Windows Defender",
-        "PUAProtection"
-    ).unwrap_or(0) != 0;
-    
-    // Exclusions
-    status.exclusion_paths = enumerate_registry_values(
-        r"SOFTWARE\Microsoft\Windows Defender\Exclusions\Paths"
-    ).unwrap_or_default();
-    
-    status.exclusion_extensions = enumerate_registry_values(
-        r"SOFTWARE\Microsoft\Windows Defender\Exclusions\Extensions"
-    ).unwrap_or_default();
-    
-    status.exclusion_processes = enumerate_registry_values(
-        r"SOFTWARE\Microsoft\Windows Defender\Exclusions\Processes"
-    ).unwrap_or_default();
+    let status = DefenderStatus {
+        // AntiSpyware global
+        antispyware_enabled: read_dword_value(
+            r"SOFTWARE\Microsoft\Windows Defender",
+            "DisableAntiSpyware"
+        ).unwrap_or(0) == 0,
+        
+        // Real-time protection
+        realtime_protection: read_dword_value(
+            r"SOFTWARE\Microsoft\Windows Defender\Real-Time Protection",
+            "DisableRealtimeMonitoring"
+        ).unwrap_or(0) == 0,
+        
+        // Behavior monitoring
+        behavior_monitoring: read_dword_value(
+            r"SOFTWARE\Microsoft\Windows Defender\Real-Time Protection",
+            "DisableBehaviorMonitoring"
+        ).unwrap_or(0) == 0,
+        
+        // Tamper protection
+        tamper_protection: read_dword_value(
+            r"SOFTWARE\Microsoft\Windows Defender\Features",
+            "TamperProtection"
+        ).unwrap_or(0) != 0,
+        
+        // Cloud protection (MAPS)
+        cloud_protection: read_dword_value(
+            r"SOFTWARE\Microsoft\Windows Defender\Spynet",
+            "SpynetReporting"
+        ).unwrap_or(0) != 0,
+        
+        // Sample submission level
+        sample_submission: read_dword_value(
+            r"SOFTWARE\Microsoft\Windows Defender\Spynet",
+            "SubmitSamplesConsent"
+        ).unwrap_or(1),
+        
+        // PUA protection
+        pua_protection: read_dword_value(
+            r"SOFTWARE\Microsoft\Windows Defender",
+            "PUAProtection"
+        ).unwrap_or(0) != 0,
+        
+        // Exclusions
+        exclusion_paths: enumerate_registry_values(
+            r"SOFTWARE\Microsoft\Windows Defender\Exclusions\Paths"
+        ).unwrap_or_default(),
+        
+        exclusion_extensions: enumerate_registry_values(
+            r"SOFTWARE\Microsoft\Windows Defender\Exclusions\Extensions"
+        ).unwrap_or_default(),
+        
+        exclusion_processes: enumerate_registry_values(
+            r"SOFTWARE\Microsoft\Windows Defender\Exclusions\Processes"
+        ).unwrap_or_default(),
+    };
     
     Ok(status)
 }
@@ -341,7 +341,7 @@ fn read_dword_value_from_hive(hive: HKEY, subkey: &str, value_name: &str) -> Res
         let result = RegOpenKeyExW(
             hive,
             PCWSTR(subkey_wide.as_ptr()),
-            0,
+            Some(0),
             KEY_READ,
             &mut hkey,
         );
@@ -383,7 +383,7 @@ pub fn read_string_value(subkey: &str, value_name: &str) -> Result<String> {
         if RegOpenKeyExW(
             HKEY_LOCAL_MACHINE,
             PCWSTR(subkey_wide.as_ptr()),
-            0,
+            Some(0),
             KEY_READ,
             &mut hkey,
         ).is_err() {
@@ -429,7 +429,7 @@ pub fn enumerate_registry_values(subkey: &str) -> Result<Vec<String>> {
         if RegOpenKeyExW(
             HKEY_LOCAL_MACHINE,
             PCWSTR(subkey_wide.as_ptr()),
-            0,
+            Some(0),
             KEY_READ,
             &mut hkey,
         ).is_err() {
@@ -446,7 +446,7 @@ pub fn enumerate_registry_values(subkey: &str) -> Result<Vec<String>> {
             let result = RegEnumValueW(
                 hkey,
                 index,
-                windows::core::PWSTR(name_buffer.as_mut_ptr()),
+                Some(windows::core::PWSTR(name_buffer.as_mut_ptr())),
                 &mut name_len,
                 None,
                 None,
@@ -480,7 +480,7 @@ pub fn key_exists(subkey: &str) -> bool {
         let exists = RegOpenKeyExW(
             HKEY_LOCAL_MACHINE,
             PCWSTR(subkey_wide.as_ptr()),
-            0,
+            Some(0),
             KEY_READ,
             &mut hkey,
         ).is_ok();

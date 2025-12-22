@@ -8,6 +8,7 @@ mod commands;
 mod tests;
 
 use clap::{Parser, Subcommand};
+use clap_complete::Shell;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 #[derive(Parser)]
@@ -86,6 +87,13 @@ enum Commands {
         #[arg(short, long, default_value = "gaming")]
         profile: String,
     },
+
+    /// Génère les scripts d'autocomplétion shell
+    Completions {
+        /// Shell cible (bash, zsh, fish, powershell, elvish)
+        #[arg(value_enum)]
+        shell: Shell,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -112,5 +120,6 @@ fn main() -> anyhow::Result<()> {
         Commands::Rollback { list, last, id } => commands::rollback::run(list, last, id),
         Commands::Verify { repair } => commands::verify::run(repair),
         Commands::Interactive { profile } => commands::interactive::run(&profile),
+        Commands::Completions { shell } => commands::completions::run(shell),
     }
 }

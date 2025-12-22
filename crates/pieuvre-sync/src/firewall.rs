@@ -92,7 +92,7 @@ pub fn create_telemetry_block_rules() -> Result<Vec<String>> {
             "enable=yes",
         ])
         .output()
-        .map_err(|e| PieuvreError::Io(e))?;
+        .map_err(PieuvreError::Io)?;
     
     if output.status.success() {
         created_rules.push(rule_name.to_string());
@@ -118,7 +118,7 @@ pub fn remove_pieuvre_rules() -> Result<u32> {
                 &format!("name={}", name),
             ])
             .output()
-            .map_err(|e| PieuvreError::Io(e))?;
+            .map_err(PieuvreError::Io)?;
         
         if output.status.success() {
             removed += 1;
@@ -139,7 +139,7 @@ pub fn list_pieuvre_rules() -> Result<Vec<FirewallRule>> {
             "name=Pieuvre-BlockTelemetry",
         ])
         .output()
-        .map_err(|e| PieuvreError::Io(e))?;
+        .map_err(PieuvreError::Io)?;
     
     if output.status.success() {
         let output_str = String::from_utf8_lossy(&output.stdout);

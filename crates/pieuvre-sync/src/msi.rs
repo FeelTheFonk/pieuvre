@@ -30,7 +30,7 @@ pub fn list_msi_eligible_devices() -> Result<Vec<MsiDevice>> {
         let base_key: Vec<u16> = PCI_ENUM_BASE.encode_utf16().chain(std::iter::once(0)).collect();
         let mut hkey = Default::default();
         
-        if RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(base_key.as_ptr()), 0, KEY_READ, &mut hkey).is_err() {
+        if RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(base_key.as_ptr()), Some(0), KEY_READ, &mut hkey).is_err() {
             return Ok(devices);
         }
         
@@ -43,10 +43,10 @@ pub fn list_msi_eligible_devices() -> Result<Vec<MsiDevice>> {
             let result = RegEnumKeyExW(
                 hkey,
                 index,
-                windows::core::PWSTR(device_id_buf.as_mut_ptr()),
+                Some(windows::core::PWSTR(device_id_buf.as_mut_ptr())),
                 &mut name_len,
                 None,
-                windows::core::PWSTR::null(),
+                None,
                 None,
                 None,
             );
@@ -98,7 +98,7 @@ fn get_msi_info(device_id: &str) -> Option<(String, bool, bool)> {
         let device_key: Vec<u16> = device_path.encode_utf16().chain(std::iter::once(0)).collect();
         let mut hkey_device = Default::default();
         
-        if RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(device_key.as_ptr()), 0, KEY_READ, &mut hkey_device).is_err() {
+        if RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(device_key.as_ptr()), Some(0), KEY_READ, &mut hkey_device).is_err() {
             return None;
         }
         
@@ -109,10 +109,10 @@ fn get_msi_info(device_id: &str) -> Option<(String, bool, bool)> {
         let result = RegEnumKeyExW(
             hkey_device,
             0, // Première instance
-            windows::core::PWSTR(instance_buffer.as_mut_ptr()),
+            Some(windows::core::PWSTR(instance_buffer.as_mut_ptr())),
             &mut instance_len,
             None,
-            windows::core::PWSTR::null(),
+            None,
             None,
             None,
         );
@@ -130,7 +130,7 @@ fn get_msi_info(device_id: &str) -> Option<(String, bool, bool)> {
         let msi_key: Vec<u16> = msi_path.encode_utf16().chain(std::iter::once(0)).collect();
         let mut hkey_msi = Default::default();
         
-        if RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(msi_key.as_ptr()), 0, KEY_READ, &mut hkey_msi).is_err() {
+        if RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(msi_key.as_ptr()), Some(0), KEY_READ, &mut hkey_msi).is_err() {
             return None; // MSI key n'existe pas = non supporté
         }
         
@@ -192,7 +192,7 @@ fn set_msi_value(key_path: &str, value: u32) -> Result<()> {
         let result = RegOpenKeyExW(
             HKEY_LOCAL_MACHINE,
             PCWSTR(subkey_wide.as_ptr()),
-            0,
+            Some(0),
             KEY_SET_VALUE,
             &mut hkey,
         );
@@ -207,7 +207,7 @@ fn set_msi_value(key_path: &str, value: u32) -> Result<()> {
         let result = RegSetValueExW(
             hkey,
             PCWSTR(value_name.as_ptr()),
-            0,
+            Some(0),
             REG_DWORD,
             Some(&data_bytes),
         );

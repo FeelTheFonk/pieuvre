@@ -16,7 +16,7 @@ pub fn set_dword_value(subkey: &str, value_name: &str, value: u32) -> Result<()>
         let result = RegOpenKeyExW(
             HKEY_LOCAL_MACHINE,
             PCWSTR(subkey_wide.as_ptr()),
-            0,
+            Some(0),
             KEY_SET_VALUE,
             &mut hkey,
         );
@@ -31,7 +31,7 @@ pub fn set_dword_value(subkey: &str, value_name: &str, value: u32) -> Result<()>
         let result = RegSetValueExW(
             hkey,
             PCWSTR(value_wide.as_ptr()),
-            0,
+            Some(0),
             REG_DWORD,
             Some(&data_bytes),
         );

@@ -1,4 +1,4 @@
-# Configuration par défaut Pieuvre
+# Configuration par défaut Pieuvre SOTA 2026
 
 [general]
 # Niveau de log: trace, debug, info, warn, error
@@ -10,7 +10,7 @@ dry_run = false
 
 [profile]
 # Profil par défaut
-default = "workstation"
+default_profile = "workstation"
 # Profils disponibles
 available = ["gaming", "privacy", "workstation"]
 
@@ -29,5 +29,7 @@ network = true
 auto_create = true
 # Nombre max de snapshots à conserver
 max_count = 10
-# Compression des snapshots
-compress = false
+# Compression zstd des snapshots (SOTA 2026)
+compress = true
+# Fichier domaines télémétrie externe
+telemetry_domains_file = "telemetry-domains.txt"

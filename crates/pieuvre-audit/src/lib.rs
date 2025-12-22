@@ -77,7 +77,7 @@ fn get_os_info() -> (String, String) {
             .collect();
         
         let mut hkey = Default::default();
-        if RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(subkey.as_ptr()), 0, KEY_READ, &mut hkey).is_err() {
+        if RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(subkey.as_ptr()), Some(0), KEY_READ, &mut hkey).is_err() {
             return ("Windows 11".into(), "Unknown".into());
         }
         
@@ -138,7 +138,7 @@ fn get_build_number() -> u32 {
             .collect();
         
         let mut hkey = Default::default();
-        if RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(subkey.as_ptr()), 0, KEY_READ, &mut hkey).is_ok() {
+        if RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(subkey.as_ptr()), Some(0), KEY_READ, &mut hkey).is_ok() {
             let value_name: Vec<u16> = "CurrentBuildNumber".encode_utf16().chain(std::iter::once(0)).collect();
             let mut buffer = vec![0u8; 32];
             let mut size = buffer.len() as u32;

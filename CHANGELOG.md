@@ -5,6 +5,54 @@ Toutes les modifications notables de ce projet sont documentées ici.
 Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
 et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2025-12-22
+
+### Added
+
+#### SOTA 2026 - Dépendances
+- `windows` crate 0.58 → **0.62.2** (APIs natives modernes)
+- `windows-sys` 0.59 → **0.61.0**
+- `clap` précisé **4.5.23**
+- `zstd` **0.13.3** - Compression snapshots
+- `sha2` **0.10.9** - Checksums intégrité
+- `clap_complete` **4.5.62** - Shell completions
+
+#### Shell Completions
+- Commande `pieuvre completions <shell>`
+- Support: Bash, Zsh, Fish, PowerShell, Elvish
+- Génération stdout, redirection vers fichier config shell
+
+#### Snapshots SOTA
+- Compression **zstd** automatique (ratio 3-10x)
+- Checksums **SHA256** avec validation au restore
+- Rotation automatique (max 10 snapshots)
+- Rétro-compatibilité fichiers .json ancients
+
+#### Configuration
+- Fichier `telemetry-domains.txt` externalisé
+- Harmonisation `default` → `default_profile`
+- Compression activée par défaut
+
+### Changed
+
+#### APIs Windows Natives
+- `power.rs`: Migration vers `PowerGetActiveScheme` / `PowerSetActiveScheme`
+- `security.rs`: Migration vers `set_dword_value` natif (HVCI, VBS, Spectre)
+- Réduction significative appels `Command::new`
+
+#### Code Quality
+- **0 warnings clippy** (11 corrections)
+- Types `&PathBuf` → `&Path` (clippy::ptr_arg)
+- Closures redondantes supprimées
+- Initialisation tardive corrigée
+
+### Technical
+- **97 tests unitaires** - 100% passent
+- Breaking changes `windows` 0.62 corrigés (6 fichiers)
+- Documentation inline améliorée
+
+---
+
 ## [0.1.0] - 2025-12-22
 
 ### Added
@@ -69,15 +117,10 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Roadmap
 
-### [0.2.0] - Prévu
-- [ ] Checksum SHA256 pour snapshots
-- [ ] Compression zstd des snapshots
+### [0.3.0] - Prévu
+- [ ] Migration complète APIs natives (network.rs, windows_update.rs)
+- [ ] Logging structuré avec `#[instrument]`
 - [ ] Module `bios.rs` (TPM, Secure Boot via WMI)
 - [ ] Module `defender.rs` (exclusions ciblées)
-- [ ] Migration APIs natives restantes (bcdedit → BCD APIs)
-
-### [0.3.0] - Prévu
 - [ ] Trait `SyncOperation` pour polymorphisme
-- [ ] Configuration profiles TOML externes
-- [ ] Shell completion (clap_complete)
 - [ ] Async runtime (tokio) pour opérations parallèles

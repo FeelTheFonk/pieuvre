@@ -69,29 +69,21 @@ pub fn disable_telemetry_tasks() -> Result<Vec<String>> {
 
 /// Disable a single scheduled task
 pub fn disable_task(task_path: &str) -> Result<()> {
-    let output = Command::new("schtasks")
+    let _ = Command::new("schtasks")
         .args(["/Change", "/TN", task_path, "/Disable"])
         .output()?;
     
-    if output.status.success() {
-        Ok(())
-    } else {
-        // Task might not exist, which is fine
-        Ok(())
-    }
+    // Task might not exist, which is fine - toujours Ok
+    Ok(())
 }
 
 /// Enable a single scheduled task (for rollback)
 pub fn enable_task(task_path: &str) -> Result<()> {
-    let output = Command::new("schtasks")
+    let _ = Command::new("schtasks")
         .args(["/Change", "/TN", task_path, "/Enable"])
         .output()?;
     
-    if output.status.success() {
-        Ok(())
-    } else {
-        Ok(())
-    }
+    Ok(())
 }
 
 /// Check if a task is currently enabled

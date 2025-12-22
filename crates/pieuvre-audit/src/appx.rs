@@ -70,7 +70,7 @@ pub fn scan_packages() -> Result<Vec<AppxInfo>> {
             .collect();
         
         let mut hkey = Default::default();
-        if RegOpenKeyExW(HKEY_CURRENT_USER, PCWSTR(subkey.as_ptr()), 0, KEY_READ, &mut hkey).is_ok() {
+        if RegOpenKeyExW(HKEY_CURRENT_USER, PCWSTR(subkey.as_ptr()), Some(0), KEY_READ, &mut hkey).is_ok() {
             let mut index = 0u32;
             loop {
                 let mut name_buffer = vec![0u16; 512];
@@ -79,10 +79,10 @@ pub fn scan_packages() -> Result<Vec<AppxInfo>> {
                 let result = RegEnumKeyExW(
                     hkey,
                     index,
-                    windows::core::PWSTR(name_buffer.as_mut_ptr()),
+                    Some(windows::core::PWSTR(name_buffer.as_mut_ptr())),
                     &mut name_len,
                     None,
-                    windows::core::PWSTR::null(),
+                    None,
                     None,
                     None,
                 );

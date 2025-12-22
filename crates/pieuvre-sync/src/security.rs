@@ -1,84 +1,60 @@
-//! Security Tweaks
+//! Security Tweaks SOTA 2026
 //!
 //! VBS, HVCI, Memory Integrity, and Spectre/Meltdown mitigations.
 //! WARNING: These settings reduce system security for performance gains.
+//!
+//! Utilise les APIs Windows natives via registry.rs au lieu de Command::new("reg").
 
 use pieuvre_common::Result;
-use std::process::Command;
+use crate::registry::set_dword_value;
+
+// ============================================
+// CONSTANTES CHEMINS REGISTRE
+// ============================================
+
+/// Clé registre pour HVCI (Memory Integrity)
+const HVCI_KEY: &str = r"SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity";
+
+/// Clé registre pour Device Guard / VBS
+const DEVICE_GUARD_KEY: &str = r"SYSTEM\CurrentControlSet\Control\DeviceGuard";
+
+/// Clé registre pour Memory Management (Spectre/Meltdown)
+const MEMORY_MANAGEMENT_KEY: &str = r"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management";
+
+// ============================================
+// MEMORY INTEGRITY (HVCI)
+// ============================================
 
 /// Disable Memory Integrity (HVCI) - 5-10% gaming performance gain
 /// WARNING: Reduces protection against kernel-level malware
 pub fn disable_memory_integrity() -> Result<()> {
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity",
-            "/v", "Enabled",
-            "/t", "REG_DWORD",
-            "/d", "0",
-            "/f"
-        ])
-        .output();
-    
-    tracing::info!("Memory Integrity (HVCI) disabled - reboot required");
+    set_dword_value(HVCI_KEY, "Enabled", 0)?;
+    tracing::info!(key = HVCI_KEY, "Memory Integrity (HVCI) disabled - reboot required");
     Ok(())
 }
 
 /// Enable Memory Integrity (restore security)
 pub fn enable_memory_integrity() -> Result<()> {
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity",
-            "/v", "Enabled",
-            "/t", "REG_DWORD",
-            "/d", "1",
-            "/f"
-        ])
-        .output();
-    
-    tracing::info!("Memory Integrity (HVCI) enabled");
+    set_dword_value(HVCI_KEY, "Enabled", 1)?;
+    tracing::info!(key = HVCI_KEY, "Memory Integrity (HVCI) enabled");
     Ok(())
 }
+
+// ============================================
+// VIRTUALIZATION-BASED SECURITY (VBS)
+// ============================================
 
 /// Disable Virtualization-Based Security completely
 /// WARNING: Major security reduction
 pub fn disable_vbs() -> Result<()> {
     // Disable VBS
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard",
-            "/v", "EnableVirtualizationBasedSecurity",
-            "/t", "REG_DWORD",
-            "/d", "0",
-            "/f"
-        ])
-        .output();
+    set_dword_value(DEVICE_GUARD_KEY, "EnableVirtualizationBasedSecurity", 0)?;
     
     // Disable Credential Guard
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard",
-            "/v", "LsaCfgFlags",
-            "/t", "REG_DWORD",
-            "/d", "0",
-            "/f"
-        ])
-        .output();
+    set_dword_value(DEVICE_GUARD_KEY, "LsaCfgFlags", 0)?;
     
     // Disable UEFI lock
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard",
-            "/v", "RequirePlatformSecurityFeatures",
-            "/t", "REG_DWORD",
-            "/d", "0",
-            "/f"
-        ])
-        .output();
+    set_dword_value(DEVICE_GUARD_KEY, "RequirePlatformSecurityFeatures", 0)?;
     
     tracing::info!("VBS completely disabled - reboot required");
     Ok(())
@@ -86,57 +62,36 @@ pub fn disable_vbs() -> Result<()> {
 
 /// Enable VBS (restore security)
 pub fn enable_vbs() -> Result<()> {
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard",
-            "/v", "EnableVirtualizationBasedSecurity",
-            "/t", "REG_DWORD",
-            "/d", "1",
-            "/f"
-        ])
-        .output();
-    
+    set_dword_value(DEVICE_GUARD_KEY, "EnableVirtualizationBasedSecurity", 1)?;
     tracing::info!("VBS enabled");
     Ok(())
 }
+
+// ============================================
+// SPECTRE / MELTDOWN MITIGATIONS
+// ============================================
 
 /// Disable Spectre/Meltdown mitigations
 /// WARNING: Critical security risk - only for isolated gaming systems
 pub fn disable_spectre_meltdown() -> Result<()> {
     // FeatureSettingsOverride = 3 disables all mitigations
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management",
-            "/v", "FeatureSettingsOverride",
-            "/t", "REG_DWORD",
-            "/d", "3",
-            "/f"
-        ])
-        .output();
+    set_dword_value(MEMORY_MANAGEMENT_KEY, "FeatureSettingsOverride", 3)?;
+    set_dword_value(MEMORY_MANAGEMENT_KEY, "FeatureSettingsOverrideMask", 3)?;
     
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management",
-            "/v", "FeatureSettingsOverrideMask",
-            "/t", "REG_DWORD",
-            "/d", "3",
-            "/f"
-        ])
-        .output();
-    
-    tracing::info!("Spectre/Meltdown mitigations disabled - CRITICAL SECURITY RISK");
+    tracing::warn!("Spectre/Meltdown mitigations disabled - CRITICAL SECURITY RISK");
     Ok(())
 }
 
 /// Enable Spectre/Meltdown mitigations (restore security)
+/// Note: Suppression des valeurs = Windows utilise les defaults (mitigations ON)
 pub fn enable_spectre_meltdown() -> Result<()> {
+    use std::process::Command;
+    
+    // Pour supprimer une valeur, on utilise reg delete (pas d'API native simple)
     let _ = Command::new("reg")
         .args([
             "delete",
-            r"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management",
+            &format!("HKLM\\{}", MEMORY_MANAGEMENT_KEY),
             "/v", "FeatureSettingsOverride",
             "/f"
         ])
@@ -145,7 +100,7 @@ pub fn enable_spectre_meltdown() -> Result<()> {
     let _ = Command::new("reg")
         .args([
             "delete",
-            r"HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management",
+            &format!("HKLM\\{}", MEMORY_MANAGEMENT_KEY),
             "/v", "FeatureSettingsOverrideMask",
             "/f"
         ])
@@ -155,41 +110,90 @@ pub fn enable_spectre_meltdown() -> Result<()> {
     Ok(())
 }
 
-/// Check if Memory Integrity is enabled
+// ============================================
+// STATUS CHECKS (READ-ONLY)
+// ============================================
+
+/// Check if Memory Integrity is enabled via registry read
 pub fn is_memory_integrity_enabled() -> bool {
-    let output = Command::new("reg")
-        .args([
-            "query",
-            r"HKLM\SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity",
-            "/v", "Enabled"
-        ])
-        .output();
+    use windows::Win32::System::Registry::{
+        RegOpenKeyExW, RegQueryValueExW, RegCloseKey,
+        HKEY_LOCAL_MACHINE, KEY_READ, REG_DWORD,
+    };
+    use windows::core::PCWSTR;
     
-    match output {
-        Ok(o) => {
-            let stdout = String::from_utf8_lossy(&o.stdout);
-            stdout.contains("0x1")
+    unsafe {
+        let subkey_wide: Vec<u16> = HVCI_KEY.encode_utf16().chain(std::iter::once(0)).collect();
+        let mut hkey = Default::default();
+        
+        if RegOpenKeyExW(
+            HKEY_LOCAL_MACHINE,
+            PCWSTR(subkey_wide.as_ptr()),
+            Some(0),
+            KEY_READ,
+            &mut hkey,
+        ).is_err() {
+            return false;
         }
-        Err(_) => false,
+        
+        let value_name: Vec<u16> = "Enabled".encode_utf16().chain(std::iter::once(0)).collect();
+        let mut data: u32 = 0;
+        let mut data_size = std::mem::size_of::<u32>() as u32;
+        let mut value_type = REG_DWORD;
+        
+        let result = RegQueryValueExW(
+            hkey,
+            PCWSTR(value_name.as_ptr()),
+            None,
+            Some(&mut value_type),
+            Some(&mut data as *mut u32 as *mut u8),
+            Some(&mut data_size),
+        );
+        
+        let _ = RegCloseKey(hkey);
+        
+        result.is_ok() && data == 1
     }
 }
 
-/// Check if VBS is enabled
+/// Check if VBS is enabled via registry read
 pub fn is_vbs_enabled() -> bool {
-    let output = Command::new("powershell")
-        .args([
-            "-NoProfile",
-            "-Command",
-            "(Get-CimInstance -ClassName Win32_DeviceGuard -Namespace root\\Microsoft\\Windows\\DeviceGuard).VirtualizationBasedSecurityStatus"
-        ])
-        .output();
+    use windows::Win32::System::Registry::{
+        RegOpenKeyExW, RegQueryValueExW, RegCloseKey,
+        HKEY_LOCAL_MACHINE, KEY_READ, REG_DWORD,
+    };
+    use windows::core::PCWSTR;
     
-    match output {
-        Ok(o) => {
-            let stdout = String::from_utf8_lossy(&o.stdout);
-            let status = stdout.trim();
-            status == "2" // 2 = Running
+    unsafe {
+        let subkey_wide: Vec<u16> = DEVICE_GUARD_KEY.encode_utf16().chain(std::iter::once(0)).collect();
+        let mut hkey = Default::default();
+        
+        if RegOpenKeyExW(
+            HKEY_LOCAL_MACHINE,
+            PCWSTR(subkey_wide.as_ptr()),
+            Some(0),
+            KEY_READ,
+            &mut hkey,
+        ).is_err() {
+            return false;
         }
-        Err(_) => false,
+        
+        let value_name: Vec<u16> = "EnableVirtualizationBasedSecurity".encode_utf16().chain(std::iter::once(0)).collect();
+        let mut data: u32 = 0;
+        let mut data_size = std::mem::size_of::<u32>() as u32;
+        let mut value_type = REG_DWORD;
+        
+        let result = RegQueryValueExW(
+            hkey,
+            PCWSTR(value_name.as_ptr()),
+            None,
+            Some(&mut value_type),
+            Some(&mut data as *mut u32 as *mut u8),
+            Some(&mut data_size),
+        );
+        
+        let _ = RegCloseKey(hkey);
+        
+        result.is_ok() && data != 0
     }
 }

@@ -19,3 +19,7 @@ chrono.workspace = true
 
 # Windows APIs
 windows.workspace = true
+
+# Compression & Checksums - SOTA 2026
+zstd.workspace = true
+sha2.workspace = true

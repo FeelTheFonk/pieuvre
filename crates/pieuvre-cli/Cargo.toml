@@ -16,6 +16,7 @@ pieuvre-sync = { path = "../pieuvre-sync" }
 pieuvre-persist = { path = "../pieuvre-persist" }
 
 clap.workspace = true
+clap_complete.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true

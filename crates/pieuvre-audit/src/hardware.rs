@@ -55,7 +55,6 @@ fn probe_cpu() -> Result<CpuInfo> {
     let mut p_cores = Vec::new();
     let mut e_cores = Vec::new();
     let mut physical_cores = 0u32;
-    let is_hybrid;
 
     // Détection via CPUID pour vendor/model
     let (vendor, model_name) = detect_cpu_via_cpuid();
@@ -98,7 +97,7 @@ fn probe_cpu() -> Result<CpuInfo> {
         .unwrap_or(1);
     
     // Hybrid detection: both P and E cores present
-    is_hybrid = !p_cores.is_empty() && !e_cores.is_empty();
+    let is_hybrid = !p_cores.is_empty() && !e_cores.is_empty();
     
     Ok(CpuInfo {
         vendor,
@@ -417,7 +416,7 @@ fn probe_gpu_registry() -> Result<Vec<GpuInfo>> {
             .collect();
         
         let mut hkey = Default::default();
-        if RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(base_key.as_ptr()), 0, KEY_READ, &mut hkey).is_err() {
+        if RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(base_key.as_ptr()), Some(0), KEY_READ, &mut hkey).is_err() {
             return Ok(gpus);
         }
         
@@ -429,10 +428,10 @@ fn probe_gpu_registry() -> Result<Vec<GpuInfo>> {
             if RegEnumKeyExW(
                 hkey,
                 index,
-                windows::core::PWSTR(name_buffer.as_mut_ptr()),
+                Some(windows::core::PWSTR(name_buffer.as_mut_ptr())),
                 &mut name_len,
                 None,
-                windows::core::PWSTR::null(),
+                None,
                 None,
                 None,
             ).is_err() {
@@ -472,7 +471,7 @@ fn read_gpu_from_registry(key_path: &str) -> Option<GpuInfo> {
         let key_wide: Vec<u16> = key_path.encode_utf16().chain(std::iter::once(0)).collect();
         
         let mut hkey = Default::default();
-        if RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(key_wide.as_ptr()), 0, KEY_READ, &mut hkey).is_err() {
+        if RegOpenKeyExW(HKEY_LOCAL_MACHINE, PCWSTR(key_wide.as_ptr()), Some(0), KEY_READ, &mut hkey).is_err() {
             return None;
         }
         

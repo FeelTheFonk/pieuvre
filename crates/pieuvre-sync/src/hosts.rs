@@ -69,7 +69,7 @@ const TELEMETRY_HOSTS: &[&str] = &[
 /// Add telemetry block entries to hosts file
 pub fn add_telemetry_blocks() -> Result<u32> {
     let hosts_content = fs::read_to_string(HOSTS_PATH)
-        .map_err(|e| PieuvreError::Io(e))?;
+        .map_err(PieuvreError::Io)?;
     
     // Check if already added
     if hosts_content.contains(PIEUVRE_MARKER_START) {
@@ -94,7 +94,7 @@ pub fn add_telemetry_blocks() -> Result<u32> {
     // Append to hosts
     let new_content = format!("{}{}", hosts_content, block);
     fs::write(HOSTS_PATH, new_content)
-        .map_err(|e| PieuvreError::Io(e))?;
+        .map_err(PieuvreError::Io)?;
     
     tracing::info!("Added {} domains to hosts file", TELEMETRY_HOSTS.len());
     Ok(TELEMETRY_HOSTS.len() as u32)
@@ -103,7 +103,7 @@ pub fn add_telemetry_blocks() -> Result<u32> {
 /// Remove Pieuvre entries from hosts file
 pub fn remove_telemetry_blocks() -> Result<()> {
     let hosts_content = fs::read_to_string(HOSTS_PATH)
-        .map_err(|e| PieuvreError::Io(e))?;
+        .map_err(PieuvreError::Io)?;
     
     if !hosts_content.contains(PIEUVRE_MARKER_START) {
         tracing::info!("No Pieuvre hosts block found");
@@ -120,7 +120,7 @@ pub fn remove_telemetry_blocks() -> Result<()> {
         let new_content = format!("{}{}", before.trim_end(), after);
         
         fs::write(HOSTS_PATH, new_content)
-            .map_err(|e| PieuvreError::Io(e))?;
+            .map_err(PieuvreError::Io)?;
         
         tracing::info!("Removed Pieuvre hosts block");
     }
