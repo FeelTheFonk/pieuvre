@@ -14,12 +14,12 @@ confidence-threshold = 0.8
 allow = [
     "MIT",
     "Apache-2.0",
-    "BSD-2-Clause",
     "BSD-3-Clause",
-    "ISC",
     "Zlib",
     "Unlicense",
-    "Unicode-DFS-2016",
+    "GPL-3.0-only",
+    "GPL-3.0-or-later",
+    "Unicode-3.0",
 ]
 
 [advisories]
@@ -35,6 +35,16 @@ ignore = [
 # Multiple versions of the same crate are allowed but warned
 multiple-versions = "warn"
 # We can skip certain crates from the multiple versions check
-skip = []
+skip = [
+    { name = "bitflags", version = "1.3.2" },
+    { name = "num-derive", version = "0.3.3" },
+    { name = "syn", version = "1.0.109" },
+    { name = "thiserror", version = "1.0.69" },
+    { name = "thiserror-impl", version = "1.0.69" },
+    { name = "windows-sys", version = "0.59.0" },
+    { name = "windows-sys", version = "0.60.2" },
+    { name = "windows-targets", version = "0.52.6" },
+    { name = "windows_x86_64_msvc", version = "0.52.6" },
+]
 # We can skip certain crates from being banned
 skip-tree = []
