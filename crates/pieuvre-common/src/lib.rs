@@ -1,7 +1,7 @@
-//! pieuvre - Types partagés et configuration
+//! pieuvre - Shared types and configuration
 //!
-//! Ce crate contient les types de données, erreurs, et configuration
-//! partagés entre tous les modules pieuvre.
+//! This crate contains data types, errors, and configuration
+//! shared across all pieuvre modules.
 
 mod config;
 mod error;

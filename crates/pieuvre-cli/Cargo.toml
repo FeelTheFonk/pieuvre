@@ -26,6 +26,9 @@ indicatif.workspace = true
 console.workspace = true
 chrono.workspace = true
 dialoguer.workspace = true
+inquire = "0.7"
+ratatui = "0.26"
+crossterm = "0.27"
 tokio.workspace = true
 async-trait.workspace = true
 windows.workspace = true
@@ -34,4 +37,3 @@ windows.workspace = true
 winres = { workspace = true }
 image = "0.25"
 ico = "0.3"
-

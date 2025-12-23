@@ -1,6 +1,6 @@
-//! Inspection des services Windows
+//! Windows services inspection
 //!
-//! Énumération et catégorisation des services avec détection SOTA.
+//! Enumeration and categorization of services.
 
 use pieuvre_common::{Result, ServiceCategory, ServiceInfo, ServiceStartType, ServiceStatus};
 use windows::core::PCWSTR;
@@ -10,7 +10,7 @@ use windows::Win32::System::Services::{
     SC_MANAGER_ENUMERATE_SERVICE, SERVICE_QUERY_CONFIG, SERVICE_STATE_ALL, SERVICE_WIN32,
 };
 
-/// Services connus comme télémétrie
+/// Services known as telemetry
 const TELEMETRY_SERVICES: &[&str] = &[
     "DiagTrack",
     "dmwappushservice",
@@ -26,7 +26,7 @@ const TELEMETRY_SERVICES: &[&str] = &[
     "wisvc",
 ];
 
-/// Services liés à la performance
+/// Performance related services
 const PERFORMANCE_SERVICES: &[&str] = &[
     "SysMain",
     "WSearch",
@@ -39,7 +39,7 @@ const PERFORMANCE_SERVICES: &[&str] = &[
     "DoSvc",
 ];
 
-/// Services de sécurité
+/// Security services
 const SECURITY_SERVICES: &[&str] = &[
     "WinDefend",
     "SecurityHealthService",
@@ -55,7 +55,7 @@ const SECURITY_SERVICES: &[&str] = &[
     "KeyIso",
 ];
 
-/// Services réseau
+/// Network services
 const NETWORK_SERVICES: &[&str] = &[
     "Dhcp",
     "Dnscache",
@@ -70,7 +70,7 @@ const NETWORK_SERVICES: &[&str] = &[
     "NetTcpPortSharing",
 ];
 
-/// Services système critiques
+/// Critical system services
 const SYSTEM_SERVICES: &[&str] = &[
     "Wdf",
     "Wmi",
@@ -88,7 +88,7 @@ const SYSTEM_SERVICES: &[&str] = &[
     "TimeBrokerSvc",
 ];
 
-/// Inspecte tous les services du système avec détection SOTA du start_type
+/// Inspects all system services with start_type detection
 pub fn inspect_services() -> Result<Vec<ServiceInfo>> {
     let mut services = Vec::new();
 
@@ -103,7 +103,7 @@ pub fn inspect_services() -> Result<Vec<ServiceInfo>> {
         let mut services_returned = 0u32;
         let mut resume_handle = 0u32;
 
-        // Premier appel pour obtenir la taille
+        // First call to get size
         let _ = EnumServicesStatusExW(
             scm,
             SC_ENUM_PROCESS_INFO,
@@ -141,7 +141,7 @@ pub fn inspect_services() -> Result<Vec<ServiceInfo>> {
                     let name = pwstr_to_string(entry.lpServiceName);
                     let display_name = pwstr_to_string(entry.lpDisplayName);
 
-                    // Statut du service
+                    // Service status
                     let status = match entry.ServiceStatusProcess.dwCurrentState.0 {
                         1 => ServiceStatus::Stopped,
                         2 => ServiceStatus::StartPending,
@@ -153,10 +153,10 @@ pub fn inspect_services() -> Result<Vec<ServiceInfo>> {
                         _ => ServiceStatus::Unknown,
                     };
 
-                    // Récupérer le vrai start_type via QueryServiceConfigW
+                    // Get real start_type via QueryServiceConfigW
                     let start_type = get_service_start_type(scm, &name);
 
-                    // PID si running
+                    // PID if running
                     let pid = if status == ServiceStatus::Running {
                         Some(entry.ServiceStatusProcess.dwProcessId)
                     } else {
@@ -183,7 +183,7 @@ pub fn inspect_services() -> Result<Vec<ServiceInfo>> {
     Ok(services)
 }
 
-/// Récupère le type de démarrage réel d'un service via QueryServiceConfigW
+/// Retrieves the real start type of a service via QueryServiceConfigW
 fn get_service_start_type(
     scm: windows::Win32::System::Services::SC_HANDLE,
     name: &str,
@@ -196,7 +196,7 @@ fn get_service_start_type(
             Err(_) => return ServiceStartType::Unknown,
         };
 
-        // Premier appel pour obtenir la taille nécessaire
+        // First call to get necessary size
         let mut bytes_needed = 0u32;
         let _ = QueryServiceConfigW(service, None, 0, &mut bytes_needed);
 
@@ -219,7 +219,7 @@ fn get_service_start_type(
 
         let config = &*config_ptr;
 
-        // Mapper dwStartType vers notre enum
+        // Map dwStartType to our enum
         match config.dwStartType.0 {
             0 => ServiceStartType::Boot,      // SERVICE_BOOT_START
             1 => ServiceStartType::System,    // SERVICE_SYSTEM_START
@@ -234,7 +234,7 @@ fn get_service_start_type(
 fn categorize_service(name: &str) -> ServiceCategory {
     let lower = name.to_lowercase();
 
-    // Télémétrie
+    // Telemetry
     if TELEMETRY_SERVICES
         .iter()
         .any(|s| s.eq_ignore_ascii_case(name))
@@ -250,7 +250,7 @@ fn categorize_service(name: &str) -> ServiceCategory {
         return ServiceCategory::Performance;
     }
 
-    // Sécurité
+    // Security
     if SECURITY_SERVICES
         .iter()
         .any(|s| s.eq_ignore_ascii_case(name))
@@ -258,7 +258,7 @@ fn categorize_service(name: &str) -> ServiceCategory {
         return ServiceCategory::Security;
     }
 
-    // Réseau
+    // Network
     if NETWORK_SERVICES
         .iter()
         .any(|s| s.eq_ignore_ascii_case(name))
@@ -266,7 +266,7 @@ fn categorize_service(name: &str) -> ServiceCategory {
         return ServiceCategory::Network;
     }
 
-    // Système - par préfixe ou liste
+    // System - by prefix or list
     if SYSTEM_SERVICES
         .iter()
         .any(|s| lower.starts_with(&s.to_lowercase()))
@@ -274,7 +274,7 @@ fn categorize_service(name: &str) -> ServiceCategory {
         return ServiceCategory::System;
     }
 
-    // Heuristiques supplémentaires
+    // Additional heuristics
     if lower.contains("xbox") || lower.contains("game") {
         return ServiceCategory::Gaming;
     }
@@ -308,7 +308,7 @@ fn pwstr_to_string(ptr: windows::core::PWSTR) -> String {
     }
 }
 
-/// Retourne les services de télémétrie actifs
+/// Returns active telemetry services
 pub fn get_active_telemetry_services(services: &[ServiceInfo]) -> Vec<&ServiceInfo> {
     services
         .iter()
@@ -316,7 +316,7 @@ pub fn get_active_telemetry_services(services: &[ServiceInfo]) -> Vec<&ServiceIn
         .collect()
 }
 
-/// Retourne les services désactivables sans risque
+/// Returns services safe to disable without risk
 pub fn get_safe_to_disable(services: &[ServiceInfo]) -> Vec<&ServiceInfo> {
     services
         .iter()

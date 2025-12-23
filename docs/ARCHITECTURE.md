@@ -16,8 +16,7 @@ pieuvre/
 │   └── pieuvre-cli/        Command-line interface
 ├── config/
 │   ├── default.toml        Default configuration
-│   ├── telemetry-domains.txt
-│   └── profiles/           gaming.toml, privacy.toml, workstation.toml
+│   └── telemetry-domains.txt
 └── docs/
     ├── ARCHITECTURE.md     This file
     └── TECHNICAL.md        Technical implementation details
@@ -45,14 +44,20 @@ pieuvre-cli
 [User Command] ──> [CLI Parser] ──> [Audit Engine]
                                           │
                                           ▼
-                                   [System Report]
+                                [Optimization Logic]
                                           │
                                           ▼
-                               [Intelligence Layer]
-                                          │
-                                          ▼
-                                [Sync Engine] ──> [Snapshot] ──> [Apply Changes]
+                                 [Optimization Engine] ──> [Snapshot] ──> [Apply Changes]
 ```
+
+---
+
+## Asynchronous Execution Model
+
+Le Dashboard utilise un modèle de communication asynchrone pour garantir une UI fluide (60 FPS) :
+- **Tokio Tasks** : Les opérations lourdes sont déportées dans des tâches de fond.
+- **MPSC Channels** : Les logs et statuts d'exécution sont transmis via des canaux asynchrones.
+- **Event Loop** : Gestion non-bloquante des événements clavier et du rendu Ratatui.
 
 ---
 
@@ -75,7 +80,7 @@ pieuvre-cli
 
 ### pieuvre-sync
 
-30+ modification modules (SOTA 2026):
+30+ optimization modules:
 - `services.rs` - Service state management (Native API)
 - `timer.rs` - `NtSetTimerResolution` (0.5ms)
 - `power.rs` - Power plan configuration (Native API)
@@ -98,7 +103,7 @@ pieuvre-cli
 - `cpu.rs` - Core Parking/Memory
 - `hardening.rs` - **System Hardening & IFEO Protection**
 - `interrupts.rs` - **Dynamic Interrupt Affinity Steering**
-- `sentinel/` - **Event-Driven Self-Healing Engine** (v0.4.0: Service Monitoring)
+- `sentinel/` - **System Monitoring Engine** (v0.4.0: Service Monitoring)
 - `power_plan.rs` - Atomic Power Plan operations (MsiOperation, AppxOperation)
 
 ### pieuvre-persist
@@ -112,5 +117,5 @@ pieuvre-cli
 
 - Command parsing (clap)
 - Interactive mode (dialoguer)
-- User-facing output
-- Profile loading
+- System state capture
+- ETW analysis

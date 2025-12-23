@@ -15,10 +15,12 @@ pub struct ExecutionResult {
     #[allow(dead_code)]
     pub affected_count: usize,
     /// Message de succès
+    #[allow(dead_code)]
     pub message: String,
 }
 
 impl ExecutionResult {
+    #[allow(dead_code)]
     pub fn ok(message: impl Into<String>) -> Self {
         Self {
             affected_count: 1,
@@ -26,6 +28,7 @@ impl ExecutionResult {
         }
     }
 
+    #[allow(dead_code)]
     pub fn ok_count(count: usize, message: impl Into<String>) -> Self {
         Self {
             affected_count: count,
@@ -38,6 +41,7 @@ impl ExecutionResult {
 #[async_trait]
 pub trait OptExecutor {
     /// Executes the optimization and returns the result
+    #[allow(dead_code)]
     async fn execute(&self, id: &str, changes: &mut Vec<ChangeRecord>) -> Result<ExecutionResult>;
 }
 
@@ -45,6 +49,7 @@ pub trait OptExecutor {
 // TELEMETRY EXECUTOR
 // ============================================================================
 
+#[allow(dead_code)]
 pub struct TelemetryExecutor;
 
 #[async_trait]
@@ -148,6 +153,7 @@ impl OptExecutor for TelemetryExecutor {
 // PRIVACY EXECUTOR
 // ============================================================================
 
+#[allow(dead_code)]
 pub struct PrivacyExecutor;
 
 #[async_trait]
@@ -280,6 +286,7 @@ impl OptExecutor for PrivacyExecutor {
 // PERFORMANCE EXECUTOR
 // ============================================================================
 
+#[allow(dead_code)]
 pub struct PerformanceExecutor;
 
 #[async_trait]
@@ -402,6 +409,7 @@ impl OptExecutor for PerformanceExecutor {
 // SCHEDULER EXECUTOR
 // ============================================================================
 
+#[allow(dead_code)]
 pub struct SchedulerExecutor;
 
 #[async_trait]
@@ -444,6 +452,7 @@ impl OptExecutor for SchedulerExecutor {
 // APPX EXECUTOR
 // ============================================================================
 
+#[allow(dead_code)]
 pub struct AppxExecutor;
 
 #[async_trait]
@@ -532,6 +541,7 @@ impl OptExecutor for AppxExecutor {
 // CPU EXECUTOR
 // ============================================================================
 
+#[allow(dead_code)]
 pub struct CPUExecutor;
 
 #[async_trait]
@@ -568,6 +578,7 @@ impl OptExecutor for CPUExecutor {
 // DPC EXECUTOR
 // ============================================================================
 
+#[allow(dead_code)]
 pub struct DPCExecutor;
 
 #[async_trait]
@@ -610,6 +621,7 @@ impl OptExecutor for DPCExecutor {
 // SECURITY EXECUTOR
 // ============================================================================
 
+#[allow(dead_code)]
 pub struct SecurityExecutor;
 
 #[async_trait]
@@ -643,6 +655,7 @@ impl OptExecutor for SecurityExecutor {
 // NETWORK ADVANCED EXECUTOR
 // ============================================================================
 
+#[allow(dead_code)]
 pub struct NetworkAdvancedExecutor;
 
 #[async_trait]
@@ -685,6 +698,7 @@ impl OptExecutor for NetworkAdvancedExecutor {
 // DNS EXECUTOR
 // ============================================================================
 
+#[allow(dead_code)]
 pub struct DNSExecutor;
 
 #[async_trait]
@@ -737,6 +751,7 @@ impl OptExecutor for DNSExecutor {
 // CLEANUP EXECUTOR
 // ============================================================================
 
+#[allow(dead_code)]
 pub struct CleanupExecutor;
 
 #[async_trait]
@@ -776,6 +791,7 @@ impl OptExecutor for CleanupExecutor {
 // HELPER FUNCTIONS
 // ============================================================================
 
+#[allow(dead_code)]
 /// Captures the original state of a service for rollback
 fn capture_service_state(service_name: &str, changes: &mut Vec<ChangeRecord>) {
     if let Ok(original) = pieuvre_sync::services::get_service_start_type(service_name) {
@@ -786,6 +802,7 @@ fn capture_service_state(service_name: &str, changes: &mut Vec<ChangeRecord>) {
     }
 }
 
+#[allow(dead_code)]
 /// Captures the original state of a registry value for rollback
 fn capture_registry_state(subkey: &str, value_name: &str, changes: &mut Vec<ChangeRecord>) {
     if let Ok(original) = pieuvre_sync::registry::read_dword_value(subkey, value_name) {
@@ -808,20 +825,23 @@ fn capture_appx_state(package_name: &str, changes: &mut Vec<ChangeRecord>) {
 }
 
 /// Dispatcher: selects the correct executor based on category
-pub fn get_executor(category: &str) -> Box<dyn OptExecutor> {
-    match category {
-        "telemetry" => Box::new(TelemetryExecutor),
-        "privacy" => Box::new(PrivacyExecutor),
-        "performance" => Box::new(PerformanceExecutor),
-        "scheduler" => Box::new(SchedulerExecutor),
-        "appx" => Box::new(AppxExecutor),
-        "cpu" => Box::new(CPUExecutor),
-        "dpc" => Box::new(DPCExecutor),
-        "security" => Box::new(SecurityExecutor),
-        "network_advanced" => Box::new(NetworkAdvancedExecutor),
-        "dns" => Box::new(DNSExecutor),
-        "cleanup" => Box::new(CleanupExecutor),
-        _ => Box::new(TelemetryExecutor), // Fallback
+pub fn get_executor(category: &str) -> Result<Box<dyn OptExecutor + Send + Sync>> {
+    let normalized = category.to_lowercase();
+    match normalized.as_str() {
+        "telemetry" | "télémétrie" => Ok(Box::new(TelemetryExecutor)),
+        "privacy" | "vie privée" => Ok(Box::new(PrivacyExecutor)),
+        "performance" => Ok(Box::new(PerformanceExecutor)),
+        "scheduler" | "ordonnanceur" => Ok(Box::new(SchedulerExecutor)),
+        "appx" | "appx bloat" => Ok(Box::new(AppxExecutor)),
+        "cpu" | "cpu/mem" | "cpu/mémoire" => Ok(Box::new(CPUExecutor)),
+        "dpc" | "dpc latency" | "latence dpc" => Ok(Box::new(DPCExecutor)),
+        "security" | "sécurité" => Ok(Box::new(SecurityExecutor)),
+        "network_advanced" | "réseau (avancé)" | "network" => {
+            Ok(Box::new(NetworkAdvancedExecutor))
+        }
+        "dns" => Ok(Box::new(DNSExecutor)),
+        "cleanup" | "nettoyage" => Ok(Box::new(CleanupExecutor)),
+        _ => anyhow::bail!("Unknown category: {}", category),
     }
 }
 

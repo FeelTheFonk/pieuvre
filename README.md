@@ -4,7 +4,6 @@
 
 <h1 align="center">pieuvre</h1>
 
-
 Windows system control and optimization tool. Full registry/service/network/power management with snapshot-based rollback.
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
@@ -16,16 +15,16 @@ Windows system control and optimization tool. Full registry/service/network/powe
 
 ## Overview
 
-pieuvre is an advanced Windows optimization toolkit built in Rust, currently in its **Apex (0.4.4)** phase.
+pieuvre is an advanced Windows optimization toolkit built in Rust, currently in its **0.5.0** phase.
 
 Unlike batch scripts or registry tweaks, pieuvre:
 
 - **100% Native API Integration** - Zero reliance on external CLI tools (`netsh`, `powercfg`, etc.)
 - **Audits before modifying** - Full system state capture with deep ETW analysis
 - **Creates automatic snapshots** - Every change is reversible via `zstd` compressed backups
-- **Sentinel Engine** - Real-time monitoring and self-healing of critical system settings
-- **Hardware-Aware Intelligence** - Advanced detection for optimal DPC/ISR steering
-- **SOTA 2026 Optimizations** - Advanced CPU Quantum, Working Set trimming, and TCP stack hardening
+- **System Monitoring** - Real-time monitoring and auto-restoration of critical system settings
+- **Hardware Detection** - Advanced detection for optimal DPC/ISR steering
+- **Advanced System Optimizations** - Advanced CPU Quantum, Working Set trimming, and TCP stack hardening
 
 **Target Users**: Power users, gaming enthusiasts, privacy-focused users, system administrators.
 
@@ -38,13 +37,10 @@ Unlike batch scripts or registry tweaks, pieuvre:
 - **Security Audit** - Defender status, Firewall profiles, UAC, SecureBoot, HVCI/VBS detection
 - **Sync Engine** - 40+ optimization modules including **CPU Quantum**, **Memory Trimming**, and **TCP Hardening**
 - **Persistence Engine** - Snapshot creation & rollback (zstd compression + SHA256)
-- **Sentinel Engine** - Event-driven background monitoring & auto-restoration (Self-Healing)
+- **Monitoring Engine** - Event-driven background monitoring & auto-restoration
 - **Hardening Engine** - Persistence vector protection and IFEO hardening
 - **Cleanup Engine** - Deep system cleaning (WinSxS via DISM, Temp, Edge, Windows Update)
-- **Interactive Mode** - 11 sections, 100+ granular options (The Ghost UI)
-
-
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
+- **Interactive Mode** - 11 sections, 100+ granular options (Interactive TUI Dashboard)
 
 ---
 
@@ -59,7 +55,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
 ### Build
 
 ```powershell
-git clone https://github.com/username/pieuvre.git
+git clone https://github.com/FeelTheFonk/pieuvre.git
 cd pieuvre
 cargo build --release
 ```
@@ -75,13 +71,9 @@ Binary: `target/release/pieuvre.exe`
 pieuvre audit --full
 
 # 2. Interactive mode (recommended)
-pieuvre interactive --profile gaming
+pieuvre interactive
 
-# 3. Or apply profile directly
-pieuvre sync --profile gaming --dry-run   # Preview
-pieuvre sync --profile gaming             # Apply
-
-# 4. Rollback if needed
+# 3. Rollback if needed
 pieuvre rollback --last
 ```
 
@@ -92,26 +84,10 @@ pieuvre rollback --last
 | Command | Description |
 |---------|-------------|
 | `audit` | Collect system state |
-| `analyze` | Generate recommendations |
-| `sync` | Apply optimizations |
-| `interactive` | Granular selection |
+| `interactive` | Granular selection (Interactive TUI Dashboard) |
 | `rollback` | Restore previous state |
 | `status` | Display current state |
 | `verify` | Check applied changes |
-
-See [CLI Documentation](crates/pieuvre-cli/README.md) for full options.
-
----
-
-## Profiles
-
-| Profile | Focus |
-|---------|-------|
-| **Gaming** | Minimum latency, maximum performance |
-| **Privacy** | Minimize telemetry and data collection |
-| **Workstation** | Balance performance with stability |
-
-See [Configuration](config/README.md) for details.
 
 ---
 
@@ -119,7 +95,7 @@ See [Configuration](config/README.md) for details.
 
 - **Laptop detection** - Adjusts recommendations for battery devices
 - **Automatic snapshots** - Every modification is reversible
-- **Non-destructive analysis** - `audit` and `analyze` are read-only
+- **Non-destructive analysis** - `audit` is read-only
 
 ---
 
@@ -128,7 +104,6 @@ See [Configuration](config/README.md) for details.
 | Document | Description |
 |----------|-------------|
 | [CLI Reference](crates/pieuvre-cli/README.md) | Full command documentation |
-| [Configuration](config/README.md) | Profiles and settings |
 | [Architecture](docs/ARCHITECTURE.md) | Project structure |
 | [Technical Details](docs/TECHNICAL.md) | Implementation specifics |
 | [Contributing](CONTRIBUTING.md) | Development guidelines |
@@ -138,20 +113,3 @@ See [Configuration](config/README.md) for details.
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
-
----
-
-## Acknowledgments
-
-### References
-
-- [ChrisTitusTech/winutil](https://github.com/ChrisTitusTech/winutil)
-- [Farag2/Sophia-Script](https://github.com/farag2/Sophia-Script-for-Windows)
-- [Raphire/Win11Debloat](https://github.com/Raphire/Win11Debloat)
-- [privacy.sexy](https://github.com/undergroundwires/privacy.sexy)
-
-### Rust Ecosystem
-
-- [windows-rs](https://github.com/microsoft/windows-rs)
-- [clap](https://github.com/clap-rs/clap)
-- [dialoguer](https://github.com/mitsuhiko/dialoguer)

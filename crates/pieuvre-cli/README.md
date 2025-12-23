@@ -11,103 +11,35 @@ Le mode interactif utilise une architecture modulaire:
 
 | Module | Description |
 |--------|-------------|
-| `interactive/mod.rs` | Orchestrateur principal (Flow guide par defaut) |
-| `interactive/sections.rs` | 9 sections avec `OptItem` typé et `RiskLevel` |
-| `interactive/executor.rs` | Trait `OptExecutor` + 9 implémentations |
+| `interactive/mod.rs` | Orchestrateur principal |
+| `interactive/sections.rs` | 11 sections avec `OptItem` typé et `RiskLevel` |
+| `interactive/executor.rs` | Trait `OptExecutor` + implémentations |
 | `interactive/ui.rs` | Interface SOTA (ASCII Art, NO EMOJI) |
 
 ---
-
-## Commands
-
-| Command | Description |
-|---------|-------------|
-| `audit` | Collect system state (services, hardware, telemetry) |
-| `analyze` | Generate profile-based recommendations |
-| `sync` | Apply profile optimizations |
-| `status` | Display current optimization state |
-| `interactive` | Granular selection interface (Default launch) |
-| `rollback` | Restore previous system state |
-| `verify` | Check integrity of applied changes |
-
----
-
-## Command Reference
-
-### audit
+### `audit`
 
 Collect current system state.
 
 ```powershell
-pieuvre audit [OPTIONS]
+pieuvre audit [--full] [--output <PATH>]
 ```
-
-| Option | Description |
-|--------|-------------|
-| `--full` | Complete audit including AppX packages |
-| `--output <PATH>` | Custom output path for report |
 
 **Example:**
 ```powershell
 pieuvre audit --full
-# Output: C:\ProgramData\pieuvre\reports\audit_2025-12-22.json
 ```
 
 ---
 
-### analyze
+### `interactive`
 
-Generate optimization recommendations.
-
-```powershell
-pieuvre analyze --profile <PROFILE>
-```
-
-| Option | Description |
-|--------|-------------|
-| `--profile` | Profile to analyze: `gaming`, `privacy`, `workstation` |
-
-**Example:**
-```powershell
-pieuvre analyze --profile gaming
-```
-
----
-
-### sync
-
-Apply optimizations from a profile.
+Granular selection interface with 100+ options.
+**Note:** Ce mode est lancé par défaut si aucun argument n'est fourni.
 
 ```powershell
-pieuvre sync --profile <PROFILE> [OPTIONS]
+pieuvre interactive
 ```
-
-| Option | Description |
-|--------|-------------|
-| `--profile` | Profile to apply |
-| `--dry-run` | Preview changes without applying |
-| `--force` | Skip confirmation prompt |
-
-**Example:**
-```powershell
-pieuvre sync --profile gaming --dry-run   # Preview
-pieuvre sync --profile gaming             # Apply
-```
-
----
-
-### interactive
-
-Granular selection interface with 65+ options.
-**Note:** Ce mode est lance par defaut si aucun argument n'est fourni a `pieuvre.exe`.
-
-```powershell
-pieuvre interactive --profile <PROFILE>
-```
-
-| Option | Description |
-|--------|-------------|
-| `--profile` | Base profile for pre-selection |
 
 **Categories:**
 - Telemetry (13 options)
@@ -119,68 +51,38 @@ pieuvre interactive --profile <PROFILE>
 - DPC Latency (5 options)
 - Security (3 options)
 - Network Avancé (5 options)
+- Cleanup (SOTA 2026)
+- AI & DNS (Recall, CoPilot, DoH)
 
 ---
 
-### status
+### `status`
 
 Display current optimization state.
 
 ```powershell
-pieuvre status
+pieuvre status [--live]
 ```
-
-Shows:
-- Applied optimizations
-- Service states
-- Power plan
-- Timer resolution
-- Last snapshot info
 
 ---
 
-### rollback
+### `rollback`
 
 Restore previous system state.
 
 ```powershell
-pieuvre rollback [OPTIONS]
-```
-
-| Option | Description |
-|--------|-------------|
-| `--last` | Restore most recent snapshot |
-| `--id <UUID>` | Restore specific snapshot |
-| `--list` | List available snapshots |
-
-**Example:**
-```powershell
-pieuvre rollback --list                              # View snapshots
-pieuvre rollback --last                              # Restore latest
-pieuvre rollback --id 7be4b13b-051a-4cb2-afb2-257c7a3aff2c
+pieuvre rollback [--list] [--last] [--id <UUID>]
 ```
 
 ---
 
-### verify
+### `verify`
 
 Check integrity of applied changes.
 
 ```powershell
-pieuvre verify [OPTIONS]
+pieuvre verify [--repair]
 ```
-
-| Option | Description |
-|--------|-------------|
-| `--strict` | Fail on any mismatch |
-
-**Checks:**
-- Timer resolution
-- Power plan
-- Service states
-- MSI mode
-- Firewall rules
-- Registry values
 
 ---
 
@@ -195,9 +97,8 @@ pieuvre verify [OPTIONS]
 
 ---
 
-## Environment Variables
+## Safety
 
-| Variable | Description |
-|----------|-------------|
-| `PIEUVRE_CONFIG` | Custom config file path |
-| `PIEUVRE_LOG` | Log level override (trace, debug, info, warn, error) |
+- **Laptop detection** - Adjusts recommendations for battery devices.
+- **Automatic snapshots** - Every modification is reversible.
+- **Non-destructive analysis** - `audit` is read-only.

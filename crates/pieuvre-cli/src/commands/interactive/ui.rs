@@ -1,403 +1,398 @@
-use anyhow::Result;
-use console::{style, Term};
-use dialoguer::{theme::Theme, Select};
-use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use std::fmt;
-
-/// Actions available from the main menu
-pub enum MainAction {
-    Interactive(String),
-    QuickApply(String),
-    Status,
-    Rollback,
-    Exit,
-}
+use ratatui::{
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Modifier, Style},
+    text::{Line, Span},
+    widgets::{Block, Borders, List, ListItem, Paragraph},
+    Frame,
+};
+use std::collections::VecDeque;
 
 // ══════════════════════════════════════════════════════════════════════════════
-// GHOST THEME - SOTA 2026
+// TUI DASHBOARD ENGINE
 // ══════════════════════════════════════════════════════════════════════════════
 
-pub struct GhostTheme {
-    pub prompt_style: console::Style,
-    pub active_item_style: console::Style,
-    pub inactive_item_style: console::Style,
-    pub active_item_prefix: String,
-    pub inactive_item_prefix: String,
+pub struct AppState {
+    pub logs: VecDeque<LogEntry>,
+    pub is_laptop: bool,
+    pub admin_status: bool,
+    pub current_view: ViewMode,
+    // Navigation granulaire
+    pub categories: Vec<(&'static str, Vec<super::sections::OptItem>)>,
+    pub selected_category: usize,
+    pub selected_option: usize,
+    pub options_state: std::collections::HashMap<String, bool>,
 }
 
-impl Default for GhostTheme {
-    fn default() -> Self {
+#[derive(PartialEq, Debug)]
+pub enum ViewMode {
+    Dashboard,
+    Audit,
+}
+
+pub struct LogEntry {
+    pub timestamp: String,
+    pub level: LogLevel,
+    pub message: String,
+    pub details: Option<String>,
+}
+
+pub enum LogLevel {
+    Info,
+    Success,
+    Warning,
+    Error,
+}
+
+impl AppState {
+    pub fn new() -> Self {
+        let is_laptop = pieuvre_audit::hardware::is_laptop();
+        let categories = vec![
+            ("Telemetry", super::sections::telemetry_section()),
+            ("Privacy", super::sections::privacy_section()),
+            (
+                "Performance",
+                super::sections::performance_section(is_laptop),
+            ),
+            ("Scheduler", super::sections::scheduler_section()),
+            ("AppX Bloat", super::sections::appx_section()),
+            ("CPU/Mem", super::sections::cpu_section(is_laptop)),
+            ("DPC Latency", super::sections::dpc_section()),
+            ("Security", super::sections::security_section()),
+            ("Network", super::sections::network_advanced_section()),
+            ("DNS", super::sections::dns_section()),
+            ("Cleanup", super::sections::cleanup_section()),
+        ];
+
+        let mut options_state = std::collections::HashMap::new();
+        for (_, section) in &categories {
+            for opt in section {
+                options_state.insert(opt.id.to_string(), opt.default);
+            }
+        }
+
         Self {
-            prompt_style: console::Style::new().for_stderr().bold(),
-            active_item_style: console::Style::new().for_stderr().cyan(),
-            inactive_item_style: console::Style::new().for_stderr().dim(),
-            active_item_prefix: "  ● ".to_string(),
-            inactive_item_prefix: "  ○ ".to_string(),
+            logs: VecDeque::with_capacity(200),
+            is_laptop,
+            admin_status: is_elevated(),
+            current_view: ViewMode::Dashboard,
+            categories,
+            selected_category: 0,
+            selected_option: 0,
+            options_state,
+        }
+    }
+
+    pub fn add_log(&mut self, level: LogLevel, message: &str, details: Option<&str>) {
+        let timestamp = chrono::Local::now().format("%H:%M:%S").to_string();
+        if self.logs.len() >= 200 {
+            self.logs.pop_front();
+        }
+        self.logs.push_back(LogEntry {
+            timestamp,
+            level,
+            message: message.to_string(),
+            details: details.map(|s| s.to_string()),
+        });
+    }
+
+    pub fn select_all_in_category(&mut self) {
+        let (_, options) = &self.categories[self.selected_category];
+        for opt in options {
+            self.options_state.insert(opt.id.to_string(), true);
+        }
+    }
+
+    pub fn deselect_all_in_category(&mut self) {
+        let (_, options) = &self.categories[self.selected_category];
+        for opt in options {
+            self.options_state.insert(opt.id.to_string(), false);
         }
     }
 }
 
-impl Theme for GhostTheme {
-    fn format_prompt(&self, f: &mut dyn fmt::Write, prompt: &str) -> fmt::Result {
-        write!(f, "\n  {}\n", self.prompt_style.apply_to(prompt))
-    }
+pub fn draw_ui(f: &mut Frame, state: &AppState) {
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3), // Header
+            Constraint::Min(10),   // Main Content (Categories + Options)
+            Constraint::Length(3), // Footer / Help
+        ])
+        .split(f.size());
 
-    fn format_select_prompt_item(
-        &self,
-        f: &mut dyn fmt::Write,
-        text: &str,
-        active: bool,
-    ) -> fmt::Result {
-        let prefix = if active {
-            &self.active_item_prefix
-        } else {
-            &self.inactive_item_prefix
-        };
-        let style = if active {
-            &self.active_item_style
-        } else {
-            &self.inactive_item_style
-        };
-        write!(f, "{}{}", prefix, style.apply_to(text))
-    }
-
-    fn format_multi_select_prompt_item(
-        &self,
-        f: &mut dyn fmt::Write,
-        text: &str,
-        checked: bool,
-        active: bool,
-    ) -> fmt::Result {
-        let prefix = if checked { "  ● " } else { "  ○ " };
-        let style = if active {
-            &self.active_item_style
-        } else {
-            &self.inactive_item_style
-        };
-        write!(f, "{}{}", prefix, style.apply_to(text))
-    }
+    draw_header(f, chunks[0], state);
+    draw_main_content(f, chunks[1], state);
+    draw_footer(f, chunks[2], state);
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// LAYOUT ENGINE
-// ══════════════════════════════════════════════════════════════════════════════
+fn draw_main_content(f: &mut Frame, area: Rect, state: &AppState) {
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(30), // Categories
+            Constraint::Percentage(70), // Options / Logs
+        ])
+        .split(area);
 
-pub fn print_box_top(title: &str) {
-    let width = 60;
-    let title_len = title.len();
-    let left_line = (width - title_len - 4) / 2;
-    let right_line = width - title_len - 4 - left_line;
+    draw_categories(f, chunks[0], state);
 
-    println!(
-        "  {}{}{}{}",
-        style("┌").dim(),
-        style("─".repeat(left_line)).dim(),
-        style(format!(" {} ", title.to_uppercase())).bold(),
-        style("─".repeat(right_line) + "┐").dim()
-    );
-}
-
-pub fn print_box_bottom() {
-    println!("  {}\n", style(format!("└{}┘", "─".repeat(58))).dim());
-}
-
-pub fn print_line(content: &str) {
-    println!(
-        "  {} {:<56} {}",
-        style("│").dim(),
-        content,
-        style("│").dim()
-    );
-}
-
-// ══════════════════════════════════════════════════════════════════════════════
-// UI COMPONENTS
-// ══════════════════════════════════════════════════════════════════════════════
-
-pub fn print_header(is_laptop: bool, profile: &str) {
-    println!();
-    println!(
-        "  {}  {} · {}",
-        style(".⣠⟬ ⊚ ⟭⣄.").cyan(),
-        if is_laptop {
-            style("LAPTOP").yellow().dim()
-        } else {
-            style("DESKTOP").green().dim()
-        },
-        style(profile.to_uppercase()).white().bold()
-    );
-}
-
-pub fn print_welcome_screen() {
-    let term = Term::stdout();
-    let _ = term.clear_screen();
-    println!();
-    println!(
-        "  {}",
-        style(format!("pieuvre v{}", env!("CARGO_PKG_VERSION"))).dim()
-    );
-    println!();
-}
-
-pub fn check_admin_status() {
-    if is_elevated() {
-        println!("  {} Administrator privileges active", style("●").green());
+    if state.current_view == ViewMode::Dashboard {
+        draw_options(f, chunks[1], state);
     } else {
-        println!("  {} Standard user - Limited mode", style("○").yellow());
-        println!(
-            "    {} Run as administrator for full control",
-            style("└─").dim()
-        );
-        println!();
+        draw_logs(f, chunks[1], state);
     }
 }
 
-pub fn print_quick_status() {
-    print_box_top(".⣠⟬ ⊚ ⟭⣄.");
-
-    let is_laptop = pieuvre_audit::hardware::is_laptop();
-    print_line(&format!(
-        "Chassis:     {}",
-        if is_laptop {
-            "Mobile / Laptop"
-        } else {
-            "Stationary / Desktop"
-        }
-    ));
-
-    if let Ok(hw) = pieuvre_audit::hardware::probe_hardware() {
-        if hw.cpu.is_hybrid {
-            print_line(&format!(
-                "CPU:         {} ({}P/{}E)",
-                hw.cpu.model_name,
-                hw.cpu.p_cores.len(),
-                hw.cpu.e_cores.len()
-            ));
-        } else {
-            print_line(&format!(
-                "CPU:         {} ({} Cores)",
-                hw.cpu.model_name, hw.cpu.physical_cores
-            ));
-        }
-    }
-
-    // Sentinel & Hardening Status
-    let sentinel_status = style("ACTIVE / LOCKED").green();
-    print_line(&format!("Sentinel:    {}", sentinel_status));
-
-    // DNS & AI Status
-    if let Ok(doh) = pieuvre_sync::registry::read_dword_value(
-        r"SYSTEM\CurrentControlSet\Services\Dnscache\Parameters",
-        "EnableAutoDoh",
-    ) {
-        let status = if doh == 2 {
-            style("SOTA (DoH)").green()
-        } else {
-            style("STOCK").dim()
-        };
-        print_line(&format!("DNS Engine:  {}", status));
-    }
-
-    if let Ok(recall) = pieuvre_sync::registry::read_dword_value(
-        r"SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
-        "DisableAIDataAnalysis",
-    ) {
-        let status = if recall == 1 {
-            style("NEUTRALIZED").green()
-        } else {
-            style("ACTIVE").red()
-        };
-        print_line(&format!("AI De-bloat: {}", status));
-    }
-
-    if let Ok(info) = pieuvre_sync::timer::get_timer_resolution() {
-        let status = if info.current_ms() <= 0.55 {
-            style("OPTIMIZED").green()
-        } else {
-            style("STOCK").dim()
-        };
-        print_line(&format!(
-            "Timer:       {:.2}ms ({})",
-            info.current_ms(),
-            status
-        ));
-    }
-
-    if let Ok(plan) = pieuvre_sync::power::get_active_power_plan() {
-        let status = if plan.contains("High") || plan.contains("Ultimate") {
-            style("PERF").green()
-        } else {
-            style("BALANCED").dim()
-        };
-        print_line(&format!("Power:       {} ({})", plan, status));
-    }
-
-    print_box_bottom();
-}
-
-pub fn show_main_menu() -> Result<MainAction> {
-    let options = &[
-        "Custom Selection     - Granular control",
-        "Apply GAMING Profile - Maximum performance",
-        "Apply PRIVACY Profile- Data protection",
-        "Apply WORKSTATION    - Stability & Speed",
-        "Display Status       - Deep system audit",
-        "Manage Snapshots     - Persistence & Rollback",
-        "Exit",
-    ];
-
-    let selection = Select::with_theme(&GhostTheme::default())
-        .with_prompt("SELECT OPERATION")
-        .items(options)
-        .default(0)
-        .interact()?;
-
-    match selection {
-        0 => {
-            let profile = select_profile()?;
-            Ok(MainAction::Interactive(profile))
-        }
-        1 => Ok(MainAction::QuickApply("gaming".to_string())),
-        2 => Ok(MainAction::QuickApply("privacy".to_string())),
-        3 => Ok(MainAction::QuickApply("workstation".to_string())),
-        4 => Ok(MainAction::Status),
-        5 => Ok(MainAction::Rollback),
-        _ => Ok(MainAction::Exit),
-    }
-}
-
-fn select_profile() -> Result<String> {
-    let profiles = &["GAMING", "PRIVACY", "WORKSTATION"];
-    let selection = Select::with_theme(&GhostTheme::default())
-        .with_prompt("BASE PROFILE")
-        .items(profiles)
-        .default(0)
-        .interact()?;
-
-    Ok(match selection {
-        0 => "gaming",
-        1 => "privacy",
-        _ => "workstation",
-    }
-    .to_string())
-}
-
-pub fn print_section_header(number: u8, total: u8, name: &str) {
-    println!(
-        "\n  {} {} / {}  {}",
-        style("»").cyan(),
-        style(number).bold(),
-        style(total).dim(),
-        style(name).bold()
-    );
-}
-
-pub fn create_progress_bar(total: u64, multi: &MultiProgress) -> ProgressBar {
-    let pb = multi.add(ProgressBar::new(total));
-    pb.set_style(
-        ProgressStyle::with_template("  {spinner:.cyan} {msg} [{bar:30.white/dim}] {pos}/{len}")
-            .unwrap()
-            .progress_chars("· "),
-    );
-    pb
-}
-
-pub fn print_operation_result(name: &str, success: bool, message: &str) {
-    let prefix = if success {
-        style("  ●").green()
+fn draw_header(f: &mut Frame, area: Rect, state: &AppState) {
+    let admin_str = if state.admin_status { "ADMIN" } else { "USER" };
+    let admin_color = if state.admin_status {
+        Color::Cyan
     } else {
-        style("  ○").red()
+        Color::Yellow
     };
-    println!("{} {:<20} {}", prefix, style(name).dim(), message);
-}
 
-pub fn print_final_result_with_reboot(
-    success: usize,
-    errors: usize,
-    snap_id: Option<&str>,
-    reboot: bool,
-) {
-    println!("\n  {}", style("EXECUTION COMPLETE").bold());
-    println!("  {} Success: {}", style("●").green(), success);
-    if errors > 0 {
-        println!("  {} Errors:  {}", style("●").red(), errors);
-    }
+    let header_text = vec![Line::from(vec![
+        Span::styled(
+            " PIEUVRE ",
+            Style::default()
+                .fg(Color::Black)
+                .bg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(" │ "),
+        Span::styled(admin_str, Style::default().fg(admin_color)),
+        Span::raw(" │ "),
+        Span::styled(
+            if state.is_laptop { "LAPTOP" } else { "DESKTOP" },
+            Style::default()
+                .fg(Color::DarkGray)
+                .add_modifier(Modifier::ITALIC),
+        ),
+        Span::raw(" │ "),
+        Span::styled(
+            format!("{:?}", state.current_view).to_uppercase(),
+            Style::default().fg(Color::Cyan),
+        ),
+    ])];
 
-    if let Some(id) = snap_id {
-        println!("  {} Snapshot: {}", style("●").dim(), &id[..8]);
-    }
-
-    if reboot {
-        println!("\n  {} REBOOT RECOMMENDED", style("!").yellow().bold());
-    }
-    println!();
-}
-
-pub fn print_goodbye() {
-    println!("\n  Goodbye.\n");
-}
-pub fn wait_for_exit() {
-    println!("  {}", style("Press ENTER to exit...").dim());
-    let mut input = String::new();
-    let _ = std::io::stdin().read_line(&mut input);
-}
-
-pub fn print_cancelled() {
-    println!("\n  {} Operation cancelled.\n", style("!").yellow());
-}
-pub fn print_no_selection() {
-    println!("\n  {} No options selected.\n", style("!").dim());
-}
-pub fn print_security_warning() {
-    println!(
-        "  {} {}",
-        style("!").red().bold(),
-        style("CAUTION: Security risk options ahead").red()
+    let header = Paragraph::new(header_text).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::DarkGray)),
     );
+    f.render_widget(header, area);
 }
 
-pub fn print_selection_summary_full(
-    telem: usize,
-    priva: usize,
-    perf: usize,
-    sched: usize,
-    appx: usize,
-    cpu: usize,
-    dpc: usize,
-    sec: usize,
-    net: usize,
-    dns: usize,
-    clean: usize,
-) {
-    let total = telem + priva + perf + sched + appx + cpu + dpc + sec + net + dns + clean;
-    println!("\n  {} SELECTION SUMMARY", style("»").cyan());
-    println!("  Total: {} optimizations", style(total).bold());
-    if sec > 0 {
-        println!("  {} Security options selected", style("!").yellow());
-    }
+fn draw_categories(f: &mut Frame, area: Rect, state: &AppState) {
+    let items: Vec<ListItem> = state
+        .categories
+        .iter()
+        .enumerate()
+        .map(|(i, (name, _))| {
+            let is_selected = i == state.selected_category;
+            let style = if is_selected {
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(Color::White)
+            };
+            let prefix = if is_selected { "» " } else { "  " };
+            let name_str = name.to_string().to_uppercase();
+
+            ListItem::new(Line::from(vec![
+                Span::styled(prefix.to_string(), style),
+                Span::styled(name_str, style),
+            ]))
+        })
+        .collect();
+
+    let list = List::new(items).block(
+        Block::default()
+            .title(" CATEGORIES ")
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::DarkGray)),
+    );
+    f.render_widget(list, area);
 }
 
-fn is_elevated() -> bool {
-    use windows::Win32::Foundation::HANDLE;
-    use windows::Win32::Security::{
-        GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY,
+fn draw_options(f: &mut Frame, area: Rect, state: &AppState) {
+    let (cat_name, options) = &state.categories[state.selected_category];
+    let items: Vec<ListItem> = options
+        .iter()
+        .enumerate()
+        .map(|(i, opt)| {
+            let is_selected = i == state.selected_option;
+            let is_checked = state.options_state.get(opt.id).cloned().unwrap_or(false);
+
+            let checkbox = if is_checked { "[x]" } else { "[ ]" };
+            let check_color = if is_checked {
+                Color::Cyan
+            } else {
+                Color::DarkGray
+            };
+
+            let style = if is_selected {
+                Style::default().fg(Color::White).bg(Color::DarkGray)
+            } else {
+                Style::default().fg(Color::White)
+            };
+
+            let risk_color = match opt.risk {
+                super::sections::RiskLevel::Safe => Color::Green,
+                super::sections::RiskLevel::Conditional => Color::Yellow,
+                super::sections::RiskLevel::Performance => Color::Cyan,
+                super::sections::RiskLevel::Warning => Color::Red,
+                super::sections::RiskLevel::Critical => Color::Magenta,
+            };
+
+            ListItem::new(vec![Line::from(vec![
+                Span::styled(format!(" {} ", checkbox), Style::default().fg(check_color)),
+                Span::styled(opt.label.to_string(), style),
+                Span::raw(" "),
+                Span::styled(
+                    format!("({:?})", opt.risk),
+                    Style::default()
+                        .fg(risk_color)
+                        .add_modifier(Modifier::ITALIC),
+                ),
+            ])])
+        })
+        .collect();
+
+    let list = List::new(items).block(
+        Block::default()
+            .title(format!(" {} OPTIONS ", cat_name.to_uppercase()))
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::DarkGray)),
+    );
+    f.render_widget(list, area);
+}
+
+fn draw_logs(f: &mut Frame, area: Rect, state: &AppState) {
+    let logs: Vec<ListItem> = state
+        .logs
+        .iter()
+        .rev()
+        .map(|log| {
+            let (icon, color) = match log.level {
+                LogLevel::Info => ("●", Color::Cyan),
+                LogLevel::Success => ("●", Color::Green),
+                LogLevel::Warning => ("!", Color::Yellow),
+                LogLevel::Error => ("○", Color::Red),
+            };
+
+            let mut lines = vec![Line::from(vec![
+                Span::styled(
+                    format!(" {} ", log.timestamp),
+                    Style::default().fg(Color::DarkGray),
+                ),
+                Span::styled(icon, Style::default().fg(color)),
+                Span::raw(" "),
+                Span::styled(
+                    &log.message,
+                    Style::default()
+                        .fg(Color::White)
+                        .add_modifier(Modifier::BOLD),
+                ),
+            ])];
+
+            if let Some(details) = &log.details {
+                lines.push(Line::from(vec![
+                    Span::raw("      "),
+                    Span::styled("└─ ", Style::default().fg(Color::DarkGray)),
+                    Span::styled(details, Style::default().fg(Color::DarkGray)),
+                ]));
+            }
+
+            ListItem::new(lines)
+        })
+        .collect();
+
+    let log_list = List::new(logs).block(
+        Block::default()
+            .title(Span::styled(
+                " SYSTEM LOGS ",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            ))
+            .borders(Borders::ALL)
+            .border_style(Style::default().fg(Color::DarkGray)),
+    );
+
+    f.render_widget(log_list, area);
+}
+
+fn draw_footer(f: &mut Frame, area: Rect, state: &AppState) {
+    let help_text = match state.current_view {
+        ViewMode::Dashboard => vec![
+            Span::styled(" Q ", Style::default().fg(Color::Black).bg(Color::DarkGray)),
+            Span::raw(" Quit │ "),
+            Span::styled(
+                " ↑↓←→ ",
+                Style::default().fg(Color::Black).bg(Color::DarkGray),
+            ),
+            Span::raw(" Navigate │ "),
+            Span::styled(
+                " SPACE ",
+                Style::default().fg(Color::Black).bg(Color::DarkGray),
+            ),
+            Span::raw(" Toggle │ "),
+            Span::styled(" A ", Style::default().fg(Color::Black).bg(Color::DarkGray)),
+            Span::raw(" Select All │ "),
+            Span::styled(" D ", Style::default().fg(Color::Black).bg(Color::DarkGray)),
+            Span::raw(" Deselect All │ "),
+            Span::styled(" C ", Style::default().fg(Color::Black).bg(Color::Cyan)),
+            Span::raw(" Quick Apply │ "),
+            Span::styled(" ENTER ", Style::default().fg(Color::Black).bg(Color::Cyan)),
+            Span::raw(" Run Batch "),
+        ],
+        _ => vec![
+            Span::styled(
+                " ESC ",
+                Style::default().fg(Color::Black).bg(Color::DarkGray),
+            ),
+            Span::raw(" Back to Dashboard "),
+        ],
     };
-    use windows::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
-    unsafe {
-        let mut token = HANDLE::default();
-        if OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token).is_err() {
-            return false;
+
+    let footer = Paragraph::new(Line::from(help_text))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(Color::DarkGray)),
+        )
+        .alignment(ratatui::layout::Alignment::Center);
+    f.render_widget(footer, area);
+}
+
+pub fn is_elevated() -> bool {
+    #[cfg(windows)]
+    {
+        use windows::Win32::Foundation::HANDLE;
+        use windows::Win32::Security::{
+            GetTokenInformation, TokenElevation, TOKEN_ELEVATION, TOKEN_QUERY,
+        };
+        use windows::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
+        unsafe {
+            let mut token = HANDLE::default();
+            if OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &mut token).is_err() {
+                return false;
+            }
+            let mut elevation = TOKEN_ELEVATION::default();
+            let mut size = std::mem::size_of::<TOKEN_ELEVATION>() as u32;
+            let result = GetTokenInformation(
+                token,
+                TokenElevation,
+                Some(&mut elevation as *mut _ as *mut _),
+                size,
+                &mut size,
+            );
+            let _ = windows::Win32::Foundation::CloseHandle(token);
+            result.is_ok() && elevation.TokenIsElevated != 0
         }
-        let mut elevation = TOKEN_ELEVATION::default();
-        let mut size = std::mem::size_of::<TOKEN_ELEVATION>() as u32;
-        let result = GetTokenInformation(
-            token,
-            TokenElevation,
-            Some(&mut elevation as *mut _ as *mut _),
-            size,
-            &mut size,
-        );
-        let _ = windows::Win32::Foundation::CloseHandle(token);
-        result.is_ok() && elevation.TokenIsElevated != 0
     }
+    #[cfg(not(windows))]
+    false
 }

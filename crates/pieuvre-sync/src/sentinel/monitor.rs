@@ -1,4 +1,4 @@
-//! Sentinel Engine
+//! System Monitoring Engine
 //!
 //! Active monitoring of critical registry keys and services.
 //! Instant restoration upon drift detection.
@@ -18,7 +18,7 @@ pub struct Sentinel;
 impl Sentinel {
     /// Starts background monitoring (Event-Driven)
     pub fn start_monitoring() -> Result<()> {
-        tracing::info!("Sentinel Engine started - Event-Driven mode");
+        tracing::info!("System Monitor started - Event-Driven mode");
 
         // Perform initial restoration to start from a clean state
         let _ = Self::check_and_restore();
@@ -101,10 +101,10 @@ impl Sentinel {
 
                 if wait_res == WAIT_OBJECT_0 {
                     tracing::warn!(
-                        "Sentinel: Modification detected on {}, immediate restoration...",
+                        "System Monitor: Modification detected on {}, immediate restoration...",
                         key_path
                     );
-                    // Instant restoration (Self-Healing)
+                    // Instant restoration (Auto-Restoration)
                     if let Err(e) = crate::hardening::lock_registry_key(key_path) {
                         tracing::error!("Sentinel failed to restore {}: {:?}", key_path, e);
                     }

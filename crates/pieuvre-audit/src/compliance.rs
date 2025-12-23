@@ -1,11 +1,11 @@
-//! Audit de Conformité SOTA 2026
+//! Compliance Audit
 //!
-//! Détection de dérive (drift) par rapport aux réglages optimisés.
+//! Drift detection compared to optimized settings.
 
 use crate::registry::read_dword_value;
 use pieuvre_common::Result;
 
-/// Rapport de conformité
+/// Compliance report
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ComplianceReport {
     pub is_compliant: bool,
@@ -29,11 +29,11 @@ pub enum ComplianceSeverity {
     Critical,
 }
 
-/// Vérifie la dérive de configuration par rapport aux standards SOTA
+/// Checks configuration drift compared to standards
 pub fn check_configuration_drift() -> Result<ComplianceReport> {
     let mut drifts = Vec::new();
 
-    // 1. Vérification Timer Resolution (PriorityControl)
+    // 1. Timer Resolution verification (PriorityControl)
     if let Ok(val) = read_dword_value(
         r"SYSTEM\CurrentControlSet\Control\PriorityControl",
         "Win32PrioritySeparation",
@@ -49,11 +49,11 @@ pub fn check_configuration_drift() -> Result<ComplianceReport> {
         }
     }
 
-    // 2. Vérification Télémétrie (DiagTrack)
-    // Note: On pourrait vérifier l'état du service ici si on avait accès à services.rs dans audit
-    // Mais audit est censé être read-only et indépendant.
+    // 2. Telemetry verification (DiagTrack)
+    // Note: We could check service state here if we had access to services.rs in audit
+    // But audit is supposed to be read-only and independent.
 
-    // 3. Vérification MMCSS
+    // 3. MMCSS verification
     if let Ok(val) = read_dword_value(
         r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile",
         "SystemResponsiveness",

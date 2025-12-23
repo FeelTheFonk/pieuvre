@@ -1,41 +1,41 @@
-//! Types d'erreur pieuvre
+//! pieuvre error types
 
 use thiserror::Error;
 
-/// Erreur principale pieuvre
+/// Main pieuvre error enum
 #[derive(Error, Debug)]
 pub enum PieuvreError {
-    #[error("Erreur d'accès au registre: {0}")]
+    #[error("Registry access error: {0}")]
     Registry(String),
 
-    #[error("Erreur système Windows: {0}")]
+    #[error("Windows system error: {0}")]
     Windows(#[from] windows::core::Error),
 
-    #[error("Erreur I/O: {0}")]
+    #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
 
-    #[error("Erreur de configuration: {0}")]
+    #[error("Configuration error: {0}")]
     Config(String),
 
-    #[error("Erreur de parsing: {0}")]
+    #[error("Parsing error: {0}")]
     Parse(String),
 
-    #[error("Permission refusée: {0}")]
+    #[error("Permission denied: {0}")]
     Permission(String),
 
-    #[error("Snapshot non trouvé: {0}")]
+    #[error("Snapshot not found: {0}")]
     SnapshotNotFound(String),
 
-    #[error("Service non trouvé: {0}")]
+    #[error("Service not found: {0}")]
     ServiceNotFound(String),
 
-    #[error("Opération annulée")]
+    #[error("Operation cancelled")]
     Cancelled,
 
-    #[error("Fonctionnalité non supportée: {0}")]
+    #[error("Unsupported feature: {0}")]
     Unsupported(String),
 
-    #[error("Erreur interne: {0}")]
+    #[error("Internal error: {0}")]
     Internal(String),
 }
 

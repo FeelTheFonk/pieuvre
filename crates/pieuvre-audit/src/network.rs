@@ -1,13 +1,13 @@
 //! Network Inspector
 //!
-//! Détection des connexions et endpoints télémétrie.
+//! Detection of connections and telemetry endpoints.
 
 use pieuvre_common::Result;
 use std::net::ToSocketAddrs;
 
-/// Endpoints Microsoft connus pour la télémétrie (50+ confirmés SOTA)
+/// Known Microsoft telemetry endpoints (50+ confirmed)
 const MS_TELEMETRY_DOMAINS: &[&str] = &[
-    // Vortex - Principal
+    // Vortex - Main
     "vortex.data.microsoft.com",
     "vortex-win.data.microsoft.com",
     "vortex-sandbox.data.microsoft.com",
@@ -46,7 +46,7 @@ const MS_TELEMETRY_DOMAINS: &[&str] = &[
     "edge.activity.windows.com",
     // Cortana & Search
     "cortana.ai.microsoft.com",
-    // SmartScreen (attention: sécurité)
+    // SmartScreen (caution: security)
     // "smartscreen.microsoft.com",
     // Feedback
     "feedback.windows.com",
@@ -60,7 +60,7 @@ const MS_TELEMETRY_DOMAINS: &[&str] = &[
     "v10.vortex-win.data.microsoft.com",
 ];
 
-/// Plages IP Microsoft télémétrie
+/// Microsoft telemetry IP ranges
 const MS_TELEMETRY_IP_RANGES: &[&str] = &[
     "13.64.0.0/11",
     "13.96.0.0/13",
@@ -90,7 +90,7 @@ pub struct NetworkStatus {
     pub reachable_count: usize,
 }
 
-/// Analyse le statut réseau télémétrie
+/// Analyzes telemetry network status
 pub fn inspect_network() -> Result<NetworkStatus> {
     let mut endpoints = Vec::new();
     let mut blocked = 0;
@@ -131,7 +131,7 @@ fn resolve_domain(domain: &str) -> Vec<String> {
     }
 }
 
-/// Vérifie si un domaine est dans la liste télémétrie
+/// Checks if a domain is in the telemetry list
 pub fn is_telemetry_domain(domain: &str) -> bool {
     let lower = domain.to_lowercase();
     MS_TELEMETRY_DOMAINS
@@ -139,12 +139,12 @@ pub fn is_telemetry_domain(domain: &str) -> bool {
         .any(|d| lower.contains(&d.to_lowercase()))
 }
 
-/// Retourne la liste des domaines télémétrie pour blocage
+/// Returns the list of telemetry domains for blocking
 pub fn get_telemetry_domains() -> &'static [&'static str] {
     MS_TELEMETRY_DOMAINS
 }
 
-/// Retourne les plages IP télémétrie
+/// Returns telemetry IP ranges
 pub fn get_telemetry_ip_ranges() -> &'static [&'static str] {
     MS_TELEMETRY_IP_RANGES
 }

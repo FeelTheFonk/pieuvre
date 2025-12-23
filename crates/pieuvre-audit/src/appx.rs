@@ -1,10 +1,10 @@
 //! Appx Scanner
 //!
-//! Détection et classification des packages UWP/Appx.
+//! Detection and classification of UWP/Appx packages.
 
 use pieuvre_common::{AppxCategory, AppxInfo, RemovalRisk, Result};
 
-/// Liste des packages bloatware connus
+/// List of known bloatware packages
 const KNOWN_BLOATWARE: &[&str] = &[
     "Microsoft.BingNews",
     "Microsoft.BingWeather",
@@ -38,7 +38,7 @@ const KNOWN_BLOATWARE: &[&str] = &[
     "Microsoft.windowscommunicationsapps", // Mail/Calendar
 ];
 
-/// Packages système critiques à ne jamais toucher
+/// Critical system packages that should never be touched
 const SYSTEM_CRITICAL: &[&str] = &[
     "Microsoft.WindowsStore",
     "Microsoft.Windows.ShellExperienceHost",
@@ -52,14 +52,11 @@ const SYSTEM_CRITICAL: &[&str] = &[
     "Microsoft.WindowsAppRuntime",
 ];
 
-/// Scan les packages Appx installés
+/// Scans installed Appx packages
 pub fn scan_packages() -> Result<Vec<AppxInfo>> {
     let mut packages = Vec::new();
 
-    // Utiliser PowerShell pour lister les packages (méthode plus simple que WinRT direct)
-    // En production, utiliser Windows::Management::Deployment::PackageManager
-
-    // Pour l'instant, récupérer depuis le registre
+    // For now, retrieve from registry
     use windows::core::PCWSTR;
     use windows::Win32::System::Registry::{
         RegCloseKey, RegEnumKeyExW, RegOpenKeyExW, HKEY_CURRENT_USER, KEY_READ,
@@ -103,7 +100,7 @@ pub fn scan_packages() -> Result<Vec<AppxInfo>> {
 
                 let full_name = String::from_utf16_lossy(&name_buffer[..name_len as usize]);
 
-                // Extraire le nom du package (partie avant le _)
+                // Extract package name (part before the _)
                 let name = full_name
                     .split('_')
                     .next()
@@ -125,7 +122,7 @@ pub fn scan_packages() -> Result<Vec<AppxInfo>> {
 
                 index += 1;
 
-                // Limiter à 200 packages pour éviter explosion
+                // Limit to 200 packages to avoid explosion
                 if index > 200 {
                     break;
                 }
@@ -162,21 +159,21 @@ fn categorize_package(name: &str) -> AppxCategory {
 }
 
 fn assess_removal_risk(name: &str) -> RemovalRisk {
-    // Packages système critiques
+    // Critical system packages
     for critical in SYSTEM_CRITICAL {
         if name.to_lowercase().starts_with(&critical.to_lowercase()) {
             return RemovalRisk::Critical;
         }
     }
 
-    // Bloatware connu = safe
+    // Known bloatware = safe
     for bloat in KNOWN_BLOATWARE {
         if name.to_lowercase().starts_with(&bloat.to_lowercase()) {
             return RemovalRisk::Safe;
         }
     }
 
-    // Par défaut, prudence
+    // By default, caution
     if name.starts_with("Microsoft.") {
         RemovalRisk::Caution
     } else {
@@ -184,7 +181,7 @@ fn assess_removal_risk(name: &str) -> RemovalRisk {
     }
 }
 
-/// Retourne la liste des bloatwares détectés
+/// Returns the list of detected bloatware
 pub fn get_bloatware(packages: &[AppxInfo]) -> Vec<&AppxInfo> {
     packages
         .iter()

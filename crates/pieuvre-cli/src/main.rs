@@ -41,24 +41,6 @@ enum Commands {
         output: Option<String>,
     },
 
-    /// Display optimization recommendations
-    Analyze {
-        /// Profile to use (gaming, privacy, workstation)
-        #[arg(short, long, default_value = "gaming")]
-        profile: String,
-    },
-
-    /// Apply optimizations
-    Sync {
-        /// Profile to apply
-        #[arg(short, long)]
-        profile: String,
-
-        /// Dry-run mode (no modifications)
-        #[arg(long)]
-        dry_run: bool,
-    },
-
     /// Display current status
     Status {
         /// Live mode (continuous refresh)
@@ -89,11 +71,7 @@ enum Commands {
     },
 
     /// Interactive mode - granular optimization selection
-    Interactive {
-        /// Base profile (gaming, privacy, workstation)
-        #[arg(short, long, default_value = "gaming")]
-        profile: String,
-    },
+    Interactive,
 
     /// Generate shell completion scripts
     Completions {
@@ -122,14 +100,14 @@ async fn main() -> anyhow::Result<()> {
 
     match cli.command {
         // Default to interactive mode if no command provided
-        None => commands::interactive::run_default().await,
-        Some(Commands::Audit { full, output }) => commands::audit::run(full, output),
-        Some(Commands::Analyze { profile }) => commands::analyze::run(&profile),
-        Some(Commands::Sync { profile, dry_run }) => commands::sync::run(&profile, dry_run).await,
+        None => commands::interactive::dashboard::run_dashboard().await,
+        Some(Commands::Audit { full, output }) => {
+            commands::audit::run(full, output, None).map(|_| ())
+        }
         Some(Commands::Status { live }) => commands::status::run(live),
         Some(Commands::Rollback { list, last, id }) => commands::rollback::run(list, last, id),
         Some(Commands::Verify { repair }) => commands::verify::run(repair),
-        Some(Commands::Interactive { profile }) => commands::interactive::run(&profile).await,
+        Some(Commands::Interactive) => commands::interactive::dashboard::run_dashboard().await,
         Some(Commands::Completions { shell }) => commands::completions::run(shell),
     }
 }

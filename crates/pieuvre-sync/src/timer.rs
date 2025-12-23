@@ -1,6 +1,6 @@
-//! Optimisation Timer Resolution
+//! Timer Resolution Optimization
 //!
-//! Configuration de la résolution du timer système via NtSetTimerResolution.
+//! Configuration of system timer resolution via NtSetTimerResolution.
 
 use pieuvre_common::{PieuvreError, Result};
 
@@ -19,7 +19,7 @@ extern "system" {
     ) -> i32;
 }
 
-/// Récupère la résolution timer actuelle (en 100ns)
+/// Retrieves the current timer resolution (in 100ns)
 pub fn get_timer_resolution() -> Result<TimerResolutionInfo> {
     let mut min = 0u32;
     let mut max = 0u32;
@@ -41,10 +41,10 @@ pub fn get_timer_resolution() -> Result<TimerResolutionInfo> {
     }
 }
 
-/// Configure la résolution timer
+/// Configures the timer resolution
 ///
 /// # Arguments
-/// * `resolution_100ns` - Résolution en unités de 100ns (5000 = 0.5ms, 10000 = 1ms)
+/// * `resolution_100ns` - Resolution in 100ns units (5000 = 0.5ms, 10000 = 1ms)
 pub fn set_timer_resolution(resolution_100ns: u32) -> Result<u32> {
     let mut actual = 0u32;
 
@@ -67,39 +67,39 @@ pub fn set_timer_resolution(resolution_100ns: u32) -> Result<u32> {
 
 #[derive(Debug, Clone)]
 pub struct TimerResolutionInfo {
-    /// Résolution minimale supportée (en 100ns)
+    /// Minimum supported resolution (in 100ns)
     pub minimum_100ns: u32,
-    /// Résolution maximale supportée (en 100ns) - la plus fine
+    /// Maximum supported resolution (in 100ns) - the finest
     pub maximum_100ns: u32,
-    /// Résolution actuelle (en 100ns)
+    /// Current resolution (in 100ns)
     pub current_100ns: u32,
 }
 
 impl TimerResolutionInfo {
-    /// Convertit la résolution actuelle en millisecondes
+    /// Converts the current resolution to milliseconds
     pub fn current_ms(&self) -> f64 {
         self.current_100ns as f64 / 10000.0
     }
 
-    /// Convertit la résolution minimale (la plus grossière) en millisecondes
+    /// Converts the minimum resolution (coarsest) to milliseconds
     pub fn min_ms(&self) -> f64 {
         self.minimum_100ns as f64 / 10000.0
     }
 
-    /// Convertit la résolution maximale (la plus fine) en millisecondes
+    /// Converts the maximum resolution (finest) to milliseconds
     pub fn max_ms(&self) -> f64 {
         self.maximum_100ns as f64 / 10000.0
     }
 
-    /// Convertit la résolution maximale (la plus fine) en millisecondes
+    /// Converts the maximum resolution (finest) to milliseconds
     pub fn best_ms(&self) -> f64 {
         self.maximum_100ns as f64 / 10000.0
     }
 }
 
-/// Réinitialise la résolution timer à la valeur par défaut (15.625ms)
+/// Resets the timer resolution to the default value (15.625ms)
 pub fn reset_timer_resolution() -> Result<u32> {
-    // 156250 = 15.625ms en unités de 100ns
+    // 156250 = 15.625ms in 100ns units
     let mut actual = 0u32;
 
     let status = unsafe { NtSetTimerResolution(156250, 0, &mut actual) };

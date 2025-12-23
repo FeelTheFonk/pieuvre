@@ -1,12 +1,12 @@
-//! Neutralisation de l'IA invasive (Recall, CoPilot) SOTA 2026
+//! Management of AI features (Recall, CoPilot)
 //!
-//! Gestion des clés de registre et des politiques pour désactiver les fonctionnalités IA.
+//! Registry keys and policies management for AI features.
 
 use crate::operation::{RegistryDwordOperation, SyncOperation};
 use async_trait::async_trait;
 use pieuvre_common::{ChangeRecord, Result};
 
-/// Opération pour désactiver Windows Recall
+/// Operation to disable Windows Recall
 pub struct DisableRecallOperation;
 
 #[async_trait]
@@ -52,7 +52,7 @@ impl SyncOperation for DisableRecallOperation {
     }
 }
 
-/// Opération pour désactiver CoPilot
+/// Operation to disable CoPilot
 pub struct DisableCoPilotOperation;
 
 #[async_trait]

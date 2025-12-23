@@ -1,10 +1,11 @@
 //! Section and option definitions for interactive mode
 //!
-//! 2026 Module: Modular structure with explicit types.
+//! Module: Modular structure with explicit types.
 
 use serde::{Deserialize, Serialize};
 
 /// Optimization option with metadata
+#[allow(dead_code)]
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct OptItem {
     /// Unique identifier for the option
@@ -32,6 +33,7 @@ pub enum RiskLevel {
     Critical,
 }
 
+#[allow(dead_code)]
 impl OptItem {
     /// Creates a safe option enabled by default
     pub const fn safe(id: &'static str, label: &'static str) -> Self {
@@ -43,6 +45,7 @@ impl OptItem {
         }
     }
 
+    #[allow(dead_code)]
     /// Creates a safe option disabled by default
     pub const fn safe_off(id: &'static str, label: &'static str) -> Self {
         Self {
@@ -53,6 +56,7 @@ impl OptItem {
         }
     }
 
+    #[allow(dead_code)]
     /// Creates a conditional option
     pub const fn conditional(id: &'static str, label: &'static str, default: bool) -> Self {
         Self {
@@ -63,6 +67,7 @@ impl OptItem {
         }
     }
 
+    #[allow(dead_code)]
     /// Creates a performance option
     pub const fn perf(id: &'static str, label: &'static str) -> Self {
         Self {
@@ -73,6 +78,7 @@ impl OptItem {
         }
     }
 
+    #[allow(dead_code)]
     /// Creates a warning option (laptop)
     pub const fn warning(id: &'static str, label: &'static str) -> Self {
         Self {
@@ -83,6 +89,7 @@ impl OptItem {
         }
     }
 
+    #[allow(dead_code)]
     /// Creates a critical option (system security)
     pub const fn critical(id: &'static str, label: &'static str) -> Self {
         Self {
@@ -98,6 +105,7 @@ impl OptItem {
 // SECTION 1: TELEMETRY
 // ============================================================================
 
+#[allow(dead_code)]
 /// Returns options for the Telemetry section
 pub fn telemetry_section() -> Vec<OptItem> {
     vec![
@@ -121,6 +129,7 @@ pub fn telemetry_section() -> Vec<OptItem> {
 // SECTION 2: PRIVACY
 // ============================================================================
 
+#[allow(dead_code)]
 /// Returns options for the Privacy section
 pub fn privacy_section() -> Vec<OptItem> {
     vec![
@@ -142,6 +151,7 @@ pub fn privacy_section() -> Vec<OptItem> {
 // SECTION 3: PERFORMANCE
 // ============================================================================
 
+#[allow(dead_code)]
 /// Returns options for the Performance section
 /// `is_laptop` adapts options for battery
 pub fn performance_section(is_laptop: bool) -> Vec<OptItem> {
@@ -202,6 +212,7 @@ pub fn performance_section(is_laptop: bool) -> Vec<OptItem> {
 // SECTION 4: SCHEDULER
 // ============================================================================
 
+#[allow(dead_code)]
 /// Returns options for the Scheduler section
 pub fn scheduler_section() -> Vec<OptItem> {
     vec![
@@ -218,6 +229,7 @@ pub fn scheduler_section() -> Vec<OptItem> {
 // SECTION 5: APPX BLOATWARE
 // ============================================================================
 
+#[allow(dead_code)]
 /// Returns options for the AppX section
 pub fn appx_section() -> Vec<OptItem> {
     vec![
@@ -241,6 +253,7 @@ pub fn appx_section() -> Vec<OptItem> {
 // SECTION 6: CPU / MEMORY
 // ============================================================================
 
+#[allow(dead_code)]
 /// Returns options for the CPU/Memory section
 /// `is_laptop` adapts options for battery
 pub fn cpu_section(is_laptop: bool) -> Vec<OptItem> {
@@ -277,6 +290,7 @@ pub fn cpu_section(is_laptop: bool) -> Vec<OptItem> {
 // SECTION 7: DPC LATENCY
 // ============================================================================
 
+#[allow(dead_code)]
 /// Returns options for the DPC Latency section (micro-stuttering)
 pub fn dpc_section() -> Vec<OptItem> {
     vec![
@@ -299,6 +313,7 @@ pub fn dpc_section() -> Vec<OptItem> {
 // SECTION 8: SECURITY (CAUTION)
 // ============================================================================
 
+#[allow(dead_code)]
 /// Returns options for the Security section
 /// WARNING: Security risk options - isolated gaming systems only
 pub fn security_section() -> Vec<OptItem> {
@@ -313,6 +328,7 @@ pub fn security_section() -> Vec<OptItem> {
 // SECTION 9: ADVANCED NETWORK
 // ============================================================================
 
+#[allow(dead_code)]
 /// Returns options for the Advanced Network section
 pub fn network_advanced_section() -> Vec<OptItem> {
     vec![
@@ -328,9 +344,10 @@ pub fn network_advanced_section() -> Vec<OptItem> {
 }
 
 // ============================================================================
-// SECTION 10: DNS SOTA 2026
+// SECTION 10: DNS
 // ============================================================================
 
+#[allow(dead_code)]
 /// Returns options for the DNS section
 pub fn dns_section() -> Vec<OptItem> {
     vec![
@@ -342,9 +359,10 @@ pub fn dns_section() -> Vec<OptItem> {
 }
 
 // ============================================================================
-// SECTION 11: CLEANUP SOTA 2026
+// SECTION 11: CLEANUP
 // ============================================================================
 
+#[allow(dead_code)]
 /// Returns options for the Cleanup section
 pub fn cleanup_section() -> Vec<OptItem> {
     vec![

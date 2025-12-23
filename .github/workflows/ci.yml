@@ -47,11 +47,12 @@ jobs:
       - name: Install Nextest
         uses: taiki-e/install-action@nextest
         
+      - name: System Info
+        run: |
+          systeminfo | findstr /B /C:"OS Name" /C:"OS Version"
+          
       - name: Build
         run: cargo build --workspace --all-targets
-        
-      - name: List Tests
-        run: cargo nextest list --workspace --all-features
         
       - name: Run Tests
         run: cargo nextest run --workspace --all-features --profile ci

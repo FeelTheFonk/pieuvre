@@ -53,7 +53,7 @@ impl SyncOperation for CleanupWinSxSOperation {
     async fn apply(&self) -> Result<Vec<ChangeRecord>> {
         // Utilisation de DISM pour le nettoyage sécurisé
         let _ = std::process::Command::new("dism.exe")
-            .args(&[
+            .args([
                 "/online",
                 "/cleanup-image",
                 "/startcomponentcleanup",

@@ -1,0 +1,22 @@
+   Compiling pieuvre-cli v0.4.8 (C:\Users\CleS\Desktop\pieuvre\crates\pieuvre-cli)
+warning: function `run_default` is never used
+   --> crates\pieuvre-cli\src\commands\interactive\dashboard.rs:115:14
+    |
+115 | pub async fn run_default() -> Result<()> {
+    |              ^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: field `message` is never read
+  --> crates\pieuvre-cli\src\commands\interactive\executor.rs:18:9
+   |
+13 | pub struct ExecutionResult {
+   |            --------------- field in this struct
+...
+18 |     pub message: String,
+   |         ^^^^^^^
+   |
+   = note: `ExecutionResult` has a derived impl for the trait `Debug`, but this is intentionally ignored during dead code analysis
+
+warning: `pieuvre-cli` (bin "pieuvre") generated 2 warnings
+    Finished `release` profile [optimized] target(s) in 22.58s

@@ -1,6 +1,6 @@
-//! Inspection du registre SOTA
+//! Registry inspection
 //!
-//! Parsing des ruches, détection télémétrie, et audit sécurité complet.
+//! Hive parsing, telemetry detection, and full security audit.
 
 use pieuvre_common::{PieuvreError, Result, TelemetryStatus};
 use serde::{Deserialize, Serialize};
@@ -11,10 +11,10 @@ use windows::Win32::System::Registry::{
 };
 
 // ============================================================================
-// TÉLÉMÉTRIE - Clés complètes (30+)
+// TELEMETRY - Full Keys (30+)
 // ============================================================================
 
-/// Clés télémétrie/privacy complètes
+/// Full telemetry/privacy keys
 #[allow(dead_code)]
 const TELEMETRY_KEYS_FULL: &[(&str, &str, &str)] = &[
     // Data Collection
@@ -139,10 +139,10 @@ const TELEMETRY_KEYS_FULL: &[(&str, &str, &str)] = &[
 ];
 
 // ============================================================================
-// DEFENDER - Status complet
+// DEFENDER - Full Status
 // ============================================================================
 
-/// Status de Windows Defender
+/// Windows Defender status
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DefenderStatus {
     pub antispyware_enabled: bool,
@@ -174,10 +174,10 @@ impl Default for DefenderStatus {
     }
 }
 
-/// Audit complet de Windows Defender
+/// Full Windows Defender audit
 pub fn get_defender_status() -> Result<DefenderStatus> {
     let status = DefenderStatus {
-        // AntiSpyware global
+        // Global AntiSpyware
         antispyware_enabled: read_dword_value(
             r"SOFTWARE\Microsoft\Windows Defender",
             "DisableAntiSpyware",
@@ -253,7 +253,7 @@ pub fn get_defender_status() -> Result<DefenderStatus> {
 // UAC - Status
 // ============================================================================
 
-/// Status UAC
+/// UAC Status
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UacStatus {
     pub enabled: bool,
@@ -263,7 +263,7 @@ pub struct UacStatus {
     pub virtualize_file_registry: bool,
 }
 
-/// Audit UAC
+/// UAC Audit
 pub fn get_uac_status() -> Result<UacStatus> {
     Ok(UacStatus {
         enabled: read_dword_value(
@@ -306,7 +306,7 @@ pub fn get_uac_status() -> Result<UacStatus> {
 // FIREWALL - Status
 // ============================================================================
 
-/// Status Firewall par profil
+/// Firewall status per profile
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FirewallStatus {
     pub domain_enabled: bool,
@@ -317,7 +317,7 @@ pub struct FirewallStatus {
     pub public_default_inbound_block: bool,
 }
 
-/// Audit Firewall
+/// Firewall Audit
 pub fn get_firewall_status() -> Result<FirewallStatus> {
     let base = r"SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy";
 
@@ -358,15 +358,15 @@ pub fn get_firewall_status() -> Result<FirewallStatus> {
 }
 
 // ============================================================================
-// TÉLÉMÉTRIE - API publique
+// TELEMETRY - Public API
 // ============================================================================
 
-/// Récupère le statut complet de la télémétrie
+/// Retrieves full telemetry status
 pub fn get_telemetry_status() -> Result<TelemetryStatus> {
     let diagtrack_start =
         read_dword_value(r"SYSTEM\CurrentControlSet\Services\DiagTrack", "Start").unwrap_or(2);
 
-    // Vérifier niveau GPO d'abord, puis user setting
+    // Check GPO level first, then user setting
     let data_collection = read_dword_value(
         r"SOFTWARE\Policies\Microsoft\Windows\DataCollection",
         "AllowTelemetry",
@@ -386,7 +386,7 @@ pub fn get_telemetry_status() -> Result<TelemetryStatus> {
     .unwrap_or(1)
         == 1;
 
-    // Location consent (REG_SZ "Allow" ou "Deny")
+    // Location consent (REG_SZ "Allow" or "Deny")
     let location = read_string_value(
         r"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location",
         "Value",
@@ -439,15 +439,15 @@ pub fn get_telemetry_status() -> Result<TelemetryStatus> {
 }
 
 // ============================================================================
-// HELPERS - Lecture registre
+// HELPERS - Registry Reading
 // ============================================================================
 
-/// Lit une valeur DWORD du registre (HKLM)
+/// Reads a DWORD value from registry (HKLM)
 pub fn read_dword_value(subkey: &str, value_name: &str) -> Result<u32> {
     read_dword_value_from_hive(HKEY_LOCAL_MACHINE, subkey, value_name)
 }
 
-/// Lit une valeur DWORD du registre (HKCU)
+/// Reads a DWORD value from registry (HKCU)
 pub fn read_dword_value_hkcu(subkey: &str, value_name: &str) -> Result<u32> {
     read_dword_value_from_hive(HKEY_CURRENT_USER, subkey, value_name)
 }
@@ -502,7 +502,7 @@ fn read_dword_value_from_hive(hive: HKEY, subkey: &str, value_name: &str) -> Res
     }
 }
 
-/// Lit une valeur String du registre
+/// Reads a String value from registry
 pub fn read_string_value(subkey: &str, value_name: &str) -> Result<String> {
     unsafe {
         let mut hkey = Default::default();
@@ -549,7 +549,7 @@ pub fn read_string_value(subkey: &str, value_name: &str) -> Result<String> {
             )));
         }
 
-        // Convertir UTF-16 en String
+        // Convert UTF-16 to String
         let chars = data_size as usize / 2;
         let s = String::from_utf16_lossy(std::slice::from_raw_parts(
             buffer.as_ptr() as *const u16,
@@ -560,7 +560,7 @@ pub fn read_string_value(subkey: &str, value_name: &str) -> Result<String> {
     }
 }
 
-/// Énumère les noms de valeurs d'une clé (pour les exclusions Defender)
+/// Enumerates value names of a key (for Defender exclusions)
 pub fn enumerate_registry_values(subkey: &str) -> Result<Vec<String>> {
     unsafe {
         let mut hkey = Default::default();
@@ -575,7 +575,7 @@ pub fn enumerate_registry_values(subkey: &str) -> Result<Vec<String>> {
         )
         .is_err()
         {
-            return Ok(Vec::new()); // Clé n'existe pas = pas d'exclusions
+            return Ok(Vec::new()); // Key does not exist = no exclusions
         }
 
         let mut values = Vec::new();
@@ -613,7 +613,7 @@ pub fn enumerate_registry_values(subkey: &str) -> Result<Vec<String>> {
     }
 }
 
-/// Vérifie si une clé existe
+/// Checks if a key exists
 pub fn key_exists(subkey: &str) -> bool {
     unsafe {
         let mut hkey = Default::default();
@@ -636,7 +636,7 @@ pub fn key_exists(subkey: &str) -> bool {
     }
 }
 
-/// Vérifie si Secure Boot est activé
+/// Checks if Secure Boot is enabled
 pub fn is_secure_boot_enabled() -> bool {
     read_dword_value(
         r"SYSTEM\CurrentControlSet\Control\SecureBoot\State",
@@ -646,7 +646,7 @@ pub fn is_secure_boot_enabled() -> bool {
         == 1
 }
 
-/// Vérifie si Credential Guard est activé
+/// Checks if Credential Guard is enabled
 pub fn is_credential_guard_enabled() -> bool {
     let config = read_dword_value(
         r"SYSTEM\CurrentControlSet\Control\DeviceGuard",

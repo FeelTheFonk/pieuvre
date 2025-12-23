@@ -1,25 +1,25 @@
-//! Security Tweaks SOTA 2026
+//! Security Tweaks
 //!
 //! VBS, HVCI, Memory Integrity, and Spectre/Meltdown mitigations.
 //! WARNING: These settings reduce system security for performance gains.
 //!
-//! Utilise les APIs Windows natives via registry.rs au lieu de Command::new("reg").
+//! Uses native Windows APIs via registry.rs instead of Command::new("reg").
 
 use crate::registry::set_dword_value;
 use pieuvre_common::Result;
 
 // ============================================
-// CONSTANTES CHEMINS REGISTRE
+// REGISTRY PATH CONSTANTS
 // ============================================
 
-/// Clé registre pour HVCI (Memory Integrity)
+/// Registry key for HVCI (Memory Integrity)
 const HVCI_KEY: &str =
     r"SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity";
 
-/// Clé registre pour Device Guard / VBS
+/// Registry key for Device Guard / VBS
 const DEVICE_GUARD_KEY: &str = r"SYSTEM\CurrentControlSet\Control\DeviceGuard";
 
-/// Clé registre pour Memory Management (Spectre/Meltdown)
+/// Registry key for Memory Management (Spectre/Meltdown)
 const MEMORY_MANAGEMENT_KEY: &str =
     r"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management";
 
@@ -88,7 +88,7 @@ pub fn disable_spectre_meltdown() -> Result<()> {
 }
 
 /// Enable Spectre/Meltdown mitigations (restore security)
-/// Note: Suppression des valeurs = Windows utilise les defaults (mitigations ON)
+/// Note: Removing values = Windows uses defaults (mitigations ON)
 pub fn enable_spectre_meltdown() -> Result<()> {
     crate::registry::delete_value(MEMORY_MANAGEMENT_KEY, "FeatureSettingsOverride")?;
     crate::registry::delete_value(MEMORY_MANAGEMENT_KEY, "FeatureSettingsOverrideMask")?;

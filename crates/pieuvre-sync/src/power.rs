@@ -1,7 +1,7 @@
-//! Power Manager SOTA 2026
+//! Power Manager
 //!
-//! Gestion des plans d'alimentation et paramètres énergétiques.
-//! Utilise les APIs Windows natives (PowerGetActiveScheme, PowerSetActiveScheme).
+//! Management of power plans and energy settings.
+//! Uses native Windows APIs (PowerGetActiveScheme, PowerSetActiveScheme).
 
 use pieuvre_common::{PieuvreError, Result};
 use windows::core::GUID;
@@ -10,16 +10,16 @@ use windows::Win32::System::Power::{
     PowerGetActiveScheme, PowerSetActiveScheme, PowerWriteACValueIndex,
 };
 
-/// Plans d'alimentation prédéfinis
+/// Predefined power plans
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PowerPlan {
-    /// Économie d'énergie
+    /// Power Saver
     PowerSaver,
-    /// Équilibré (défaut Windows)
+    /// Balanced (Windows default)
     Balanced,
-    /// Hautes performances
+    /// High Performance
     HighPerformance,
-    /// Performances ultimes (Windows 10+)
+    /// Ultimate Performance (Windows 10+)
     UltimatePerformance,
 }
 
@@ -42,13 +42,13 @@ impl PowerPlan {
         }
     }
 
-    /// Convertit le GUID string en struct GUID Windows
+    /// Converts GUID string to Windows GUID struct
     pub fn as_guid(&self) -> GUID {
         parse_guid(self.guid())
     }
 }
 
-/// Parse un GUID string en struct GUID
+/// Parses a GUID string into a GUID struct
 fn parse_guid(s: &str) -> GUID {
     // Format: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
     let parts: Vec<&str> = s.split('-').collect();
@@ -82,7 +82,7 @@ fn parse_guid(s: &str) -> GUID {
     }
 }
 
-/// Convertit un GUID Windows en string formatté
+/// Converts a Windows GUID to a formatted string
 fn guid_to_string(guid: &GUID) -> String {
     format!(
         "{:08x}-{:04x}-{:04x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
@@ -100,7 +100,7 @@ fn guid_to_string(guid: &GUID) -> String {
     )
 }
 
-/// Récupère le plan d'alimentation actif via API native
+/// Retrieves the active power plan via native API
 pub fn get_active_power_plan() -> Result<String> {
     unsafe {
         let mut scheme_guid: *mut GUID = std::ptr::null_mut();
@@ -122,10 +122,10 @@ pub fn get_active_power_plan() -> Result<String> {
         let guid = *scheme_guid;
         let guid_str = guid_to_string(&guid);
 
-        // Libérer la mémoire allouée par Windows
+        // Free memory allocated by Windows
         let _ = LocalFree(Some(HLOCAL(scheme_guid as *mut std::ffi::c_void)));
 
-        // Convertir en nom lisible si connu
+        // Convert to readable name if known
         let name = match guid_str.as_str() {
             s if s == PowerPlan::PowerSaver.guid() => PowerPlan::PowerSaver.name().to_string(),
             s if s == PowerPlan::Balanced.guid() => PowerPlan::Balanced.name().to_string(),
@@ -143,7 +143,7 @@ pub fn get_active_power_plan() -> Result<String> {
     }
 }
 
-/// Définit le plan d'alimentation actif via API native
+/// Sets the active power plan via native API
 pub fn set_power_plan(plan: PowerPlan) -> Result<()> {
     unsafe {
         let guid = plan.as_guid();
@@ -151,19 +151,17 @@ pub fn set_power_plan(plan: PowerPlan) -> Result<()> {
         let result = PowerSetActiveScheme(None, Some(&guid));
 
         if result.is_err() {
-            // En cas d'échec, le plan n'existe peut-être pas
+            // If failed, the plan might not exist
             if plan == PowerPlan::UltimatePerformance {
                 create_ultimate_performance_plan()?;
 
-                // Réessayer
+                // Retry
                 let guid = plan.as_guid();
                 if PowerSetActiveScheme(None, Some(&guid)).is_err() {
-                    // Fallback vers High Performance
+                    // Fallback to High Performance
                     let hp_guid = PowerPlan::HighPerformance.as_guid();
                     let _ = PowerSetActiveScheme(None, Some(&hp_guid));
-                    tracing::warn!(
-                        "Ultimate Performance non disponible, utilisation High Performance"
-                    );
+                    tracing::warn!("Ultimate Performance not available, using High Performance");
                 }
             } else {
                 return Err(PieuvreError::Unsupported(format!(
@@ -173,12 +171,12 @@ pub fn set_power_plan(plan: PowerPlan) -> Result<()> {
             }
         }
 
-        tracing::info!(plan = %plan.name(), "Plan d'alimentation activé");
+        tracing::info!(plan = %plan.name(), "Power plan activated");
         Ok(())
     }
 }
 
-/// Crée le plan Ultimate Performance via powercfg (nécessaire car pas d'API native pour duplicate)
+/// Creates the Ultimate Performance plan via powercfg (necessary as no native API for duplicate)
 fn create_ultimate_performance_plan() -> Result<()> {
     use std::process::Command;
 
@@ -188,7 +186,7 @@ fn create_ultimate_performance_plan() -> Result<()> {
         .map_err(PieuvreError::Io)?;
 
     if !output.status.success() {
-        // Créer depuis High Performance
+        // Create from High Performance
         let _ = Command::new("powercfg")
             .args([
                 "-duplicatescheme",
@@ -201,7 +199,7 @@ fn create_ultimate_performance_plan() -> Result<()> {
     Ok(())
 }
 
-/// Configure les paramètres d'alimentation spécifiques via API native
+/// Configures specific power settings via native API
 pub fn configure_power_settings(
     usb_selective_suspend: bool,
     pci_aspm: bool,
@@ -217,7 +215,7 @@ pub fn configure_power_settings(
         }
         let scheme_guid = *scheme_guid_ptr;
 
-        // GUIDs pour les paramètres (Source: Microsoft Documentation)
+        // GUIDs for settings (Source: Microsoft Documentation)
         let subgroup_usb = parse_guid("2a737441-1930-4402-8d77-b2bebba308a3");
         let setting_usb_suspend = parse_guid("48e6b7a6-50f5-4782-a5d4-53bb8f07e226");
 
@@ -228,7 +226,7 @@ pub fn configure_power_settings(
         let setting_cpu_min = parse_guid("893dee8e-2bef-41e0-89c6-b55d0929964c");
         let setting_cpu_max = parse_guid("bc5038f7-23e0-4960-96da-33abaf5935ec");
 
-        // Appliquer les valeurs
+        // Apply values
         let _ = PowerWriteACValueIndex(
             None,
             &scheme_guid,
@@ -258,7 +256,7 @@ pub fn configure_power_settings(
             processor_max as u32,
         );
 
-        // Appliquer les changements
+        // Apply changes
         let _ = PowerSetActiveScheme(None, Some(&scheme_guid));
 
         let _ = LocalFree(Some(HLOCAL(scheme_guid_ptr as *mut std::ffi::c_void)));
@@ -268,19 +266,19 @@ pub fn configure_power_settings(
             pci_aspm = pci_aspm,
             cpu_min = processor_min,
             cpu_max = processor_max,
-            "Paramètres power configurés via API native"
+            "Power settings configured via native API"
         );
 
         Ok(())
     }
 }
 
-/// Désactive l'économie d'énergie du CPU (performance max)
+/// Disables CPU throttling (max performance)
 pub fn disable_cpu_throttling() -> Result<()> {
     configure_power_settings(false, false, 100, 100)
 }
 
-/// Configuration gaming optimale
+/// Optimal gaming configuration
 pub fn apply_gaming_power_config() -> Result<()> {
     set_power_plan(PowerPlan::UltimatePerformance)?;
     configure_power_settings(false, false, 100, 100)?;

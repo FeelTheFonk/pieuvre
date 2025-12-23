@@ -1,10 +1,10 @@
-//! Types de données partagés
+//! Shared data types
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-/// Rapport d'audit complet
+/// Full audit report
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AuditReport {
     pub id: Uuid,
@@ -17,7 +17,7 @@ pub struct AuditReport {
     pub appx: Vec<AppxInfo>,
 }
 
-/// Informations système
+/// System information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SystemInfo {
     pub os_version: String,
@@ -26,7 +26,7 @@ pub struct SystemInfo {
     pub hostname: String,
 }
 
-/// Informations matérielles
+/// Hardware information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HardwareInfo {
     pub cpu: CpuInfo,
@@ -68,7 +68,7 @@ pub struct GpuInfo {
     pub vram_bytes: u64,
 }
 
-/// Information sur un service Windows
+/// Windows service information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServiceInfo {
     pub name: String,
@@ -76,7 +76,7 @@ pub struct ServiceInfo {
     pub status: ServiceStatus,
     pub start_type: ServiceStartType,
     pub category: ServiceCategory,
-    /// PID du processus si le service est en cours d'exécution
+    /// Service process PID if running
     #[serde(skip_serializing_if = "Option::is_none")]
     pub pid: Option<u32>,
 }
@@ -117,7 +117,7 @@ pub enum ServiceCategory {
     Unknown,
 }
 
-/// Statut télémétrie complet
+/// Full telemetry status
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TelemetryStatus {
     pub diagtrack_enabled: bool,
@@ -130,7 +130,7 @@ pub struct TelemetryStatus {
     pub error_reporting_enabled: bool,
 }
 
-/// Rapport de latence DPC/ISR
+/// DPC/ISR latency report
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LatencyReport {
     pub duration_seconds: u64,
@@ -148,7 +148,7 @@ pub struct LatencyOffender {
     pub count: u64,
 }
 
-/// Information package Appx
+/// Appx package information
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppxInfo {
     pub name: String,
@@ -179,7 +179,7 @@ pub enum RemovalRisk {
     Critical,
 }
 
-/// Snapshot pour rollback
+/// Rollback snapshot
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Snapshot {
     pub id: Uuid,

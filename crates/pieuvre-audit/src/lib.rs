@@ -1,8 +1,8 @@
-//! pieuvre Audit Engine SOTA
+//! pieuvre Audit Engine
 //!
-//! Module d'audit système bas-niveau pour Windows 11.
-//! Fournit l'introspection du registre, la détection matérielle,
-//! le monitoring de latence, l'inventaire des packages, et l'audit sécurité.
+//! Low-level system audit module for Windows 11.
+//! Provides registry introspection, hardware detection,
+//! latency monitoring, package inventory, and security audit.
 
 pub mod appx;
 pub mod compliance;
@@ -20,13 +20,13 @@ use chrono::Utc;
 use pieuvre_common::{AuditReport, Result, SystemInfo};
 use uuid::Uuid;
 
-// Re-exports pour API publique
+// Re-exports for public API
 pub use registry::{DefenderStatus, FirewallStatus, UacStatus};
 pub use security::{SecurityAudit, SecurityRecommendation, Severity};
 
-/// Effectue un audit complet du système
+/// Performs a full system audit
 pub fn full_audit() -> Result<AuditReport> {
-    tracing::info!("Démarrage audit complet SOTA");
+    tracing::info!("Starting full system audit");
 
     let system = get_system_info()?;
     let hardware = hardware::probe_hardware()?;
@@ -41,18 +41,18 @@ pub fn full_audit() -> Result<AuditReport> {
         hardware,
         services,
         telemetry,
-        latency: None, // ETW séparé (nécessite durée)
+        latency: None, // Separate ETW (requires duration)
         appx: appx_packages,
     })
 }
 
-/// Effectue un audit de sécurité complet
+/// Performs a full security audit
 pub fn security_audit() -> Result<SecurityAudit> {
-    tracing::info!("Démarrage audit sécurité");
+    tracing::info!("Starting security audit");
     security::audit_security()
 }
 
-/// Récupère les informations système
+/// Retrieves system information
 fn get_system_info() -> Result<SystemInfo> {
     let (os_version, edition) = get_os_info();
 
@@ -64,7 +64,7 @@ fn get_system_info() -> Result<SystemInfo> {
     })
 }
 
-/// Récupère version OS et édition depuis le registre
+/// Retrieves OS version and edition from registry
 fn get_os_info() -> (String, String) {
     use windows::core::PCWSTR;
     use windows::Win32::System::Registry::{
@@ -103,7 +103,7 @@ fn get_os_info() -> (String, String) {
     }
 }
 
-/// Lit une valeur string depuis une clé déjà ouverte
+/// Reads a string value from an already open key
 fn read_string_value_raw(
     hkey: windows::Win32::System::Registry::HKEY,
     value_name: &str,
@@ -140,7 +140,7 @@ fn read_string_value_raw(
     }
 }
 
-/// Récupère le build number
+/// Retrieves the build number
 fn get_build_number() -> u32 {
     use windows::core::PCWSTR;
     use windows::Win32::System::Registry::{
@@ -193,12 +193,12 @@ fn get_build_number() -> u32 {
     22631
 }
 
-/// Vérifie si le système est un laptop
+/// Checks if the system is a laptop
 pub fn is_laptop() -> bool {
     hardware::is_laptop()
 }
 
-/// Audit réseau rapide
+/// Quick network audit
 pub fn network_audit() -> Result<network::NetworkStatus> {
     network::inspect_network()
 }

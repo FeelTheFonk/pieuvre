@@ -197,7 +197,7 @@ pub fn run(repair: bool) -> Result<()> {
     if repair && !issues.is_empty() {
         println!();
         println!("[*] Mode reparation active...");
-        println!("    Executez 'pieuvre interactive --profile gaming' pour corriger");
+        println!("    Exécutez 'pieuvre interactive' pour corriger");
     }
 
     println!();

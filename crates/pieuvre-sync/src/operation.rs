@@ -1,25 +1,25 @@
-//! Trait SyncOperation SOTA 2026
+//! SyncOperation Trait
 //!
-//! Abstraction pour toutes les opérations de synchronisation et d'optimisation.
+//! Abstraction for all synchronization and optimization operations.
 
 use async_trait::async_trait;
 use pieuvre_common::{ChangeRecord, Result};
 use tracing::instrument;
 
-/// Une opération de synchronisation unifiée
+/// A unified synchronization operation
 #[async_trait]
 pub trait SyncOperation: Send + Sync {
-    /// Nom de l'opération (pour le logging)
+    /// Operation name (for logging)
     fn name(&self) -> &str;
 
-    /// Applique l'optimisation
+    /// Applies the optimization
     async fn apply(&self) -> Result<Vec<ChangeRecord>>;
 
-    /// Vérifie si l'optimisation est déjà appliquée
+    /// Checks if the optimization is already applied
     async fn is_applied(&self) -> Result<bool>;
 }
 
-/// Opération sur un service Windows
+/// Operation on a Windows service
 pub struct ServiceOperation {
     pub name: String,
     pub target_start_type: u32, // 2=Auto, 3=Manual, 4=Disabled
@@ -39,7 +39,13 @@ impl SyncOperation for ServiceOperation {
         tokio::task::spawn_blocking(move || {
             let original = crate::services::get_service_start_type(&name)?;
             if original != target {
-                crate::services::disable_service(&name)?; // TODO: support other types
+                // Use a more generic method if available, otherwise fallback
+                if target == 4 {
+                    crate::services::disable_service(&name)?;
+                } else {
+                    // For now we only handle switching to Disabled or maintaining
+                    // TODO: Implement set_service_start_type in services.rs
+                }
                 Ok(vec![ChangeRecord::Service {
                     name,
                     original_start_type: original,
@@ -64,7 +70,7 @@ impl SyncOperation for ServiceOperation {
     }
 }
 
-/// Opération sur le registre (DWORD)
+/// Registry operation (DWORD)
 pub struct RegistryDwordOperation {
     pub key: String,
     pub value: String,
@@ -84,14 +90,20 @@ impl SyncOperation for RegistryDwordOperation {
         let data = self.target_data;
 
         tokio::task::spawn_blocking(move || {
+            // Capture original state BEFORE any modification
             let original = crate::registry::read_dword_value(&key, &value).ok();
+
+            // Apply modification
             crate::registry::set_dword_value(&key, &value, data)?;
 
+            // If operation succeeded, return change record
             Ok(vec![ChangeRecord::Registry {
                 key,
                 value_name: value,
                 value_type: "REG_DWORD".to_string(),
-                original_data: original.unwrap_or_default().to_le_bytes().to_vec(),
+                original_data: original
+                    .map(|v| v.to_le_bytes().to_vec())
+                    .unwrap_or_default(),
             }])
         })
         .await
@@ -111,7 +123,7 @@ impl SyncOperation for RegistryDwordOperation {
     }
 }
 
-/// Opération sur les interruptions MSI
+/// MSI Interrupt operation
 pub struct MsiOperation {
     pub devices: Vec<String>,
     pub priority: String,
@@ -128,18 +140,18 @@ impl SyncOperation for MsiOperation {
         let priority = self.priority.clone();
         tokio::task::spawn_blocking(move || {
             crate::msi::configure_msi_for_devices(&devices, &priority)?;
-            Ok(vec![]) // MSI rollback non supporté pour l'instant
+            Ok(vec![]) // MSI rollback not supported for now
         })
         .await
         .map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))?
     }
 
     async fn is_applied(&self) -> Result<bool> {
-        Ok(false) // Toujours appliquer pour l'instant
+        Ok(false) // Always apply for now
     }
 }
 
-/// Opération sur les packages AppX
+/// AppX Package operation
 pub struct AppxOperation {
     pub packages_to_remove: Vec<String>,
 }
@@ -167,7 +179,7 @@ impl SyncOperation for AppxOperation {
     }
 }
 
-/// Opération sur le plan d'alimentation
+/// Power plan operation
 pub struct PowerPlanOperation {
     pub plan: String,
 }
@@ -199,7 +211,7 @@ impl SyncOperation for PowerPlanOperation {
     }
 }
 
-/// Opération d'optimisation CPU
+/// CPU optimization operation
 pub struct CpuOptimizationOperation {
     pub disable_core_parking: bool,
     pub disable_memory_compression: bool,
@@ -209,7 +221,7 @@ pub struct CpuOptimizationOperation {
 #[async_trait]
 impl SyncOperation for CpuOptimizationOperation {
     fn name(&self) -> &str {
-        "CPU SOTA Optimization"
+        "CPU Optimization"
     }
 
     async fn apply(&self) -> Result<Vec<ChangeRecord>> {
@@ -257,7 +269,7 @@ impl SyncOperation for CpuOptimizationOperation {
     }
 }
 
-/// Opération d'optimisation Mémoire
+/// Memory optimization operation
 pub struct MemoryOptimizationOperation {
     pub enable_large_system_cache: bool,
     pub io_page_lock_limit_mb: Option<u32>,
@@ -266,7 +278,7 @@ pub struct MemoryOptimizationOperation {
 #[async_trait]
 impl SyncOperation for MemoryOptimizationOperation {
     fn name(&self) -> &str {
-        "Memory SOTA Optimization"
+        "Memory Optimization"
     }
 
     async fn apply(&self) -> Result<Vec<ChangeRecord>> {
@@ -289,6 +301,6 @@ impl SyncOperation for MemoryOptimizationOperation {
     }
 
     async fn is_applied(&self) -> Result<bool> {
-        Ok(false) // Toujours appliquer le trim
+        Ok(false) // Always apply trim
     }
 }
