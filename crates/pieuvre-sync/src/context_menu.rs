@@ -5,7 +5,7 @@
 use pieuvre_common::Result;
 use std::process::Command;
 
-/// Context menu items to remove (SOTA - Sophia Script reference)
+/// Context menu items to remove
 const CONTEXT_MENU_CLSIDS: &[(&str, &str)] = &[
     // "Edit with Paint 3D"
     (

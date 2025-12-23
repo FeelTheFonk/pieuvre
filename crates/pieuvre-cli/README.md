@@ -1,20 +1,23 @@
-# pieuvre-cli
+<p align="center">
+  <img src="logo.svg" width="256" alt="pieuvre logo">
+</p>
+
+<h1 align="center">pieuvre-cli</h1>
 
 Command-line interface for pieuvre Windows optimization tool.
 
-[![SOTA 2026](https://img.shields.io/badge/SOTA-2026-brightgreen)]()
 [![Tests](https://img.shields.io/badge/tests-12%20passed-success)]()
 
-## Architecture SOTA
+## Architecture
 
 Le mode interactif utilise une architecture modulaire:
 
 | Module | Description |
 |--------|-------------|
-| `interactive/mod.rs` | Orchestrateur principal |
-| `interactive/sections.rs` | 11 sections avec `OptItem` typé et `RiskLevel` |
-| `interactive/executor.rs` | Trait `OptExecutor` + implémentations |
-| `interactive/ui.rs` | Interface SOTA (ASCII Art, NO EMOJI) |
+| `interactive/mod.rs` | Main orchestrator |
+| `interactive/sections.rs` | 12 sections with typed `OptItem` and `RiskLevel` |
+| `interactive/executor.rs` | `OptExecutor` trait + implementations |
+| `interactive/ui.rs` | User interface (Premium TUI, severity-based colors) |
 
 ---
 ### `audit`
@@ -34,8 +37,8 @@ pieuvre audit --full
 
 ### `interactive`
 
-Granular selection interface with 100+ options.
-**Note:** Ce mode est lancé par défaut si aucun argument n'est fourni.
+Granular selection interface with 110+ options.
+**Note:** This mode is launched by default if no arguments are provided.
 
 ```powershell
 pieuvre interactive
@@ -50,9 +53,10 @@ pieuvre interactive
 - CPU & Memory (4 options)
 - DPC Latency (5 options)
 - Security (3 options)
-- Network Avancé (5 options)
-- Cleanup (SOTA 2026)
+- Network (5 options)
+- Cleanup
 - AI & DNS (Recall, CoPilot, DoH)
+- **System Scan** (Winapp2, LOLDrivers, LotL, YARA) - Key `S`
 
 ---
 
@@ -82,6 +86,26 @@ Check integrity of applied changes.
 
 ```powershell
 pieuvre verify [--repair]
+```
+
+---
+
+### `scan`
+
+YARA-based signature scan.
+
+```powershell
+pieuvre scan [--rules <PATH>]
+```
+
+---
+
+### `kernel`
+
+Kernel driver status.
+
+```powershell
+pieuvre kernel
 ```
 
 ---

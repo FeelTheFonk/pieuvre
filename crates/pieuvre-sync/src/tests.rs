@@ -1,4 +1,4 @@
-//! Tests unitaires SOTA pour pieuvre-sync
+//! Tests unitaires pour pieuvre-sync
 //!
 //! Tests read-only validant la configuration et l'état du système.
 //! Aucune modification n'est effectuée par ces tests.

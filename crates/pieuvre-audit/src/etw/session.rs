@@ -1,4 +1,4 @@
-//! Gestion des sessions ETW Kernel (SOTA 2026)
+//! Gestion des sessions ETW Kernel
 //!
 //! Permet de démarrer et d'arrêter des traces kernel pour capturer DPC/ISR.
 
@@ -21,7 +21,7 @@ pub struct EtwSession {
 }
 
 impl EtwSession {
-    /// Démarre une nouvelle session "NT Kernel Logger" (SOTA)
+    /// Démarre une nouvelle session "NT Kernel Logger"
     pub fn start_kernel_session() -> Result<Self> {
         unsafe {
             let session_name = KERNEL_LOGGER_NAMEW;

@@ -39,13 +39,7 @@ impl SyncOperation for ServiceOperation {
         tokio::task::spawn_blocking(move || {
             let original = crate::services::get_service_start_type(&name)?;
             if original != target {
-                // Use a more generic method if available, otherwise fallback
-                if target == 4 {
-                    crate::services::disable_service(&name)?;
-                } else {
-                    // For now we only handle switching to Disabled or maintaining
-                    // TODO: Implement set_service_start_type in services.rs
-                }
+                crate::services::set_service_start_type(&name, target)?;
                 Ok(vec![ChangeRecord::Service {
                     name,
                     original_start_type: original,

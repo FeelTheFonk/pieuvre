@@ -5,7 +5,7 @@
 use pieuvre_common::Result;
 use std::process::Command;
 
-/// Telemetry scheduled tasks to disable (SOTA - Sophia Script reference)
+/// Telemetry scheduled tasks to disable
 const TELEMETRY_TASKS: &[&str] = &[
     // Microsoft Compatibility Appraiser
     r"\Microsoft\Windows\Application Experience\Microsoft Compatibility Appraiser",

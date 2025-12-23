@@ -1,4 +1,4 @@
-//! Connectivité DNS SOTA 2026
+//! Connectivité DNS
 //!
 //! Configuration DNS-over-HTTPS (DoH) et sélecteurs DNS optimisés.
 
@@ -31,12 +31,12 @@ impl SyncOperation for ConfigureDohOperation {
         let op = RegistryDwordOperation {
             key: r"SYSTEM\CurrentControlSet\Services\Dnscache\Parameters".to_string(),
             value: "EnableAutoDoh".to_string(),
-            target_data: 2, // 2 = Required (SOTA)
+            target_data: 2, // 2 = Required
         };
         changes.extend(op.apply().await?);
 
         // Note: La configuration des IPs DNS nécessite normalement des appels netsh ou WMI.
-        // Pour rester SOTA et natif, nous nous concentrons sur les paramètres de registre globaux.
+        // Pour rester natif, nous nous concentrons sur les paramètres de registre globaux.
 
         Ok(changes)
     }
@@ -72,4 +72,26 @@ impl SyncOperation for FlushDnsOperation {
     async fn is_applied(&self) -> Result<bool> {
         Ok(false) // Toujours applicable
     }
+}
+
+/// Helper pour configurer DoH
+pub fn set_doh_provider(_provider: DNSProvider) -> Result<()> {
+    // Les opérations de registre sont synchrones, mais SyncOperation::apply est async.
+    // Pour le SOTA, on appelle directement la logique de registre ici.
+    let op = RegistryDwordOperation {
+        key: r"SYSTEM\CurrentControlSet\Services\Dnscache\Parameters".to_string(),
+        value: "EnableAutoDoh".to_string(),
+        target_data: 2,
+    };
+    // On utilise une approche synchrone directe pour éviter le overhead async
+    crate::registry::set_dword_value(&op.key, &op.value, op.target_data)?;
+    Ok(())
+}
+
+/// Helper pour Flush DNS
+pub fn flush_dns_cache() -> Result<()> {
+    let _ = std::process::Command::new("ipconfig")
+        .arg("/flushdns")
+        .output();
+    Ok(())
 }

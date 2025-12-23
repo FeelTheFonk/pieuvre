@@ -442,7 +442,7 @@ pub fn disable_cortana() -> Result<()> {
 }
 
 // ============================================
-// MMCSS / GAMING TWEAKS (SOTA)
+// MMCSS / GAMING TWEAKS
 // ============================================
 
 /// Configure MMCSS pour gaming (SystemResponsiveness = 10, NetworkThrottling = OFF)
@@ -513,7 +513,7 @@ pub fn reduce_shutdown_timeout() -> Result<()> {
 }
 
 // ============================================
-// P4 SOTA - ADVANCED TWEAKS
+// ADVANCED TWEAKS
 // ============================================
 
 /// Disable CPU Power Throttling for max performance

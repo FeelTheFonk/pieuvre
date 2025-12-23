@@ -1,4 +1,4 @@
-//! Rollback Manager SOTA 2026
+//! Rollback Manager
 //!
 //! Logique de retour arrière automatique basée sur les ChangeRecords.
 
@@ -54,7 +54,7 @@ async fn rollback_registry_full(
 ) -> Result<()> {
     info!(key, value, "Restauration registre (Full)...");
 
-    // Déverrouillage SOTA
+    // Déverrouillage
     let _ = tokio::task::spawn_blocking({
         let key = key.to_string();
         move || crate::hardening::unlock_registry_key(&key)
@@ -85,15 +85,7 @@ async fn rollback_service(name: &str, start_type: u32) -> Result<()> {
 
     tokio::task::spawn_blocking({
         let name = name.to_string();
-        move || {
-            // TODO: implémenter set_service_start_type générique
-            match start_type {
-                2 => crate::services::set_service_automatic(&name),
-                3 => crate::services::set_service_manual(&name),
-                4 => crate::services::disable_service(&name),
-                _ => Ok(()),
-            }
-        }
+        move || crate::services::set_service_start_type(&name, start_type)
     })
     .await
     .map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))??;

@@ -1,6 +1,6 @@
 //! Commande rollback
 
-use anyhow::Result;
+use pieuvre_common::Result;
 
 pub fn run(list: bool, last: bool, id: Option<String>) -> Result<()> {
     let snapshots = pieuvre_persist::list_snapshots()?;

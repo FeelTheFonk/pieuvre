@@ -20,6 +20,7 @@ chrono.workspace = true
 # Windows APIs
 windows.workspace = true
 
-# Compression & Checksums - SOTA 2026
+# Compression & Checksums
 zstd.workspace = true
 sha2.workspace = true
+hex = "0.4"

@@ -1,4 +1,4 @@
-//! Analyseur d'événements ETW (SOTA 2026)
+//! Analyseur d'événements ETW
 //!
 //! Parse les structures EVENT_RECORD pour extraire les données de latence.
 
@@ -73,7 +73,7 @@ impl EtwParser {
 
                 let driver_name = super::resolver::DriverResolver::global()
                     .read()
-                    .unwrap()
+                    .expect("DriverResolver lock poisoned")
                     .resolve(routine as usize);
                 super::monitor::LatencyMonitor::global().update_dpc(driver_name, latency_us);
                 tracing::trace!(
@@ -105,7 +105,7 @@ impl EtwParser {
                 let latency_us = (end_time - initial_time) / 10;
                 let driver_name = super::resolver::DriverResolver::global()
                     .read()
-                    .unwrap()
+                    .expect("DriverResolver lock poisoned")
                     .resolve(routine as usize);
                 super::monitor::LatencyMonitor::global().update_isr(driver_name, latency_us);
                 tracing::trace!(

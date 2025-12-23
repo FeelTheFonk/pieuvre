@@ -1,121 +1,45 @@
-# Technical Documentation
+# Architecture Technique : Pieuvre TUI (v0.6.2)
 
-Detailed technical documentation for pieuvre's Windows integration layer.
+## 1. Moteur de Navigation Sidebar (v0.6.0)
+La TUI utilise une navigation par volet latéral (Sidebar) pour une gestion efficace des catégories d'optimisation.
 
----
+### Navigation & Contrôles
+- **Structure** : Layout horizontal divisé en `Sidebar` (Catégories) et `MainView` (Options & Détails).
+- **Contrôles** :
+    - `Tab` / `BackTab` : Navigation entre les catégories de la Sidebar.
+    - `Up` / `Down` : Navigation verticale dans la liste des options de la catégorie active.
+    - `Space` : Basculer l'état de sélection d'une option ([X] / [ ]).
+    - `Enter` : Exécuter toutes les optimisations sélectionnées.
+    - `Q` / `Esc` : Quitter l'application.
 
-## Timer Resolution
+### Overlay HUD & Logging
+- **Système de Logs** : Panneau de logs asynchrone en bas de l'écran avec retour visuel en temps réel (RUNNING, SUCCESS, ERROR).
+- **Avantage** : Centralisation du feedback d'exécution sans interrompre le flux de configuration.
 
-### Implementation
+## 2. Durcissement Système (Hardening)
+Pieuvre intègre un moteur de durcissement basé sur les ACLs natives de Windows et la manipulation directe du registre.
+- **SDDL (Security Descriptor Definition Language)** : Verrouillage des clés de registre et services via descripteurs de sécurité.
+- **Privilèges** : Gestion des privilèges `SeTakeOwnershipPrivilege` pour les objets système protégés.
+- **Registre** : Détection précise de l'OS et du Build Number via `winreg`.
 
-Uses `NtSetTimerResolution` from `ntdll.dll` for sub-millisecond timer control:
+## 3. Gestion de l'IA & Confidentialité
+- **Recall Blocking** : Désactivation via GPO (`DisableAIDataAnalysis`) et registres.
+- **CoPilot** : Suppression complète des intégrations barre des tâches et Edge.
+- **Télémétrie** : Blocage multi-niveaux (Services, Tâches planifiées, Fichier Hosts, et Firewall).
 
-```rust
-NtSetTimerResolution(5000, TRUE, &actual);  // 0.5ms (5000 * 100ns)
-```
+## 4. Architecture Multi-Crates
+- `pieuvre-cli` : Point d'entrée TUI et orchestrateur.
+- `pieuvre-sync` : Moteur d'exécution des optimisations (Services, Registre, Cleanup).
+- `pieuvre-audit` : Moteur d'analyse et de détection.
+- `pieuvre-persist` : Gestion des snapshots et de la persistance.
 
-### Windows Behavior
+## 5. Optimisation de la Latence (DPC/ISR)
+- **Timer Resolution** : Forçage à 0.5ms pour réduire l'input lag.
+- **Interrupt Affinity** : Distribution des interruptions sur les cœurs physiques.
+- **MSI (Message Signaled Interrupts)** : Migration PCI vers MSI pour éliminer les conflits d'IRQ.
 
-- Default resolution: 15.6ms
-- Minimum achievable: 0.5ms
-- Global effect: affects all processes
-- Power impact: increased CPU wake frequency
+## 6. Monitoring & Audit
+- **Sentinel Engine** : Surveillance des clés critiques via `RegNotifyChangeKeyValue`.
+- **Audit Hardware** : Sondage exhaustif CPU/RAM/Software via `pieuvre-audit`.
+- **Métriques Temps Réel** : Acquisition via `sysinfo` dans un thread dédié.
 
----
-
-## Power Plans
-
-### Native API Usage
-
-pieuvre bypasses `powercfg.exe` and uses `PowrProf.dll` directly:
-
-```rust
-PowerGetActiveScheme(None, &mut scheme_guid);
-PowerSetActiveScheme(None, Some(&target_guid));
-```
-
-### GUID Mapping
-
-| Plan | GUID |
-|------|------|
-| Balanced | `381b4222-f694-41f0-9685-ff5bb260df2e` |
-| High Performance | `8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c` |
-| Ultimate Performance | `e9a42b02-d5df-448d-aa00-03f14749eb61` |
-
----
-
-## Service Control Manager
-
-### Native API Usage
-
-```rust
-OpenSCManagerW(None, None, SC_MANAGER_ALL_ACCESS);
-OpenServiceW(hSCManager, service_name, SERVICE_CHANGE_CONFIG);
-ChangeServiceConfigW(hService, SERVICE_NO_CHANGE, SERVICE_DISABLED, ...);
-```
-
-### Target Services
-
-| Service | Purpose | Safe to Disable |
-|---------|---------|-----------------|
-| DiagTrack | Telemetry | Yes |
-| dmwappushservice | Push notifications | Yes |
-| SysMain | Superfetch | Yes (SSD) |
-| WSearch | Windows Search | Conditional |
-
----
-
-## Sentinel Engine (Self-Healing)
-
-### Implementation
-
-Uses `RegNotifyChangeKeyValue` for event-driven monitoring of critical registry keys.
-
-- **Mode**: Event-driven (0% CPU idle)
-- **Reaction**: Instantaneous restoration upon modification
-- **Scope**: IFEO, AppInit_DLLs, Winlogon, ShellServiceObjectDelayLoad
-
----
-
-## ETW Engine (Latency Monitoring)
-
-### Implementation
-
-Uses `EventTrace` APIs to capture kernel events in real-time.
-
-- **DriverResolver**: Maps kernel routine addresses to `.sys` filenames using `EnumDeviceDrivers`.
-- **Metrics**: Captures DPC/ISR duration per driver.
-- **Feedback Loop**: Automatically adjusts interrupt affinity for high-latency drivers via `interrupts.rs`.
-
----
-
-## Registry Operations
-
-### Atomic Writes
-
-All registry modifications use native APIs:
-
-```rust
-RegCreateKeyExW(..., REG_OPTION_NON_VOLATILE, ...);
-RegSetValueExW(hKey, value_name, 0, REG_DWORD, Some(&data));
-```
-
-### Backup Strategy
-
-Original values captured in `zstd` compressed snapshots with SHA256 integrity checks.
-
----
-
-## References
-
-### Microsoft Documentation
-
-- [Windows Internals (Sysinternals)](https://docs.microsoft.com/en-us/sysinternals/)
-- [Service Control Manager](https://docs.microsoft.com/en-us/windows/win32/services/service-control-manager)
-- [Registry Functions](https://docs.microsoft.com/en-us/windows/win32/sysinfo/registry-functions)
-
-### Community Research
-
-- [Bruce Dawson - Timer Resolution](https://randomascii.wordpress.com/2020/10/04/windows-timer-resolution-the-great-rule-change/)
-- [Sophia Script](https://github.com/farag2/Sophia-Script-for-Windows)
-- [privacy.sexy](https://github.com/undergroundwires/privacy.sexy)

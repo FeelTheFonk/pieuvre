@@ -1,4 +1,4 @@
-//! Tests CLI SOTA 2026 pour pieuvre-cli
+//! Tests CLI pour pieuvre-cli
 //!
 //! Tests complets de la couche CLI:
 //! - Parsing des arguments
@@ -23,13 +23,6 @@ fn test_cli_has_all_commands() {
         assert!(!cmd.is_empty(), "Command {} should exist", cmd);
     }
 }
-
-// test_audit_module_exists removed in v0.5.0
-// test_sync_module_exists removed in v0.5.0
-// test_status_module_exists removed in v0.5.0
-// test_rollback_module_exists removed in v0.5.0
-// test_verify_module_exists removed in v0.5.0
-// test_analyze_module_exists removed in v0.5.0
 
 // ============================================================================
 // TESTS COMMANDE INTERACTIVE

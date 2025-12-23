@@ -1,4 +1,4 @@
-# Configuration par défaut pieuvre SOTA 2026
+# Configuration par défaut pieuvre
 
 [general]
 # Niveau de log: trace, debug, info, warn, error
@@ -29,7 +29,7 @@ network = true
 auto_create = true
 # Nombre max de snapshots à conserver
 max_count = 10
-# Compression zstd des snapshots (SOTA 2026)
+# Compression zstd des snapshots
 compress = true
 # Fichier domaines télémétrie externe
 telemetry_domains_file = "telemetry-domains.txt"

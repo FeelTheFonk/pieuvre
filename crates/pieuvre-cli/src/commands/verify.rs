@@ -2,7 +2,7 @@
 //!
 //! Verification de l'integrite des optimisations appliquees.
 
-use anyhow::Result;
+use pieuvre_common::Result;
 
 pub fn run(repair: bool) -> Result<()> {
     println!();
@@ -108,6 +108,7 @@ pub fn run(repair: bool) -> Result<()> {
     // Verification Registry Win32PrioritySeparation
     print!("[*] Scheduler... ");
     match pieuvre_audit::registry::read_dword_value(
+        windows::Win32::System::Registry::HKEY_LOCAL_MACHINE,
         r"SYSTEM\CurrentControlSet\Control\PriorityControl",
         "Win32PrioritySeparation",
     ) {
@@ -132,6 +133,7 @@ pub fn run(repair: bool) -> Result<()> {
     // Verification MMCSS SystemResponsiveness
     print!("[*] MMCSS Gaming... ");
     match pieuvre_audit::registry::read_dword_value(
+        windows::Win32::System::Registry::HKEY_LOCAL_MACHINE,
         r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile",
         "SystemResponsiveness",
     ) {
@@ -156,6 +158,7 @@ pub fn run(repair: bool) -> Result<()> {
     // Verification Network Throttling
     print!("[*] Network Throttling... ");
     match pieuvre_audit::registry::read_dword_value(
+        windows::Win32::System::Registry::HKEY_LOCAL_MACHINE,
         r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile",
         "NetworkThrottlingIndex",
     ) {

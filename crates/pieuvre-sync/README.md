@@ -1,6 +1,6 @@
 # pieuvre-sync
 
-System modification engine with **24 specialized modules** (SOTA 2026).
+System modification engine with **24 specialized modules**.
 
 ---
 
@@ -35,7 +35,7 @@ System modification engine with **24 specialized modules** (SOTA 2026).
 
 ---
 
-## SOTA 2026 Features
+## Features
 
 ### Security Module (5-10% FPS Gain)
 

@@ -1,76 +1,44 @@
-//! Compliance Audit
-//!
-//! Drift detection compared to optimized settings.
-
 use crate::registry::read_dword_value;
 use pieuvre_common::Result;
-
-/// Compliance report
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct ComplianceReport {
-    pub is_compliant: bool,
-    pub drifts: Vec<DriftRecord>,
-}
+use windows::Win32::System::Registry::HKEY_LOCAL_MACHINE;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct DriftRecord {
-    pub component: String,
-    pub setting: String,
+pub struct ComplianceCheck {
+    pub id: String,
+    pub name: String,
+    pub status: ComplianceStatus,
     pub expected: String,
     pub actual: String,
-    pub severity: ComplianceSeverity,
 }
 
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub enum ComplianceSeverity {
-    Low,
-    Medium,
-    High,
-    Critical,
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
+pub enum ComplianceStatus {
+    Compliant,
+    NonCompliant,
+    Error(String),
 }
 
-/// Checks configuration drift compared to standards
-pub fn check_configuration_drift() -> Result<ComplianceReport> {
-    let mut drifts = Vec::new();
+pub fn check_compliance() -> Result<Vec<ComplianceCheck>> {
+    let mut checks = Vec::new();
 
-    // 1. Timer Resolution verification (PriorityControl)
-    if let Ok(val) = read_dword_value(
-        r"SYSTEM\CurrentControlSet\Control\PriorityControl",
-        "Win32PrioritySeparation",
-    ) {
-        if val != 0x26 && val != 0x18 && val != 0x2 {
-            drifts.push(DriftRecord {
-                component: "Kernel".to_string(),
-                setting: "Win32PrioritySeparation".to_string(),
-                expected: "0x26 or 0x18".to_string(),
-                actual: format!("{:#x}", val),
-                severity: ComplianceSeverity::High,
-            });
-        }
-    }
+    // Exemple : Vérification de la télémétrie
+    let telemetry_val = read_dword_value(
+        HKEY_LOCAL_MACHINE,
+        r"SOFTWARE\Policies\Microsoft\Windows\DataCollection",
+        "AllowTelemetry",
+    )
+    .unwrap_or(1);
+    checks.push(ComplianceCheck {
+        id: "COMP-001".to_string(),
+        name: "Telemetry Disabled".to_string(),
+        status: if telemetry_val == 0 {
+            ComplianceStatus::Compliant
+        } else {
+            ComplianceStatus::NonCompliant
+        },
+        expected: "0".to_string(),
+        actual: telemetry_val.to_string(),
+    });
 
-    // 2. Telemetry verification (DiagTrack)
-    // Note: We could check service state here if we had access to services.rs in audit
-    // But audit is supposed to be read-only and independent.
-
-    // 3. MMCSS verification
-    if let Ok(val) = read_dword_value(
-        r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile",
-        "SystemResponsiveness",
-    ) {
-        if val > 10 {
-            drifts.push(DriftRecord {
-                component: "MMCSS".to_string(),
-                setting: "SystemResponsiveness".to_string(),
-                expected: "10".to_string(),
-                actual: val.to_string(),
-                severity: ComplianceSeverity::Medium,
-            });
-        }
-    }
-
-    Ok(ComplianceReport {
-        is_compliant: drifts.is_empty(),
-        drifts,
-    })
+    Ok(checks)
 }

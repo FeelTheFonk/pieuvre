@@ -2,7 +2,6 @@
 //!
 //! Synchronization module: applying optimizations.
 
-pub mod ai;
 pub mod cleanup;
 pub mod dns;
 pub mod interrupts;

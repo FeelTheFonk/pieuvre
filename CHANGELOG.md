@@ -1,41 +1,42 @@
-# Changelog
+# Changelog - Pieuvre
 
-All notable changes to this project will be documented in this file.
+## [0.6.2] - 2025-12-23
+### Audit "Deep Clean" Optimization
+- **Optimisation (Phase 3)**:
+    - Removed `rusqlite` dependency and `db.rs` module (weight and portability gain).
+    - Removed redundant state capture dead code in `executor.rs`.
+    - Removed `ai.rs` module (merged into direct registry operations in `pieuvre-sync`).
+- **Précision** :
+    - Implemented real OS and Build Number detection via Windows Registry in `pieuvre-audit`.
+    - Harmonized types and synchronous APIs for maximum reactivity across all crates.
+- **Robustesse & Sécurité**:
+    - Exhaustive audit of `unwrap()` and `expect()` in production code.
+    - Reinforced error handling in `dns` and `cleanup` modules.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.6.0] - 2025-12-23
+### Refonte de l'interface (Phases 1 & 2)
+- **Architecture Sidebar/MainView & Taffy** :
+    - **Sidebar Navigation**: Centralized category management with instant preview.
+    - **Flux/Redux Pattern**: State management via `AppState` and `Action` messages for total predictability.
+    - **Async Execution**: Scans and optimizations launched in background via `tokio::spawn` with real-time feedback in the log panel.
+    - **Zero Warning**: Cleaned codebase, no unused variables, no dead code.
+- **Design System (v2)**:
+    - **Vibrant Theme**: Cyan/Magenta/Yellow palette optimized for maximum contrast.
+    - **Real-time Metrics**: Dynamic header displaying CPU, RAM, and Uptime via dedicated threads.
+    - **Système de Logs** : Console de logs asynchrone avec icônes et horodatage.
+- **Navigation & Controls**:
+    - **Default Launch**: Interactive mode is now the main entry point.
+    - **Optimized Controls**: `Tab` for categories, `Up/Down` for items, `Space` to toggle, `Enter` to apply.
 
-## [0.5.1] - 2025-12-23
-### Sobriety & Harmonization
-- **Linguistic Standardization**: All code comments, console messages, and documentation translated from French to technical English across all crates.
-- **Marketing Jargon Eradication**: Systematic removal of superlatives and buzzwords ("SOTA", "2026", "Ultimate", "Ghost UI", etc.).
-- **Metadata Refinement**: Updated `Cargo.toml` descriptions and `README.md` for a factual, professional tone.
-- **CLI Consistency**: Unified command descriptions and help messages for `audit`, `status`, `verify`, and `rollback`.
-- **Code Quality**: Resolved Clippy warnings regarding type complexity in `pieuvre-cli` and improved error handling.
-- **Test Alignment**: Updated unit tests in `pieuvre-audit` to match the new professional security grades and English terminology.
-- **Build Optimization**: Hardened release profile with LTO, single codegen unit, and panic abort for production readiness.
+## [0.5.5] - 2025-12-23
+### Advanced Threat Detection & UI Alignment
+- **LOLDrivers Integration** : Detection of vulnerable drivers used in BYOVD attacks.
+- **WMI Persistence Audit** : Scanning for malicious WMI event consumers and filters.
+- **UI Risk Indicators** : Visual cues for high-risk optimizations in the TUI.
+- **Latency Monitoring** : Real-time DPC latency tracking in the dashboard.
 
-## [0.5.0] - 2025-12-23
-### Pinacle Total - Éradication des Profils
-- **Éradication Totale du Système de Profils** : Suppression des profils statiques (`gaming`, `workstation`, `privacy`) au profit d'une approche 100% granulaire via l'interface interactive.
-- **Simplification Architecturale** : Suppression des commandes `sync` et `analyze` redondantes.
-- **Pureté Structurelle** : Nettoyage complet des structures `Profile` et `PieuvreConfig`.
-- **Fluidité UI SOTA** : Optimisation du rendu Ratatui et correction des problèmes de types dans le dashboard.
-- **Absolute Zero Warning** : Codebase 100% propre, sans aucun warning de compilation.
-
-### Changed
-- **Architecture**: Centralized interactive logic in `dashboard.rs`, harmonizing `mod.rs` and `ui.rs`.
-- **UX**: Improved feedback loops with refined progress bars and confirmation prompts.
-
-## [0.4.9] - 2025-12-23 (focus CLI)
-### Added
-#### CLI Dashboard SOTA 2026
-- **Non-Linear Navigation**: Complete transformation of the CLI into a granular interactive Dashboard.
-- **Expert Identity**: Total eradication of emojis, replaced by professional ASCII symbols (`●`, `»`, `[OK]`, `[!]`).
-- **Granular Control**: Direct access to all 11 optimization sections (Telemetry, Privacy, Performance, Scheduler, DNS, Cleanup, etc.).
-- **Quick Actions**: New "Clean & Boost" module for instant essential optimizations.
-- **Zero Warning Build**: Systematic eradication of all dead code and unused imports for a pure binary.
-
-#### Documentation Ascension
-- **README SOTA**: Updated features and installation guide for the new Dashboard era.
-- **CHANGELOG Alignment**: Full history synchronization with SOTA 2026 standards.
+## [0.5.0] - 2024-12-20
+### Version Initiale
+- **Moteur Core** : Optimisation haute performance du registre et des services.
+- **TUI v1** : Interface Ratatui avec navigation par onglets.
+- **Module Audit** : Rapports de configuration matérielle et de sécurité.

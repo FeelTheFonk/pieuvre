@@ -3,7 +3,9 @@
 //! Probes CPU, GPU, RAM, storage via native Windows APIs.
 //! GPU via DXGI for accurate VRAM, Storage via DeviceIoControl for NVMe/SSD.
 
-use pieuvre_common::{CpuInfo, GpuInfo, HardwareInfo, MemoryInfo, Result, StorageInfo};
+use pieuvre_common::{
+    CpuInfo, GpuInfo, HardwareInfo, MemoryInfo, PieuvreError, Result, StorageInfo,
+};
 #[cfg(target_arch = "x86_64")]
 use std::arch::x86_64::__cpuid;
 
@@ -174,7 +176,7 @@ fn probe_memory() -> Result<MemoryInfo> {
             ..Default::default()
         };
 
-        GlobalMemoryStatusEx(&mut status)?;
+        GlobalMemoryStatusEx(&mut status).map_err(PieuvreError::from)?;
 
         Ok(MemoryInfo {
             total_bytes: status.ullTotalPhys,

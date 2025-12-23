@@ -32,3 +32,4 @@ windows-sys.workspace = true
 # Registry parsing
 nt_hive2.workspace = true
 memmap2.workspace = true
+winreg.workspace = true

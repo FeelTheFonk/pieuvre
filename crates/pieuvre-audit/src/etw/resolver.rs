@@ -1,4 +1,4 @@
-//! Driver Resolver SOTA 2026
+//! Driver Resolver
 //!
 //! Mappe les adresses de routine noyau aux noms de drivers (.sys).
 

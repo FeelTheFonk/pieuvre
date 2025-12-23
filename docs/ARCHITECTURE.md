@@ -38,17 +38,34 @@ pieuvre-cli
 
 ---
 
-## Data Flow
+- **User-Mode (Rust)** : Orchestration, détection YARA, snapshots compressés (Zstd), interface CLI/TUI.
 
+### Data Flow
+
+```mermaid
+graph TD
+    A[CLI/TUI] -- Scan --> C[YaraScanner]
+    C -- Rules --> D{Detection?}
+    D -- Yes --> E[Snapshot Engine]
+    D -- Yes --> F[Hardening Engine]
+    E -- Save --> G[(Snapshots Zstd)]
+    F -- Lock --> H[Registry/Services]
 ```
-[User Command] ──> [CLI Parser] ──> [Audit Engine]
-                                          │
-                                          ▼
-                                [Optimization Logic]
-                                          │
-                                          ▼
-                                 [Optimization Engine] ──> [Snapshot] ──> [Apply Changes]
-```
+
+---
+
+## Architecture TUI (v0.6.0+)
+
+L'interface utilisateur a été refactorisée vers un modèle **Component-Based** pour une fluidité et une clarté maximales.
+
+### Component Model
+Chaque vue est un composant autonome implémentant le trait `Component`. Le rendu est orchestré par une boucle centrale dans `ui.rs` qui distribue les zones de rendu (`Rect`) aux composants.
+
+### Navigation Drill-down
+Le système utilise une pile de navigation (`nav_stack`) permettant une exploration hiérarchique profonde sans surcharge cognitive.
+
+### HUD Mode
+Les logs et métriques sont gérés en surimpression (Overlay) pour maximiser l'espace de travail utile.
 
 ---
 
@@ -57,7 +74,7 @@ pieuvre-cli
 Le Dashboard utilise un modèle de communication asynchrone pour garantir une UI fluide (60 FPS) :
 - **Tokio Tasks** : Les opérations lourdes sont déportées dans des tâches de fond.
 - **MPSC Channels** : Les logs et statuts d'exécution sont transmis via des canaux asynchrones.
-- **Event Loop** : Gestion non-bloquante des événements clavier et du rendu Ratatui.
+- **Event Loop** : Gestion non-bloquante des événements clavier et du rendu Ratatui via un `Store` centralisé (Phase 2).
 
 ---
 

@@ -1,6 +1,6 @@
 # pieuvre-audit
 
-Read-only system inspection engine SOTA.
+Read-only system inspection engine.
 
 ---
 

@@ -4,6 +4,8 @@
 
 mod commands;
 
+use pieuvre_common::Result;
+
 #[cfg(test)]
 mod tests;
 
@@ -82,7 +84,7 @@ enum Commands {
 }
 
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> Result<()> {
     let cli = Cli::parse();
 
     // Logging configuration
@@ -99,15 +101,16 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     match cli.command {
-        // Default to interactive mode if no command provided
-        None => commands::interactive::dashboard::run_dashboard().await,
+        // Launch SOTA Interactive Mode by default
+        None => commands::interactive::tui::run().await,
         Some(Commands::Audit { full, output }) => {
             commands::audit::run(full, output, None).map(|_| ())
         }
         Some(Commands::Status { live }) => commands::status::run(live),
         Some(Commands::Rollback { list, last, id }) => commands::rollback::run(list, last, id),
         Some(Commands::Verify { repair }) => commands::verify::run(repair),
-        Some(Commands::Interactive) => commands::interactive::dashboard::run_dashboard().await,
+
+        Some(Commands::Interactive) => commands::interactive::tui::run().await,
         Some(Commands::Completions { shell }) => commands::completions::run(shell),
     }
 }

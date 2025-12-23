@@ -13,6 +13,7 @@ pub struct AuditReport {
     pub hardware: HardwareInfo,
     pub services: Vec<ServiceInfo>,
     pub telemetry: TelemetryStatus,
+    pub security: SecurityAudit,
     pub latency: Option<LatencyReport>,
     pub appx: Vec<AppxInfo>,
 }
@@ -128,6 +129,18 @@ pub struct TelemetryStatus {
     pub cortana_enabled: bool,
     pub web_search_enabled: bool,
     pub error_reporting_enabled: bool,
+}
+
+/// Security audit status
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SecurityAudit {
+    pub defender_enabled: bool,
+    pub tamper_protection: bool,
+    pub firewall_enabled: bool,
+    pub uac_level: u32,
+    pub secure_boot: bool,
+    pub credential_guard: bool,
+    pub bitlocker_active: bool,
 }
 
 /// DPC/ISR latency report

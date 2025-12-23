@@ -2,12 +2,12 @@ use std::path::Path;
 
 fn main() {
     if std::env::var("CARGO_CFG_TARGET_OS").unwrap() == "windows" {
-        // SOTA 2026: Auto-generate ICO from Premium PNG
-        let png_path = "icon_premium.png";
+        // Auto-generate ICO from PNG
+        let png_path = "icon.png";
         let ico_path = "icon.ico";
 
         if Path::new(png_path).exists() {
-            let img = image::open(png_path).expect("Failed to open premium icon PNG");
+            let img = image::open(png_path).expect("Failed to open icon PNG");
             let icon_dir = {
                 let mut dir = ico::IconDir::new(ico::ResourceType::Icon);
                 for size in [16, 32, 48, 64, 128, 256] {

@@ -32,7 +32,7 @@ pub fn remove_package(name: &str) -> Result<()> {
     Ok(())
 }
 
-/// Liste des bloatware a supprimer (SOTA - base Win11Debloat)
+/// Liste des bloatware a supprimer
 const BLOATWARE: &[&str] = &[
     // Bing apps
     "Microsoft.BingNews",

@@ -2,9 +2,9 @@
 //!
 //! Complete system audit with automatic report generation.
 
-use anyhow::Result;
 use chrono::Local;
 use pieuvre_common::AuditReport;
+use pieuvre_common::Result;
 use std::fs;
 use std::path::PathBuf;
 

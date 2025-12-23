@@ -1,11 +1,11 @@
-# Telemetry Domains - pieuvre SOTA 2026
+# Telemetry Domains - pieuvre
 #
 # Liste des domaines Microsoft à bloquer pour la télémétrie.
 # Format: un domaine par ligne, commentaires avec #
 #
 # Sources:
 # - Microsoft documentation
-# - Sophia Script reference
+# - Community research
 # - Community research
 
 # === Telemetry Core ===

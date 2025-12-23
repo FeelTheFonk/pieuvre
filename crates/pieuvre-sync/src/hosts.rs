@@ -9,7 +9,7 @@ const HOSTS_PATH: &str = r"C:\Windows\System32\drivers\etc\hosts";
 const PIEUVRE_MARKER_START: &str = "# === PIEUVRE TELEMETRY BLOCK START ===";
 const PIEUVRE_MARKER_END: &str = "# === PIEUVRE TELEMETRY BLOCK END ===";
 
-/// Telemetry domains to block via hosts (SOTA - privacy.sexy reference)
+/// Telemetry domains to block via hosts
 const TELEMETRY_HOSTS: &[&str] = &[
     // Core telemetry
     "vortex.data.microsoft.com",

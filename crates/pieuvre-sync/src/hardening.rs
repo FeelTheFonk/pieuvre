@@ -1,4 +1,4 @@
-//! Registry Hardening SOTA 2026
+//! Registry Hardening
 //!
 //! Verrouillage des clés de registre via ACLs pour empêcher les réinitialisations.
 //! Utilise SDDL (Security Descriptor Definition Language) pour une précision maximale.
@@ -19,7 +19,7 @@ use windows::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
 
 const SDDL_REVISION_1: u32 = 1;
 
-/// Verrouille une clé de registre en lecture seule (SOTA)
+/// Verrouille une clé de registre en lecture seule
 /// SDDL: D:P(A;;KR;;;WD)(A;;KA;;;SY) -> Allow Read (KR) to Everyone (WD), Full Control (KA) to SYSTEM (SY)
 pub fn lock_registry_key(key_path: &str) -> Result<()> {
     apply_sddl(key_path, "D:P(A;;KR;;;WD)(A;;KA;;;SY)")
@@ -33,7 +33,7 @@ pub fn unlock_registry_key(key_path: &str) -> Result<()> {
     apply_sddl(key_path, "D:P(A;;KA;;;WD)(A;;KA;;;SY)")
 }
 
-/// Verrouille un service (SOTA)
+/// Verrouille un service
 /// Empêche l'arrêt et la modification par tout le monde sauf SYSTEM
 pub fn lock_service(service_name: &str) -> Result<()> {
     apply_sddl_service(service_name, "D:P(A;;LCRP;;;WD)(A;;KA;;;SY)")
@@ -206,7 +206,33 @@ fn enable_privilege(privilege_name: &str) -> Result<()> {
     }
 }
 
-/// Clés critiques à verrouiller (SOTA 2026)
+/// Active la protection PPL (Protected Process Light) pour le processus actuel
+/// Nécessite que le binaire soit signé avec un certificat ELAM ou spécifique.
+pub fn enable_ppl_protection() -> Result<()> {
+    unsafe {
+        use windows::Win32::System::Threading::{
+            ProcessProtectionLevelInfo, SetProcessInformation,
+            PROCESS_PROTECTION_LEVEL_INFORMATION, PROTECTION_LEVEL_NONE,
+        };
+
+        let mut protection = PROCESS_PROTECTION_LEVEL_INFORMATION {
+            ProtectionLevel: PROTECTION_LEVEL_NONE, // Base level
+        };
+
+        SetProcessInformation(
+            GetCurrentProcess(),
+            ProcessProtectionLevelInfo,
+            &mut protection as *mut _ as *mut _,
+            std::mem::size_of::<PROCESS_PROTECTION_LEVEL_INFORMATION>() as u32,
+        )
+        .map_err(|e| PieuvreError::Internal(format!("Failed to set PPL protection: {}", e)))?;
+
+        tracing::info!("Protection PPL activée");
+        Ok(())
+    }
+}
+
+/// Clés critiques à verrouiller
 pub const CRITICAL_KEYS: &[&str] = &[
     r"SYSTEM\CurrentControlSet\Control\PriorityControl",
     r"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management",
@@ -219,14 +245,14 @@ pub const CRITICAL_KEYS: &[&str] = &[
     r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows\AppInit_DLLs",
     r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon",
     r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\ShellServiceObjectDelayLoad",
-    // AI & DNS SOTA 2026
+    // AI & DNS
     r"SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
     r"SOFTWARE\Microsoft\Windows\CurrentVersion\AI\DataAnalysis",
     r"SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot",
     r"SYSTEM\CurrentControlSet\Services\Dnscache\Parameters",
 ];
 
-/// Services critiques à verrouiller (SOTA 2026)
+/// Services critiques à verrouiller
 pub const CRITICAL_SERVICES: &[&str] = &[
     "DiagTrack",
     "SysMain",

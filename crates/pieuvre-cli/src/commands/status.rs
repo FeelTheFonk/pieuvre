@@ -1,9 +1,9 @@
 //! Status command
 //!
-//! Real-time dashboard displaying the state of the 9 optimization sections.
+//! Real-time dashboard displaying the state of the optimization sections.
 
-use anyhow::Result;
 use console::style;
+use pieuvre_common::Result;
 use pieuvre_sync::timer;
 
 pub fn run(live: bool) -> Result<()> {
@@ -84,6 +84,7 @@ fn render_dashboard() -> Result<()> {
     println!("    GPU MSI Mode:      {}", msi_status);
 
     match pieuvre_audit::registry::read_dword_value(
+        windows::Win32::System::Registry::HKEY_LOCAL_MACHINE,
         r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile",
         "SystemResponsiveness",
     ) {
@@ -94,7 +95,7 @@ fn render_dashboard() -> Result<()> {
 
     // 2. TELEMETRY & PRIVACY
     println!("  {}", style("PRIVACY & TELEMETRY").bold().underlined());
-    match pieuvre_audit::registry::get_telemetry_status() {
+    match pieuvre_audit::security::get_telemetry_status() {
         Ok(status) => {
             let diag = if status.diagtrack_enabled {
                 style("ACTIVE").red()
@@ -145,18 +146,15 @@ fn render_dashboard() -> Result<()> {
     println!();
 
     // 3. SECURITY & HARDENING
-    println!(
-        "  {}",
-        style("SECURITY & APEX HARDENING").bold().underlined()
-    );
+    println!("  {}", style("SECURITY & HARDENING").bold().underlined());
 
     // Sentinel Status
     println!(
         "    Sentinel Engine:   {}",
-        style("ACTIVE / LOCKED").green().bold()
+        style("READY (Manual)").yellow()
     );
 
-    let defender = pieuvre_audit::registry::get_defender_status().ok();
+    let defender = pieuvre_audit::security::run_security_audit().ok();
     if let Some(d) = defender {
         let tp = if d.tamper_protection {
             style("ON").green()
@@ -165,9 +163,9 @@ fn render_dashboard() -> Result<()> {
         };
         println!("    Tamper Protection: {}", tp);
     }
-    let uac = pieuvre_audit::registry::get_uac_status().ok();
+    let uac = pieuvre_audit::security::run_security_audit().ok();
     if let Some(u) = uac {
-        let uac_st = if u.enabled {
+        let uac_st = if u.uac_level > 0 {
             style("ON").green()
         } else {
             style("OFF").red()

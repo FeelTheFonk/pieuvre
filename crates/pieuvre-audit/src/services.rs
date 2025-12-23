@@ -184,7 +184,7 @@ pub fn inspect_services() -> Result<Vec<ServiceInfo>> {
 }
 
 /// Retrieves the real start type of a service via QueryServiceConfigW
-fn get_service_start_type(
+pub(crate) fn get_service_start_type(
     scm: windows::Win32::System::Services::SC_HANDLE,
     name: &str,
 ) -> ServiceStartType {
@@ -327,4 +327,17 @@ pub fn get_safe_to_disable(services: &[ServiceInfo]) -> Vec<&ServiceInfo> {
             ) && s.start_type != ServiceStartType::Disabled
         })
         .collect()
+}
+/// Returns the start type of a service by its name.
+pub fn get_service_start_type_by_name(name: &str) -> ServiceStartType {
+    unsafe {
+        let scm = match OpenSCManagerW(PCWSTR::null(), PCWSTR::null(), SC_MANAGER_ENUMERATE_SERVICE)
+        {
+            Ok(handle) => handle,
+            Err(_) => return ServiceStartType::Unknown,
+        };
+        let start_type = get_service_start_type(scm, name);
+        let _ = CloseServiceHandle(scm);
+        start_type
+    }
 }

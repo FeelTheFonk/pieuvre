@@ -1,7 +1,7 @@
 //! Firewall Rules
 //!
 //! Création de règles Windows Firewall pour bloquer la télémétrie.
-//! Utilise l'interface COM INetFwPolicy2 pour une gestion native SOTA.
+//! Utilise l'interface COM INetFwPolicy2 pour une gestion native.
 
 use pieuvre_common::{PieuvreError, Result};
 use windows::core::BSTR;
@@ -14,7 +14,7 @@ use windows::Win32::System::Com::{
     CoCreateInstance, CoInitializeEx, CLSCTX_ALL, COINIT_MULTITHREADED,
 };
 
-/// Domaines télémétrie Microsoft à bloquer (SOTA)
+/// Domaines télémétrie Microsoft à bloquer
 const TELEMETRY_DOMAINS: &[&str] = &[
     // Telemetry core
     "vortex.data.microsoft.com",
@@ -82,7 +82,7 @@ pub struct FirewallRule {
     pub enabled: bool,
 }
 
-/// Crée les règles firewall pour bloquer la télémétrie via API COM (SOTA Native)
+/// Crée les règles firewall pour bloquer la télémétrie via API COM (Native)
 pub fn create_telemetry_block_rules() -> Result<Vec<String>> {
     unsafe {
         let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
@@ -103,7 +103,7 @@ pub fn create_telemetry_block_rules() -> Result<Vec<String>> {
         rule.SetName(&BSTR::from(rule_name))
             .map_err(|e| PieuvreError::Internal(e.to_string()))?;
         rule.SetDescription(&BSTR::from(
-            "Bloque les IPs de télémétrie Microsoft (pieuvre SOTA)",
+            "Bloque les IPs de télémétrie Microsoft (pieuvre)",
         ))
         .map_err(|e| PieuvreError::Internal(e.to_string()))?;
         rule.SetDirection(NET_FW_RULE_DIR_OUT)

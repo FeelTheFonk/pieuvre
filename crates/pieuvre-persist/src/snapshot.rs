@@ -242,6 +242,12 @@ pub fn list_all() -> Result<Vec<Snapshot>> {
     Ok(snapshots)
 }
 
+/// Loads a snapshot by ID
+pub fn load(id: &str) -> Result<Snapshot> {
+    let dir = PathBuf::from(SNAPSHOT_DIR);
+    load_compressed(&dir, id)
+}
+
 /// Restores a snapshot (applies original values)
 pub fn restore(id: &str) -> Result<()> {
     let dir = PathBuf::from(SNAPSHOT_DIR);
@@ -323,19 +329,8 @@ pub fn restore(id: &str) -> Result<()> {
                     "Restoring service"
                 );
 
-                let result = match *original_start_type {
-                    2 => pieuvre_sync::services::set_service_automatic(name),
-                    3 => pieuvre_sync::services::set_service_manual(name),
-                    4 => pieuvre_sync::services::disable_service(name),
-                    _ => {
-                        tracing::warn!(
-                            service = name,
-                            start_type = original_start_type,
-                            "Unsupported start type"
-                        );
-                        Ok(())
-                    }
-                };
+                let result =
+                    pieuvre_sync::services::set_service_start_type(name, *original_start_type);
 
                 match result {
                     Ok(_) => {
