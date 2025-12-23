@@ -1,6 +1,6 @@
-//! Commande audit
+//! Audit command
 //!
-//! Audit complet du système avec sauvegarde automatique.
+//! Complete system audit with automatic report generation.
 
 use anyhow::Result;
 use chrono::Local;
@@ -10,10 +10,13 @@ use std::path::PathBuf;
 
 const OUTPUT_DIR: &str = r"C:\ProgramData\pieuvre\reports";
 
+/// Callback type for audit logging
+pub type AuditLogCallback<'a> = &'a mut dyn FnMut(&str, &str);
+
 pub fn run(
     full: bool,
     output: Option<String>,
-    mut log_cb: Option<&mut dyn FnMut(&str, &str)>,
+    mut log_cb: Option<AuditLogCallback>,
 ) -> Result<AuditReport> {
     if log_cb.is_none() {
         println!("\n╔══════════════════════════════════════════════════════════════════╗");
@@ -25,8 +28,8 @@ pub fn run(
         cb(
             "INFO",
             &format!(
-                "Démarrage audit (mode: {})",
-                if full { "Complet" } else { "Standard" }
+                "Starting audit (mode: {})",
+                if full { "Full" } else { "Standard" }
             ),
         );
     }
@@ -35,11 +38,11 @@ pub fn run(
 
     let json = serde_json::to_string_pretty(&report)?;
 
-    // Déterminer le chemin de sortie
+    // Determine output path
     let output_path = if let Some(path) = output {
         PathBuf::from(path)
     } else {
-        // Sauvegarde automatique
+        // Automatic backup
         fs::create_dir_all(OUTPUT_DIR)?;
         let timestamp = Local::now().format("%Y%m%d_%H%M%S");
         PathBuf::from(OUTPUT_DIR).join(format!("audit_{}.json", timestamp))
@@ -50,7 +53,7 @@ pub fn run(
     if let Some(ref mut cb) = log_cb {
         cb(
             "SUCCESS",
-            &format!("Audit terminé. Rapport : {}", output_path.display()),
+            &format!("Audit completed. Report: {}", output_path.display()),
         );
         cb(
             "INFO",
@@ -61,9 +64,9 @@ pub fn run(
         );
         cb("INFO", &format!("CPU: {}", report.hardware.cpu.model_name));
     } else {
-        // Afficher un résumé console classique
+        // Standard console summary
         println!("═══════════════════════════════════════════════════════════════════");
-        println!("                         RÉSUMÉ AUDIT");
+        println!("                         AUDIT SUMMARY");
         println!("═══════════════════════════════════════════════════════════════════");
         println!("  ID:         {}", report.id);
         println!("  Timestamp:  {}", report.timestamp);
@@ -76,10 +79,10 @@ pub fn run(
             "  RAM:        {:.1} GB",
             report.hardware.memory.total_bytes as f64 / 1024.0 / 1024.0 / 1024.0
         );
-        println!("  Services:   {} analysés", report.services.len());
+        println!("  Services:   {} analyzed", report.services.len());
         println!("  Packages:   {} Appx", report.appx.len());
         println!("═══════════════════════════════════════════════════════════════════");
-        println!("\n  [*] Rapport sauvegarde: {}", output_path.display());
+        println!("\n  [*] Report saved: {}", output_path.display());
     }
 
     Ok(report)

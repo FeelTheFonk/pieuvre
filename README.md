@@ -15,32 +15,32 @@ Windows system control and optimization tool. Full registry/service/network/powe
 
 ## Overview
 
-pieuvre is an advanced Windows optimization toolkit built in Rust, currently in its **0.5.0** phase.
+pieuvre is a Windows optimization toolkit built in Rust, currently in its **0.5.0** phase.
 
 Unlike batch scripts or registry tweaks, pieuvre:
 
-- **100% Native API Integration** - Zero reliance on external CLI tools (`netsh`, `powercfg`, etc.)
-- **Audits before modifying** - Full system state capture with deep ETW analysis
-- **Creates automatic snapshots** - Every change is reversible via `zstd` compressed backups
-- **System Monitoring** - Real-time monitoring and auto-restoration of critical system settings
-- **Hardware Detection** - Advanced detection for optimal DPC/ISR steering
-- **Advanced System Optimizations** - Advanced CPU Quantum, Working Set trimming, and TCP stack hardening
+- **Native API Integration** - Direct interaction with Windows APIs (no reliance on `netsh`, `powercfg`, etc.)
+- **Audit-First Approach** - System state analysis before any modification
+- **Automatic Snapshots** - Change tracking and rollback via `zstd` compressed backups
+- **System Monitoring** - Background monitoring and restoration of critical settings
+- **Hardware-Aware** - Optimization tailoring based on detected hardware
+- **System Tuning** - CPU Quantum, Working Set management, and network stack adjustments
 
-**Target Users**: Power users, gaming enthusiasts, privacy-focused users, system administrators.
+**Target Users**: Power users, system administrators, and enthusiasts.
 
 ---
 
 ## Features
 
-- **Audit Engine** - Hardware (DXGI GPU, SSD), services, telemetry (40+ keys), security scoring
-- **ETW Monitoring** - Real-time Kernel DPC/ISR latency capture with `DriverResolver`
-- **Security Audit** - Defender status, Firewall profiles, UAC, SecureBoot, HVCI/VBS detection
-- **Sync Engine** - 40+ optimization modules including **CPU Quantum**, **Memory Trimming**, and **TCP Hardening**
-- **Persistence Engine** - Snapshot creation & rollback (zstd compression + SHA256)
-- **Monitoring Engine** - Event-driven background monitoring & auto-restoration
-- **Hardening Engine** - Persistence vector protection and IFEO hardening
-- **Cleanup Engine** - Deep system cleaning (WinSxS via DISM, Temp, Edge, Windows Update)
-- **Interactive Mode** - 11 sections, 100+ granular options (Interactive TUI Dashboard)
+- **Audit Engine** - Hardware, services, telemetry, and security state analysis
+- **Latency Monitoring** - Kernel DPC/ISR latency capture via ETW
+- **Security Audit** - Defender, Firewall, UAC, and SecureBoot status detection
+- **Optimization Engine** - Modules for CPU, Memory, and Network tuning
+- **Persistence Engine** - Snapshot creation and rollback (zstd + SHA256)
+- **Monitoring Engine** - Event-driven background monitoring
+- **Hardening Engine** - System protection and IFEO management
+- **Cleanup Engine** - System maintenance (WinSxS, Temp, Windows Update)
+- **Interactive Mode** - Granular control via TUI Dashboard
 
 ---
 

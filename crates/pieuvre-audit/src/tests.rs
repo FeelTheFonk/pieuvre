@@ -1,6 +1,6 @@
-//! Tests unitaires pour pieuvre-audit
+//! Unit tests for pieuvre-audit
 //!
-//! Tests en mode dry-run/lecture seule pour valider toutes les fonctionnalités.
+//! Read-only/dry-run tests to validate all functionalities.
 
 use crate::{
     appx, full_audit, hardware, is_laptop, network, network_audit, registry, security,
@@ -19,7 +19,7 @@ fn test_probe_hardware_returns_valid_data() {
 
     let hw = result.unwrap();
 
-    // CPU doit avoir au moins 1 core
+    // CPU must have at least 1 core
     assert!(
         hw.cpu.logical_cores >= 1,
         "Should have at least 1 logical core"
@@ -30,7 +30,7 @@ fn test_probe_hardware_returns_valid_data() {
         "CPU model_name should not be empty"
     );
 
-    // RAM doit être > 0
+    // RAM must be > 0
     assert!(hw.memory.total_bytes > 0, "Total RAM should be > 0");
     assert!(hw.memory.available_bytes > 0, "Available RAM should be > 0");
     assert!(
@@ -41,7 +41,7 @@ fn test_probe_hardware_returns_valid_data() {
 
 #[test]
 fn test_is_laptop_returns_bool() {
-    // Test que la fonction ne panic pas
+    // Test that the function does not panic
     let _is_laptop = hardware::is_laptop();
 }
 
@@ -51,7 +51,7 @@ fn test_gpu_detection() {
     assert!(result.is_ok());
 
     let hw = result.unwrap();
-    // GPU peut être vide sur certains systèmes (VM sans GPU)
+    // GPU might be empty on some systems (VM without GPU)
     for gpu in &hw.gpu {
         assert!(!gpu.name.is_empty(), "GPU name should not be empty");
         assert!(!gpu.vendor.is_empty(), "GPU vendor should not be empty");
@@ -64,7 +64,7 @@ fn test_storage_detection() {
     assert!(result.is_ok());
 
     let hw = result.unwrap();
-    // Au moins un disque fixe attendu
+    // At least one fixed drive expected
     assert!(
         !hw.storage.is_empty(),
         "Should detect at least one storage device"
@@ -87,7 +87,7 @@ fn test_inspect_services_returns_list() {
     let svcs = result.unwrap();
     assert!(!svcs.is_empty(), "Should detect services");
 
-    // Ces services doivent exister sur tout Windows
+    // These services should exist on any Windows system
     let common_services = ["EventLog", "PlugPlay", "RpcSs"];
     for expected in common_services {
         assert!(
@@ -113,7 +113,7 @@ fn test_service_start_type_not_all_manual() {
     let total = svcs.len();
     let manual_ratio = manual_count as f64 / total as f64;
 
-    // Si > 80% sont Manual, c'est probablement un bug
+    // If > 80% are Manual, it's likely a bug
     assert!(
         manual_ratio < 0.8,
         "Too many services are Manual ({}/{})",
@@ -258,10 +258,10 @@ fn test_security_recommendations_valid() {
 fn test_score_to_grade() {
     assert_eq!(security::score_to_grade(100), "A - Excellent");
     assert_eq!(security::score_to_grade(95), "A - Excellent");
-    assert_eq!(security::score_to_grade(85), "B - Bon");
+    assert_eq!(security::score_to_grade(85), "B - Good");
     assert_eq!(security::score_to_grade(75), "C - Acceptable");
-    assert_eq!(security::score_to_grade(65), "D - Améliorable");
-    assert_eq!(security::score_to_grade(50), "F - Critique");
+    assert_eq!(security::score_to_grade(65), "D - Needs Improvement");
+    assert_eq!(security::score_to_grade(50), "F - Critical");
 }
 
 #[test]

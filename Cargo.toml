@@ -9,13 +9,13 @@ members = [
 ]
 
 [workspace.package]
-version = "0.5.0"
+version = "0.5.1"
 
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/pieuvre/pieuvre"
 authors = ["pieuvre Contributors"]
-description = "Outil SOTA d'alignement système Windows 11"
+description = "Windows 11 system alignment and optimization tool"
 readme = "README.md"
 keywords = ["windows", "optimization", "system", "gaming", "privacy"]
 categories = ["os::windows-apis", "config"]
@@ -35,7 +35,7 @@ tokio = { version = "1.42", features = ["full"] }
 async-trait = "0.1"
 once_cell = "1.19"
 
-# Windows APIs - SOTA 2026
+# Windows APIs
 windows = { version = "0.62", features = [
     "Win32_Foundation",
     "Win32_System_Registry",
@@ -61,14 +61,14 @@ windows-sys = "0.61"
 nt_hive2 = "4.2"
 memmap2 = "0.9"
 
-# CLI - SOTA 2026
+# CLI
 clap = { version = "4.5.23", features = ["derive", "env"] }
 clap_complete = "4.5"
 indicatif = "0.17"
 console = "0.15"
 dialoguer = "0.11"
 
-# Compression & Checksums - SOTA 2026
+# Compression & Checksums
 zstd = "0.13"
 sha2 = "0.10"
 

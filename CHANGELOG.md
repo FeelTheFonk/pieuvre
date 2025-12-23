@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2025-12-23
+### Sobriety & Harmonization
+- **Linguistic Standardization**: All code comments, console messages, and documentation translated from French to technical English across all crates.
+- **Marketing Jargon Eradication**: Systematic removal of superlatives and buzzwords ("SOTA", "2026", "Ultimate", "Ghost UI", etc.).
+- **Metadata Refinement**: Updated `Cargo.toml` descriptions and `README.md` for a factual, professional tone.
+- **CLI Consistency**: Unified command descriptions and help messages for `audit`, `status`, `verify`, and `rollback`.
+- **Code Quality**: Resolved Clippy warnings regarding type complexity in `pieuvre-cli` and improved error handling.
+- **Test Alignment**: Updated unit tests in `pieuvre-audit` to match the new professional security grades and English terminology.
+- **Build Optimization**: Hardened release profile with LTO, single codegen unit, and panic abort for production readiness.
+
 ## [0.5.0] - 2025-12-23
 ### Pinacle Total - Éradication des Profils
 - **Éradication Totale du Système de Profils** : Suppression des profils statiques (`gaming`, `workstation`, `privacy`) au profit d'une approche 100% granulaire via l'interface interactive.
@@ -18,9 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **UX**: Improved feedback loops with refined progress bars and confirmation prompts.
 
 ## [0.4.9] - 2025-12-23 (focus CLI)
-
 ### Added
-
 #### CLI Dashboard SOTA 2026
 - **Non-Linear Navigation**: Complete transformation of the CLI into a granular interactive Dashboard.
 - **Expert Identity**: Total eradication of emojis, replaced by professional ASCII symbols (`●`, `»`, `[OK]`, `[!]`).

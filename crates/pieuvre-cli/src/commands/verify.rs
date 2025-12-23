@@ -7,7 +7,7 @@ use anyhow::Result;
 pub fn run(repair: bool) -> Result<()> {
     println!();
     println!("================================================================");
-    println!("           PIEUVRE - Verification Integrite");
+    println!("           PIEUVRE - Integrity Verification");
     println!("================================================================");
     println!();
 
@@ -25,12 +25,12 @@ pub fn run(repair: bool) -> Result<()> {
                 println!("WARN ({:.2}ms > 0.5ms)", info.current_ms());
                 issues.push((
                     "Timer",
-                    format!("Resolution {:.2}ms, attendu 0.5ms", info.current_ms()),
+                    format!("Resolution {:.2}ms, expected 0.5ms", info.current_ms()),
                 ));
             }
         }
         Err(e) => {
-            println!("ERREUR: {}", e);
+            println!("ERROR: {}", e);
             issues.push(("Timer", e.to_string()));
         }
     }
@@ -46,12 +46,12 @@ pub fn run(repair: bool) -> Result<()> {
                 println!("WARN ({})", plan);
                 issues.push((
                     "Power",
-                    format!("Plan actif: {}, attendu High/Ultimate", plan),
+                    format!("Active plan: {}, expected High/Ultimate", plan),
                 ));
             }
         }
         Err(e) => {
-            println!("ERREUR: {}", e);
+            println!("ERROR: {}", e);
             issues.push(("Power", e.to_string()));
         }
     }
@@ -67,12 +67,12 @@ pub fn run(repair: bool) -> Result<()> {
                 println!("WARN (start_type={})", start_type);
                 issues.push((
                     "DiagTrack",
-                    format!("start_type={}, attendu 4 (Disabled)", start_type),
+                    format!("start_type={}, expected 4 (Disabled)", start_type),
                 ));
             }
         }
         Err(_) => {
-            println!("OK (non trouve)");
+            println!("OK (not found)");
             ok_count += 1;
         }
     }
@@ -83,8 +83,8 @@ pub fn run(repair: bool) -> Result<()> {
         println!("OK");
         ok_count += 1;
     } else {
-        println!("WARN (non active)");
-        issues.push(("MSI", "MSI Mode non active sur GPU".to_string()));
+        println!("WARN (not active)");
+        issues.push(("MSI", "MSI Mode not active on GPU".to_string()));
     }
 
     // Verification Firewall rules
@@ -95,12 +95,12 @@ pub fn run(repair: bool) -> Result<()> {
                 println!("OK ({} regles)", rules.len());
                 ok_count += 1;
             } else {
-                println!("WARN (aucune regle)");
-                issues.push(("Firewall", "Aucune regle pieuvre active".to_string()));
+                println!("WARN (no rules)");
+                issues.push(("Firewall", "No pieuvre rules active".to_string()));
             }
         }
         Err(e) => {
-            println!("ERREUR: {}", e);
+            println!("ERROR: {}", e);
             issues.push(("Firewall", e.to_string()));
         }
     }
@@ -119,7 +119,7 @@ pub fn run(repair: bool) -> Result<()> {
                 println!("WARN (0x{:02X})", value);
                 issues.push((
                     "Scheduler",
-                    format!("Win32PrioritySeparation=0x{:02X}, attendu 0x26", value),
+                    format!("Win32PrioritySeparation=0x{:02X}, expected 0x26", value),
                 ));
             }
         }
@@ -143,13 +143,13 @@ pub fn run(repair: bool) -> Result<()> {
                 println!("WARN ({}%)", value);
                 issues.push((
                     "MMCSS",
-                    format!("SystemResponsiveness={}%, attendu 10%", value),
+                    format!("SystemResponsiveness={}%, expected 10%", value),
                 ));
             }
         }
         Err(_) => {
-            println!("WARN (non configure)");
-            issues.push(("MMCSS", "SystemResponsiveness non configure".to_string()));
+            println!("WARN (not configured)");
+            issues.push(("MMCSS", "SystemResponsiveness not configured".to_string()));
         }
     }
 
@@ -167,28 +167,28 @@ pub fn run(repair: bool) -> Result<()> {
                 println!("WARN (0x{:08X})", value);
                 issues.push((
                     "NetworkThrottle",
-                    format!("NetworkThrottlingIndex=0x{:08X}, attendu OFF", value),
+                    format!("NetworkThrottlingIndex=0x{:08X}, expected OFF", value),
                 ));
             }
         }
         Err(_) => {
-            println!("WARN (non configure)");
-            issues.push(("NetworkThrottle", "Non configure".to_string()));
+            println!("WARN (not configured)");
+            issues.push(("NetworkThrottle", "Not configured".to_string()));
         }
     }
 
     // Resume
     println!();
     println!("================================================================");
-    println!("                      RESUME");
+    println!("                      SUMMARY");
     println!("================================================================");
     println!();
     println!("  Verifications OK: {}", ok_count);
-    println!("  Problemes:        {}", issues.len());
+    println!("  Issues:           {}", issues.len());
 
     if !issues.is_empty() {
         println!();
-        println!("  Problemes detectes:");
+        println!("  Issues detected:");
         for (name, desc) in &issues {
             println!("    - {}: {}", name, desc);
         }
@@ -196,16 +196,16 @@ pub fn run(repair: bool) -> Result<()> {
 
     if repair && !issues.is_empty() {
         println!();
-        println!("[*] Mode reparation active...");
-        println!("    Exécutez 'pieuvre interactive' pour corriger");
+        println!("[*] Repair mode active...");
+        println!("    Run 'pieuvre interactive' to fix issues");
     }
 
     println!();
 
     if issues.is_empty() {
-        println!("[OK] Toutes les verifications passees avec succes.");
+        println!("[OK] All verifications passed successfully.");
     } else {
-        println!("[!] {} probleme(s) detecte(s).", issues.len());
+        println!("[!] {} issue(s) detected.", issues.len());
     }
 
     Ok(())

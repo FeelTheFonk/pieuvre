@@ -1,7 +1,7 @@
-//! Gestion des snapshots SOTA 2026
+//! Snapshot Management
 //!
-//! Sauvegarde et restauration des modifications.
-//! Compression zstd et validation checksums SHA256.
+//! Backup and restoration of system modifications.
+//! zstd compression and SHA256 checksum validation.
 
 use chrono::Utc;
 use pieuvre_common::{ChangeRecord, PieuvreError, Result, Snapshot};
@@ -17,7 +17,7 @@ const DEFAULT_MAX_SNAPSHOTS: usize = 10;
 // SNAPSHOT CREATION
 // ============================================
 
-/// Crée un nouveau snapshot avec compression et checksum
+/// Creates a new snapshot with compression and checksum
 pub fn create(description: &str, changes: Vec<ChangeRecord>) -> Result<Snapshot> {
     let snapshot = Snapshot {
         id: Uuid::new_v4(),
@@ -29,37 +29,37 @@ pub fn create(description: &str, changes: Vec<ChangeRecord>) -> Result<Snapshot>
     let dir = PathBuf::from(SNAPSHOT_DIR);
     fs::create_dir_all(&dir)?;
 
-    // Sérialiser en JSON
+    // Serialize to JSON
     let json =
         serde_json::to_string_pretty(&snapshot).map_err(|e| PieuvreError::Parse(e.to_string()))?;
 
-    // Sauvegarder avec compression
+    // Save with compression
     save_compressed(&dir, &snapshot.id.to_string(), json.as_bytes())?;
 
-    // Rotation automatique
+    // Automatic rotation
     rotate_snapshots(&dir)?;
 
-    tracing::info!(id = %snapshot.id, description = %snapshot.description, "Snapshot créé");
+    tracing::info!(id = %snapshot.id, description = %snapshot.description, "Snapshot created");
     Ok(snapshot)
 }
 
-/// Sauvegarde les données avec compression zstd et checksum SHA256
+/// Saves data with zstd compression and SHA256 checksum
 fn save_compressed(dir: &Path, id: &str, data: &[u8]) -> Result<()> {
-    // Calculer checksum SHA256
+    // Calculate SHA256 checksum
     let mut hasher = Sha256::new();
     hasher.update(data);
     let checksum = hasher.finalize();
     let checksum_hex = hex_encode(&checksum);
 
-    // Compresser avec zstd (niveau 3 = bon ratio taille/vitesse)
+    // Compress with zstd (level 3 = good size/speed ratio)
     let compressed =
         zstd::encode_all(data, 3).map_err(|e| PieuvreError::Io(std::io::Error::other(e)))?;
 
-    // Sauvegarder fichier compressé
+    // Save compressed file
     let path = dir.join(format!("{}.json.zst", id));
     fs::write(&path, &compressed)?;
 
-    // Sauvegarder checksum
+    // Save checksum
     let checksum_path = dir.join(format!("{}.sha256", id));
     fs::write(&checksum_path, &checksum_hex)?;
 
@@ -68,31 +68,31 @@ fn save_compressed(dir: &Path, id: &str, data: &[u8]) -> Result<()> {
         original_size = data.len(),
         compressed_size = compressed.len(),
         ratio = format!("{:.1}x", data.len() as f64 / compressed.len() as f64),
-        "Snapshot compressé"
+        "Snapshot compressed"
     );
 
     Ok(())
 }
 
-/// Charge un snapshot avec décompression et validation checksum
+/// Loads a snapshot with decompression and checksum validation
 fn load_compressed(dir: &Path, id: &str) -> Result<Snapshot> {
-    // Chercher fichier compressé ou non-compressé (rétro-compatibilité)
+    // Look for compressed or uncompressed file (backward compatibility)
     let zst_path = dir.join(format!("{}.json.zst", id));
     let json_path = dir.join(format!("{}.json", id));
 
     let data = if zst_path.exists() {
-        // Fichier compressé
+        // Compressed file
         let compressed = fs::read(&zst_path)?;
         zstd::decode_all(compressed.as_slice())
             .map_err(|e| PieuvreError::Parse(format!("Decompression failed: {}", e)))?
     } else if json_path.exists() {
-        // Fichier JSON non-compressé (ancienne version)
+        // Uncompressed JSON file (legacy)
         fs::read(&json_path)?
     } else {
         return Err(PieuvreError::SnapshotNotFound(id.to_string()));
     };
 
-    // Valider checksum si présent
+    // Validate checksum if present
     let checksum_path = dir.join(format!("{}.sha256", id));
     if checksum_path.exists() {
         let expected = fs::read_to_string(&checksum_path)?;
@@ -108,7 +108,7 @@ fn load_compressed(dir: &Path, id: &str) -> Result<Snapshot> {
                 actual
             )));
         }
-        tracing::debug!(id = id, "Checksum validé");
+        tracing::debug!(id = id, "Checksum validated");
     }
 
     let snapshot: Snapshot =
@@ -117,7 +117,7 @@ fn load_compressed(dir: &Path, id: &str) -> Result<Snapshot> {
     Ok(snapshot)
 }
 
-/// Encode bytes en hex string
+/// Encodes bytes to hex string
 fn hex_encode(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{:02x}", b)).collect()
 }
@@ -126,7 +126,7 @@ fn hex_encode(bytes: &[u8]) -> String {
 // ROTATION AUTOMATIQUE
 // ============================================
 
-/// Rotation automatique des snapshots (garde les N plus récents)
+/// Automatic snapshot rotation (keeps N most recent)
 fn rotate_snapshots(dir: &Path) -> Result<()> {
     let mut snapshots = list_all_internal(dir)?;
 
@@ -134,26 +134,26 @@ fn rotate_snapshots(dir: &Path) -> Result<()> {
         return Ok(());
     }
 
-    // Trier par date (plus récent en premier)
+    // Sort by date (most recent first)
     snapshots.sort_by(|a, b| b.1.cmp(&a.1));
 
-    // Supprimer les plus anciens
+    // Remove oldest
     let to_remove = snapshots.len() - DEFAULT_MAX_SNAPSHOTS;
     for (id, _) in snapshots.iter().skip(DEFAULT_MAX_SNAPSHOTS) {
         let _ = delete_by_id(dir, id);
-        tracing::debug!(id = id, "Snapshot supprimé (rotation)");
+        tracing::debug!(id = id, "Snapshot deleted (rotation)");
     }
 
     tracing::info!(
         removed = to_remove,
         max = DEFAULT_MAX_SNAPSHOTS,
-        "Rotation snapshots"
+        "Snapshot rotation"
     );
 
     Ok(())
 }
 
-/// Liste interne retournant (id, timestamp)
+/// Internal list returning (id, timestamp)
 fn list_all_internal(dir: &Path) -> Result<Vec<(String, chrono::DateTime<Utc>)>> {
     if !dir.exists() {
         return Ok(Vec::new());
@@ -175,7 +175,7 @@ fn list_all_internal(dir: &Path) -> Result<Vec<(String, chrono::DateTime<Utc>)>>
             continue;
         };
 
-        // Essayer de charger pour obtenir le timestamp
+        // Try to load to get timestamp
         if let Ok(snapshot) = load_compressed(dir, id) {
             snapshots.push((id.to_string(), snapshot.timestamp));
         }
@@ -184,7 +184,7 @@ fn list_all_internal(dir: &Path) -> Result<Vec<(String, chrono::DateTime<Utc>)>>
     Ok(snapshots)
 }
 
-/// Supprime un snapshot par ID
+/// Deletes a snapshot by ID
 fn delete_by_id(dir: &Path, id: &str) -> Result<()> {
     let zst_path = dir.join(format!("{}.json.zst", id));
     let json_path = dir.join(format!("{}.json", id));
@@ -207,7 +207,7 @@ fn delete_by_id(dir: &Path, id: &str) -> Result<()> {
 // API PUBLIQUE
 // ============================================
 
-/// Liste tous les snapshots
+/// Lists all snapshots
 pub fn list_all() -> Result<Vec<Snapshot>> {
     let dir = PathBuf::from(SNAPSHOT_DIR);
 
@@ -236,17 +236,17 @@ pub fn list_all() -> Result<Vec<Snapshot>> {
         }
     }
 
-    // Trier par date décroissante
+    // Sort by date descending
     snapshots.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
 
     Ok(snapshots)
 }
 
-/// Restaure un snapshot (applique les valeurs originales)
+/// Restores a snapshot (applies original values)
 pub fn restore(id: &str) -> Result<()> {
     let dir = PathBuf::from(SNAPSHOT_DIR);
 
-    // Chercher snapshot qui commence par l'ID fourni
+    // Search for snapshot starting with provided ID
     let mut found_id: Option<String> = None;
 
     if dir.exists() {
@@ -272,7 +272,7 @@ pub fn restore(id: &str) -> Result<()> {
     let snapshot_id = found_id.ok_or_else(|| PieuvreError::SnapshotNotFound(id.to_string()))?;
     let snapshot = load_compressed(&dir, &snapshot_id)?;
 
-    tracing::info!(id = %snapshot.id, "Restauration snapshot");
+    tracing::info!(id = %snapshot.id, "Restoring snapshot");
 
     let mut restored = 0;
     let mut errors = 0;
@@ -285,9 +285,9 @@ pub fn restore(id: &str) -> Result<()> {
                 value_type: _,
                 original_data,
             } => {
-                tracing::debug!(key = key, value_name = value_name, "Restauration registre");
+                tracing::debug!(key = key, value_name = value_name, "Restoring registry");
 
-                // Restaurer la valeur DWORD originale si possible
+                // Restore original DWORD value if possible
                 if original_data.len() == 4 {
                     let value = u32::from_le_bytes([
                         original_data[0],
@@ -302,12 +302,12 @@ pub fn restore(id: &str) -> Result<()> {
                                 key = key,
                                 value_name = value_name,
                                 value = value,
-                                "Registry restauré"
+                                "Registry restored"
                             );
                             restored += 1;
                         }
                         Err(e) => {
-                            tracing::warn!(key = key, error = %e, "Échec restauration registry");
+                            tracing::warn!(key = key, error = %e, "Registry restoration failed");
                             errors += 1;
                         }
                     }
@@ -320,7 +320,7 @@ pub fn restore(id: &str) -> Result<()> {
                 tracing::debug!(
                     service = name,
                     start_type = original_start_type,
-                    "Restauration service"
+                    "Restoring service"
                 );
 
                 let result = match *original_start_type {
@@ -331,7 +331,7 @@ pub fn restore(id: &str) -> Result<()> {
                         tracing::warn!(
                             service = name,
                             start_type = original_start_type,
-                            "Start type non supporté"
+                            "Unsupported start type"
                         );
                         Ok(())
                     }
@@ -342,28 +342,28 @@ pub fn restore(id: &str) -> Result<()> {
                         tracing::info!(
                             service = name,
                             start_type = original_start_type,
-                            "Service restauré"
+                            "Service restored"
                         );
                         restored += 1;
                     }
                     Err(e) => {
-                        tracing::warn!(service = name, error = %e, "Échec restauration service");
+                        tracing::warn!(service = name, error = %e, "Service restoration failed");
                         errors += 1;
                     }
                 }
             }
             ChangeRecord::FirewallRule { name } => {
-                tracing::debug!(rule = name, "Suppression règle firewall");
+                tracing::debug!(rule = name, "Removing firewall rule");
 
                 if let Err(e) = pieuvre_sync::firewall::remove_pieuvre_rules() {
-                    tracing::warn!(rule = name, error = %e, "Échec suppression règle");
+                    tracing::warn!(rule = name, error = %e, "Rule removal failed");
                     errors += 1;
                 } else {
                     restored += 1;
                 }
             }
             ChangeRecord::AppX { package_full_name } => {
-                tracing::debug!(package = package_full_name, "Restauration AppX (no-op)");
+                tracing::debug!(package = package_full_name, "Restoring AppX (no-op)");
                 restored += 1;
             }
         }
@@ -372,21 +372,21 @@ pub fn restore(id: &str) -> Result<()> {
     tracing::info!(
         restored = restored,
         errors = errors,
-        "Restauration terminée"
+        "Restoration completed"
     );
 
     if errors > 0 {
-        tracing::warn!(errors = errors, "Certaines restaurations ont échoué");
+        tracing::warn!(errors = errors, "Some restorations failed");
     }
 
     Ok(())
 }
 
-/// Supprime un snapshot
+/// Deletes a snapshot
 pub fn delete(id: &str) -> Result<()> {
     let dir = PathBuf::from(SNAPSHOT_DIR);
 
-    // Chercher fichier correspondant
+    // Search for corresponding file
     let zst_path = dir.join(format!("{}.json.zst", id));
     let json_path = dir.join(format!("{}.json", id));
     let exists = zst_path.exists() || json_path.exists();
@@ -397,11 +397,11 @@ pub fn delete(id: &str) -> Result<()> {
 
     delete_by_id(&dir, id)?;
 
-    tracing::info!(id = id, "Snapshot supprimé");
+    tracing::info!(id = id, "Snapshot deleted");
     Ok(())
 }
 
-/// Retourne le chemin du répertoire snapshots
+/// Returns the snapshot directory path
 pub fn get_snapshot_dir() -> PathBuf {
     PathBuf::from(SNAPSHOT_DIR)
 }

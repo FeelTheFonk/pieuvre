@@ -15,9 +15,9 @@ use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 #[command(name = "pieuvre")]
 #[command(author = "pieuvre Contributors")]
 #[command(version)]
-#[command(about = "Advanced Windows 11 system alignment tool")]
+#[command(about = "Windows 11 system alignment tool")]
 #[command(
-    long_about = "Advanced Windows 11 system alignment tool.\n\nRun without arguments for guided interactive mode."
+    long_about = "Windows 11 system alignment tool.\n\nRun without arguments for guided interactive mode."
 )]
 struct Cli {
     /// Verbosity level (-v, -vv, -vvv)

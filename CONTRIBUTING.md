@@ -32,7 +32,7 @@ cargo build
 # Standard tests
 cargo test
 
-# SOTA tests (recommended)
+# Integration tests (recommended)
 cargo nextest run
 ```
 

@@ -47,8 +47,8 @@ fn render_dashboard() -> Result<()> {
     // 1. HARDWARE & KERNEL
     println!("  {}", style("KERNEL & LATENCY").bold().underlined());
 
-    // Timer SOTA Check (Persistence)
-    let sota_timer = pieuvre_sync::registry::read_dword_value(
+    // Timer Check (Persistence)
+    let persistent_timer = pieuvre_sync::registry::read_dword_value(
         r"SYSTEM\CurrentControlSet\Control\Session Manager\kernel",
         "GlobalTimerResolutionRequests",
     )
@@ -58,8 +58,8 @@ fn render_dashboard() -> Result<()> {
     match timer::get_timer_resolution() {
         Ok(info) => {
             let res = info.current_ms();
-            let (status_text, color_code) = if sota_timer {
-                (format!("{:.4}ms (SOTA / Persistent)", res), 10) // Green
+            let (status_text, color_code) = if persistent_timer {
+                (format!("{:.4}ms (Persistent)", res), 10) // Green
             } else if res <= 0.55 {
                 (format!("{:.4}ms (Active)", res), 10) // Green
             } else if res <= 1.0 {
@@ -110,7 +110,7 @@ fn render_dashboard() -> Result<()> {
         Err(_) => println!("    Telemetry:         {}", style("Read error").red()),
     }
 
-    // DNS SOTA 2026
+    // DNS Engine
     if let Ok(doh) = pieuvre_sync::registry::read_dword_value(
         r"SYSTEM\CurrentControlSet\Services\Dnscache\Parameters",
         "EnableAutoDoh",
