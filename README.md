@@ -4,38 +4,56 @@
 
 <h1 align="center">pieuvre</h1>
 
-Windows system control and optimization tool. Full registry/service/network/power management with snapshot-based rollback.
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)]()
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)]()
-[![Rust](https://img.shields.io/badge/rust-1.75+-orange.svg)]()
-[![Platform](https://img.shields.io/badge/platform-Windows%2011-lightgrey)]()
+<p align="center">
+  <strong>Advanced Windows 11 System Alignment & Optimization Toolkit</strong>
+</p>
+
+<p align="center">
+  pieuvre is a high-performance system control utility built in Rust, designed for power users and system administrators who require granular control over Windows internals. It provides a safe, snapshot-based approach to system hardening and performance tuning.
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Platform-Windows%2011-lightgrey" alt="Platform">
+  <img src="https://img.shields.io/badge/Rust-1.75+-orange.svg" alt="Rust">
+  <img src="https://img.shields.io/badge/License-MIT%20/%20Apache--2.0-blue.svg" alt="License">
+  <img src="https://img.shields.io/badge/Build-Passing-brightgreen" alt="Build Status">
+</p>
 
 ---
 
 <p align="center">
-  <img src="crates/pieuvre-cli/screen.png"alt="screen">
+  <img src="crates/pieuvre-cli/screen.png" width="800" alt="pieuvre TUI Dashboard">
 </p>
 
-## Overview
+## Core Philosophy
 
-pieuvre is a Windows optimization toolkit built in Rust.
+Unlike traditional batch scripts or opaque registry tweaks, pieuvre follows a rigorous engineering approach:
 
-Unlike batch scripts or registry tweaks, pieuvre:
-
-- **Native API Integration** - Direct interaction with Windows APIs.
-- **Audit-First Approach** - System state analysis before any modification.
-- **Automatic Snapshots** - Change tracking and rollback via `zstd` compressed backups.
-- **System Monitoring** - Background monitoring and restoration of critical settings.
-- **Hardware-Aware** - Optimization tailoring based on detected hardware.
-- **System Tuning** - CPU Quantum, Working Set management, and network stack adjustments.
-
-**Target Users**: Power users, system administrators, and enthusiasts.
+- **Native API Integration**: Direct interaction with Windows APIs (Win32, NT) for atomic operations.
+- **Audit-First Methodology**: Comprehensive system state analysis before any modification.
+- **Persistence & Safety**: Automatic `zstd`-compressed snapshots with SHA256 integrity for reliable rollbacks.
+- **Hardware-Aware**: Optimizations are dynamically tailored based on detected hardware (CPU topology, GPU VRAM, Storage type).
+- **Asynchronous Execution**: Non-blocking TUI powered by `tokio` for real-time feedback and metrics.
 
 ---
 
-- **Interactive Dashboard** : Premium TUI interface with real-time system metrics and async execution.
-- **Audit Engine** : Full hardware, services, telemetry, and security analysis.
-- **Persistence Engine** : Snapshot creation and rollback (zstd + SHA256).
+## Key Features
+
+### 1. Interactive Dashboard (TUI)
+A premium terminal interface featuring:
+- **Real-time Metrics**: Live CPU, RAM, and Uptime monitoring.
+- **Sidebar Navigation**: Categorized optimization modules for efficient workflow.
+- **Async Logging**: Real-time execution feedback with detailed status reporting.
+
+### 2. System Hardening & Privacy
+- **Telemetry Neutralization**: Multi-level blocking (Services, Registry, Firewall, Hosts).
+- **AI & Recall Blocking**: Complete disabling of Windows Recall and CoPilot integrations.
+- **Security Audit**: Deep inspection of Defender, SecureBoot, and VBS status.
+
+### 3. Performance Engineering
+- **Latency Optimization**: Timer resolution forcing (0.5ms), MSI mode migration, and DPC/ISR tuning.
+- **Hardware Tuning**: Core parking management, memory compression control, and GPU scheduling.
+- **Network Stack**: Nagle algorithm disabling and interrupt moderation adjustments.
 
 ---
 
@@ -43,11 +61,11 @@ Unlike batch scripts or registry tweaks, pieuvre:
 
 ### Prerequisites
 
-- Windows 10/11 (64-bit)
-- Rust 1.75+ (for building)
-- Administrator privileges
+- **OS**: Windows 10/11 (64-bit)
+- **Toolchain**: Rust 1.75+
+- **Privileges**: Administrator access required for system modifications.
 
-### Build
+### Build from Source
 
 ```powershell
 git clone https://github.com/FeelTheFonk/pieuvre.git
@@ -55,56 +73,49 @@ cd pieuvre
 cargo build --release
 ```
 
-Binary: `target/release/pieuvre.exe`
+The compiled binary will be located at `target/release/pieuvre.exe`.
 
 ---
 
 ## Quick Start
 
+> [!CAUTION]
+> Always perform a full audit before applying optimizations. pieuvre creates snapshots automatically, but manual verification is recommended.
+
 ```powershell
-# 1. Audit current state
+# 1. Analyze current system state
 pieuvre audit --full
 
-# 2. Interactive mode (recommended)
+# 2. Launch the interactive dashboard (Recommended)
 pieuvre interactive
 
-# 3. Rollback if needed
+# 3. Rollback to the last known good state if necessary
 pieuvre rollback --last
 ```
 
 ---
 
-## Commands
+## Command Reference
 
 | Command | Description |
-|---------|-------------|
-| `audit` | Collect system state |
-| `interactive` | Granular selection (Interactive TUI Dashboard) |
-| `rollback` | Restore previous state |
-| `status` | Display current state |
-| `verify` | Check applied changes |
-
----
-
-## Safety
-
-- **Laptop detection** - Adjusts recommendations for battery devices.
-- **Automatic snapshots** - Every modification is reversible.
-- **Non-destructive analysis** - `audit` is read-only.
+|:---|:---|
+| `audit` | Comprehensive system inspection and report generation. |
+| `interactive` | Premium TUI for granular optimization selection. |
+| `status` | Display current system alignment and applied tweaks. |
+| `verify` | Integrity check of applied changes with repair capabilities. |
+| `rollback` | Restore system state from a previous snapshot. |
 
 ---
 
 ## Documentation
 
-| Document | Description |
-|----------|-------------|
-| [CLI Reference](crates/pieuvre-cli/README.md) | Full command documentation |
-| [Architecture](docs/ARCHITECTURE.md) | Project structure |
-| [Technical Details](docs/TECHNICAL.md) | Implementation specifics |
-| [Contributing](CONTRIBUTING.md) | Development guidelines |
+- [**Architecture**](docs/ARCHITECTURE.md): Deep dive into the workspace structure and data flow.
+- [**Technical Details**](docs/TECHNICAL.md): Implementation specifics of the optimization modules.
+- [**CLI Reference**](crates/pieuvre-cli/README.md): Detailed command-line arguments and usage.
+- [**Contributing**](CONTRIBUTING.md): Guidelines for development and code standards.
 
 ---
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for details.
+Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or [MIT license](LICENSE-MIT) at your option.

@@ -2,31 +2,36 @@
 
 ## Supported Versions
 
-Only the latest version of Pieuvre is supported for security updates.
+We provide security updates for the current major version of pieuvre.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.6.x   | :white_check_mark: |
-| < 0.6   | :x:                |
+| Version | Supported |
+|:---|:---|
+| 0.6.x | Supported |
+| < 0.6 | End of Life |
 
 ## Reporting a Vulnerability
 
-We take the security of Pieuvre seriously. If you believe you have found a security vulnerability, please report it to us by opening a private security advisory on GitHub or by contacting the maintainers directly.
+We take the security of pieuvre seriously. If you discover a security vulnerability, please report it through one of the following channels:
 
-Please do not report security vulnerabilities through public GitHub issues.
+- **GitHub Security Advisory**: Open a private advisory on the repository.
+- **Maintainer Contact**: Contact the maintainers directly via the information provided in the repository profile.
 
-### What to include in your report
+**Please do not report security vulnerabilities through public GitHub issues.**
 
-- A description of the vulnerability.
-- Steps to reproduce the issue.
-- Potential impact of the vulnerability.
-- Any suggested fixes or mitigations.
+### Submission Guidelines
 
-### Our Response Process
+To help us triage and resolve the issue quickly, please include the following in your report:
 
-- We will acknowledge receipt of your report within 48 hours.
-- We will investigate the issue and provide a timeline for a fix.
-- We will keep you informed of our progress.
-- Once a fix is ready, we will release a new version and credit you for the discovery (if desired).
+- **Description**: A detailed summary of the vulnerability.
+- **Reproduction**: Clear steps or a proof-of-concept (PoC) to reproduce the issue.
+- **Impact**: An assessment of the potential risk and impact.
+- **Mitigation**: Any suggested fixes or temporary workarounds.
 
-Thank you for helping keep Pieuvre secure!
+### Response Process
+
+1. **Acknowledgment**: We will acknowledge receipt of your report within 48 hours.
+2. **Investigation**: We will investigate the issue and provide a preliminary timeline for a fix.
+3. **Updates**: We will keep you informed of our progress throughout the remediation process.
+4. **Release**: Once a fix is verified, we will release a new version and provide credit for the discovery (if requested).
+
+Thank you for helping us keep pieuvre secure.

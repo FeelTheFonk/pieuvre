@@ -4,85 +4,72 @@
 
 <h1 align="center">pieuvre-cli</h1>
 
-Command-line interface for pieuvre Windows optimization tool.
-
-[![Tests](https://img.shields.io/badge/tests-12%20passed-success)]()
-
-## Architecture
-
-Le mode interactif utilise une architecture modulaire:
-
-| Module | Description |
-|--------|-------------|
-| `interactive/mod.rs` | Main orchestrator |
-| `interactive/sections.rs` | 12 sections with typed `OptItem` and `RiskLevel` |
-| `interactive/executor.rs` | `OptExecutor` trait + implementations |
-| `interactive/ui.rs` | User interface (Premium TUI, severity-based colors) |
+<p align="center">
+  <strong>Command-line interface and TUI dashboard for the pieuvre optimization toolkit.</strong>
+</p>
 
 ---
-### `audit`
 
-Collect current system state.
+## Overview
+
+`pieuvre-cli` is the primary entry point for users. It orchestrates the system audit, optimization execution, and snapshot management through a high-performance terminal interface.
+
+## TUI Architecture
+
+The interactive mode utilizes a modular, component-based architecture:
+
+| Module | Description |
+|:---|:---|
+| `interactive/mod.rs` | Main orchestrator and event loop. |
+| `interactive/sections.rs` | Definition of optimization sections with typed `OptItem` and `RiskLevel`. |
+| `interactive/executor.rs` | Implementation of the `OptExecutor` trait for applying changes. |
+| `interactive/ui.rs` | Rendering logic using `ratatui` with a premium design system. |
+
+---
+
+## Command Reference
+
+### `audit`
+Performs a comprehensive inspection of the system state.
 
 ```powershell
 pieuvre audit [--full] [--output <PATH>]
 ```
 
-**Example:**
-```powershell
-pieuvre audit --full
-```
-
----
-
 ### `interactive`
-
-Granular selection interface with 110+ options.
-**Note:** This mode is launched by default if no arguments are provided.
+Launches the premium TUI dashboard. This is the **default mode** if no arguments are provided.
 
 ```powershell
 pieuvre interactive
 ```
 
-**Categories:**
-- Telemetry (13 options)
-- Privacy (11 options)
-- Performance & GPU (18 options)
-- Scheduler (5 options)
-- AppX Bloatware (10 categories)
-- CPU & Memory (4 options)
-- DPC Latency (5 options)
-- Security (3 options)
-- Network (5 options)
-- Cleanup
-- AI & DNS (Recall, CoPilot, DoH)
-- **System Scan** (Winapp2, LOLDrivers, LotL, YARA) - Key `S`
-
----
+**Optimization Categories:**
+- **Telemetry**: Core data collection and background service management.
+- **Privacy**: AI blocking (Recall/CoPilot), location services, and activity history.
+- **Performance**: Timer resolution, power plans, and CPU throttling.
+- **Scheduler**: Win32 priority separation and MMCSS gaming profiles.
+- **AppX Bloatware**: Granular removal of pre-installed Windows applications.
+- **CPU & Memory**: Core parking, memory compression, and page file tuning.
+- **DPC Latency**: Kernel paging, dynamic tick, and TSC synchronization.
+- **Security**: HVCI/VBS control and Defender real-time protection.
+- **Network**: Nagle algorithm, interrupt moderation, and LSO/RSS tuning.
 
 ### `status`
-
-Display current optimization state.
+Displays the current optimization state and system alignment.
 
 ```powershell
 pieuvre status [--live]
 ```
 
----
-
 ### `rollback`
-
-Restore previous system state.
+Restores the system to a previous state using snapshots.
 
 ```powershell
 pieuvre rollback [--list] [--last] [--id <UUID>]
 ```
 
----
-
 ### `verify`
-
-Check integrity of applied changes.
+Checks the integrity of applied changes and offers repair options.
 
 ```powershell
 pieuvre verify [--repair]
@@ -90,39 +77,19 @@ pieuvre verify [--repair]
 
 ---
 
-### `scan`
-
-YARA-based signature scan.
-
-```powershell
-pieuvre scan [--rules <PATH>]
-```
-
----
-
-### `kernel`
-
-Kernel driver status.
-
-```powershell
-pieuvre kernel
-```
-
----
-
 ## Exit Codes
 
 | Code | Meaning |
-|------|---------|
+|:---|:---|
 | 0 | Success |
-| 1 | General error |
-| 2 | Configuration error |
-| 3 | Permission denied (run as Administrator) |
+| 1 | General execution error |
+| 2 | Configuration or parsing error |
+| 3 | Permission denied (Administrator privileges required) |
 
 ---
 
-## Safety
+## Safety Features
 
-- **Laptop detection** - Adjusts recommendations for battery devices.
-- **Automatic snapshots** - Every modification is reversible.
-- **Non-destructive analysis** - `audit` is read-only.
+- **Automatic Snapshots**: A system snapshot is created before any modification.
+- **Hardware Awareness**: Recommendations are automatically adjusted for laptops and battery-powered devices.
+- **Non-Destructive Audit**: The `audit` command is strictly read-only.

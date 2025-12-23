@@ -1,94 +1,49 @@
 # pieuvre-common
 
-Shared types and error handling for pieuvre.
+Shared types, error handling, and utilities for the pieuvre optimization toolkit.
 
 ---
 
-## Error Types
+## Overview
 
-```rust
-use pieuvre_common::PieuvreError;
+`pieuvre-common` provides the foundational building blocks used by all other crates in the workspace. It ensures consistency in error handling, configuration parsing, and data structures across the entire project.
 
-pub enum PieuvreError {
-    /// Windows API error
-    WindowsApi(String),
-    
-    /// Registry operation failed
-    Registry(String),
-    
-    /// Service control failed
-    Service(String),
-    
-    /// File I/O error
-    Io(std::io::Error),
-    
-    /// Configuration parsing error
-    Config(String),
-    
-    /// Snapshot operation failed
-    Snapshot(String),
-    
-    /// Permission denied
-    PermissionDenied,
-}
-```
+## Key Components
+
+### 1. Error Handling
+Centralized error management using the `thiserror` crate.
+- `PieuvreError`: The main error enum covering all possible failure modes (Registry, Service, IO, etc.).
+- `Result<T>`: A type alias for `std::result::Result<T, PieuvreError>`.
+
+### 2. Configuration
+Shared configuration structures and parsing logic.
+- `Config`: The root configuration object.
+- `TelemetryConfig`: Specific settings for telemetry blocking.
+- `PerformanceConfig`: Hardware-aware optimization parameters.
+
+### 3. Shared Utilities
+- **Logging**: Common tracing subscribers and formatting.
+- **Validation**: Helper functions for system state validation.
+- **Constants**: Global constants used across the workspace (e.g., registry paths, service names).
 
 ---
 
-## Result Type
+## API Usage
 
 ```rust
-use pieuvre_common::Result;
+use pieuvre_common::{PieuvreError, Result};
 
-pub type Result<T> = std::result::Result<T, PieuvreError>;
-```
-
----
-
-## Shared Structures
-
-### ChangeRecord
-
-```rust
-pub struct ChangeRecord {
-    pub change_type: ChangeType,
-    pub name: String,
-    pub original_value: String,
-    pub new_value: String,
-    pub timestamp: DateTime<Utc>,
-}
-
-pub enum ChangeType {
-    Service,
-    Registry,
-    Firewall,
-    Hosts,
-    ScheduledTask,
-}
-```
-
-### ServiceState
-
-```rust
-pub enum ServiceState {
-    Running,
-    Stopped,
-    Disabled,
-    Manual,
-    Automatic,
-}
-```
-
----
-
-## Usage
-
-```rust
-use pieuvre_common::{PieuvreError, Result, ChangeRecord};
-
-fn example_operation() -> Result<()> {
-    // Operation that might fail
-    do_something().map_err(|e| PieuvreError::WindowsApi(e.to_string()))?;
+fn example_function() -> Result<()> {
+    // Shared error handling
+    if something_failed() {
+        return Err(PieuvreError::Internal("Something went wrong".into()));
+    }
     Ok(())
 }
 ```
+
+---
+
+## Dependency Graph
+
+This crate has **zero dependencies** on other workspace crates to prevent circular dependencies. It is the root of the dependency tree.

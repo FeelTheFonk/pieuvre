@@ -1,190 +1,92 @@
 # pieuvre-sync
 
-System modification engine with **24 specialized modules**.
+The core execution engine of pieuvre, containing over 24 specialized modules for system optimization and hardening.
 
 ---
 
-## Modules
+## Optimization Modules
 
-| Module | File | Description |
-|--------|------|-------------|
-| Services | `services.rs` | Service state management (disable/manual/auto) |
-| Timer | `timer.rs` | Timer resolution control (0.5ms minimum) |
-| Power | `power.rs` | Power plan configuration |
-| Firewall | `firewall.rs` | Windows Firewall rule injection |
-| MSI | `msi.rs` | MSI Mode detection and enabling |
-| Registry | `registry.rs` | Atomic registry writes |
-| AppX | `appx.rs` | AppX package removal (47 packages, 10 categories) |
-| Hosts | `hosts.rs` | Hosts file blocking (50+ domains) |
-| Scheduled Tasks | `scheduled_tasks.rs` | Telemetry task disabling (30 tasks) |
-| OneDrive | `onedrive.rs` | Complete OneDrive removal |
-| Context Menu | `context_menu.rs` | Classic menu + clutter removal |
-| Widgets | `widgets.rs` | Win11 widget board disabling |
-| Windows Update | `windows_update.rs` | Update pause + driver control |
-| Edge | `edge.rs` | Edge browser management |
-| Explorer | `explorer.rs` | Explorer UI tweaks |
-| Game Mode | `game_mode.rs` | Game Bar/DVR/HAGS/Pre-rendered frames |
-| Network | `network.rs` | Nagle/Interrupt Moderation/LSO/RSS |
-| Security | `security.rs` | VBS/HVCI/Memory Integrity |
-| DPC | `dpc.rs` | DPC latency optimizations |
-| CPU | `cpu.rs` | Core Parking/Memory Compression |
-| BIOS | `bios.rs` | TPM/SecureBoot status (WMI) |
-| Defender | `defender.rs` | Real-time protection & exclusions |
-| Interrupts | `interrupts.rs` | Dynamic interrupt affinity steering |
-| Sentinel | `sentinel/` | Background monitoring & restoration |
+| Module | Description |
+|:---|:---|
+| **Services** | Granular control over service states and start types. |
+| **Timer** | High-precision timer resolution forcing (0.5ms). |
+| **Power** | Advanced power plan configuration and energy throttling control. |
+| **Firewall** | Native rule injection for telemetry domain blocking. |
+| **MSI** | Migration of PCI devices to Message Signaled Interrupts. |
+| **Registry** | Atomic writes with security descriptor (SDDL) locking. |
+| **AppX** | Clean removal of pre-installed Windows applications. |
+| **Hardening** | System protection via ACL locking and IFEO protection. |
+| **Network** | TCP stack tuning, Nagle algorithm, and interrupt moderation. |
+| **Security** | VBS, HVCI, and Memory Integrity management. |
+| **DPC/ISR** | Latency reduction via paging control and TSC synchronization. |
+| **Sentinel** | Background monitoring and automatic restoration of critical settings. |
 
 ---
 
-## Features
+## API Usage
 
-### Security Module (5-10% FPS Gain)
+### Security & Performance Hardening
 
 ```rust
 use pieuvre_sync::security;
 
-// Disable Memory Integrity (HVCI) - major performance gain
+// Disable Memory Integrity (HVCI) for significant FPS gains
 security::disable_memory_integrity()?;
 
-// Disable VBS completely
+// Disable Virtualization-Based Security (VBS)
 security::disable_vbs()?;
-
-// Disable Spectre/Meltdown mitigations (ADVANCED - security risk)
-security::disable_spectre_meltdown()?;
 ```
 
-### DPC Latency Module (Micro-stutter fix)
+### Latency Optimization
 
 ```rust
 use pieuvre_sync::dpc;
 
-// Keep kernel in RAM
+// Prevent kernel paging to disk
 dpc::disable_paging_executive()?;
 
-// Disable dynamic tick for consistent timer
+// Stabilize system timer by disabling dynamic tick
 dpc::disable_dynamic_tick()?;
 
-// Enhanced TSC sync
-dpc::set_tsc_sync_enhanced()?;
-
-// Spread interrupts across cores
+// Distribute hardware interrupts across cores
 dpc::set_interrupt_affinity_spread()?;
-
-// Apply all at once
-dpc::apply_all_dpc_optimizations()?;
 ```
 
-### CPU Module (Core Parking / Memory)
-
-```rust
-use pieuvre_sync::cpu;
-
-// Keep all CPU cores active
-cpu::disable_core_parking()?;
-
-// Disable memory compression (16GB+ systems)
-cpu::disable_memory_compression()?;
-
-// Set static page file (reduces fragmentation)
-cpu::set_static_page_file(8192)?; // 8GB
-
-// Apply all CPU optimizations
-cpu::apply_gaming_cpu_optimizations()?;
-```
-
-### Network Module (Extended)
+### Network Tuning
 
 ```rust
 use pieuvre_sync::network;
 
-// All network latency optimizations
+// Apply all gaming-focused network optimizations
 network::apply_all_network_optimizations()?;
 
-// Or individually:
+// Individual controls
 network::disable_nagle_algorithm()?;
 network::disable_interrupt_moderation()?;
-network::disable_lso()?;
-network::disable_eee()?;
-network::enable_rss()?;
-network::disable_rsc()?;
-```
-
-### Game Mode Module (Extended)
-
-```rust
-use pieuvre_sync::game_mode;
-
-// All GPU optimizations
-game_mode::apply_all_gpu_optimizations()?;
-
-// Or individually:
-game_mode::set_prerendered_frames(1)?; // Minimum input lag
-game_mode::disable_fullscreen_optimizations()?;
-game_mode::disable_game_bar()?;
-game_mode::enable_game_mode()?;
 ```
 
 ---
 
-## Services API
+## Safety & Rollback
 
-```rust
-use pieuvre_sync::services;
+Every modification performed by `pieuvre-sync` follows a strict safety protocol:
 
-// Disable a service
-services::disable_service("DiagTrack")?;
+1. **State Capture**: The original value is read and stored.
+2. **Snapshot Recording**: A `ChangeRecord` is generated and sent to the persistence engine.
+3. **Atomic Application**: The change is applied using native APIs to ensure consistency.
 
-// Get current state
-let state = services::get_service_start_type("DiagTrack")?;
-```
+### Risk Assessment
 
-## Timer Resolution API
-
-```rust
-use pieuvre_sync::timer;
-
-// Set to 0.5ms
-timer::set_timer_resolution(5000)?;
-
-// Get current resolution
-let info = timer::get_timer_resolution()?;
-
-// Reset to default
-timer::reset_timer_resolution()?;
-```
-
-## Power Plans API
-
-```rust
-use pieuvre_sync::power;
-
-// Activate Ultimate Performance
-power::set_power_plan(power::PowerPlan::UltimatePerformance)?;
-
-// Full gaming config
-power::apply_gaming_power_config()?;
-```
+| Feature | Risk Level | Impact |
+|:---|:---|:---|
+| `disable_memory_integrity()` | Medium | Reduced kernel-level protection. |
+| `disable_vbs()` | High | Disables Credential Guard. |
+| `disable_spectre_meltdown()` | Critical | Exposes CPU to known vulnerabilities. |
 
 ---
 
-## Safety
+## Build Instructions
 
-All modifications:
-1. Capture original state first
-2. Record in ChangeRecord struct
-3. Rollback available via pieuvre-persist
-
-### Security Warnings
-
-| Function | Risk | Impact |
-|----------|------|--------|
-| `disable_memory_integrity()` | Medium | Reduced kernel protection |
-| `disable_vbs()` | High | Credential Guard disabled |
-| `disable_spectre_meltdown()` | Critical | CPU vulnerability exposure |
-
----
-
-## Build
-
-```bash
+```powershell
 cargo build -p pieuvre-sync --release
 ```

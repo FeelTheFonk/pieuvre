@@ -9,11 +9,11 @@ pieuvre workspace architecture and data flow.
 ```
 pieuvre/
 ├── crates/
-│   ├── pieuvre-common/     Shared types, error handling
-│   ├── pieuvre-audit/      Read-only system inspection
-│   ├── pieuvre-sync/       System modification functions
-│   ├── pieuvre-persist/    Snapshot and rollback
-│   └── pieuvre-cli/        Command-line interface
+│   ├── pieuvre-common/     Shared types, error handling, and utilities
+│   ├── pieuvre-audit/      Read-only system inspection engine
+│   ├── pieuvre-sync/       System modification and optimization engine
+│   ├── pieuvre-persist/    Snapshot management and rollback logic
+│   └── pieuvre-cli/        Command-line interface and TUI dashboard
 ├── config/
 │   ├── default.toml        Default configuration
 │   └── telemetry-domains.txt
@@ -26,55 +26,59 @@ pieuvre/
 
 ## Crate Dependencies
 
-```
-pieuvre-cli
-    ├── pieuvre-audit
-    │   └── pieuvre-common
-    ├── pieuvre-sync
-    │   └── pieuvre-common
-    └── pieuvre-persist
-        └── pieuvre-common
+```mermaid
+graph TD
+    CLI[pieuvre-cli] --> AUDIT[pieuvre-audit]
+    CLI --> SYNC[pieuvre-sync]
+    CLI --> PERSIST[pieuvre-persist]
+    AUDIT --> COMMON[pieuvre-common]
+    SYNC --> COMMON
+    PERSIST --> COMMON
 ```
 
 ---
 
-- **User-Mode (Rust)** : Orchestration, détection YARA, snapshots compressés (Zstd), interface CLI/TUI.
+## Core Principles
+
+- **User-Mode (Rust)**: Orchestration, compressed snapshots (Zstd), and high-performance CLI/TUI.
+- **Audit-First**: Every modification is preceded by a comprehensive system state analysis.
+- **Safety**: Automatic state persistence before any system change.
 
 ### Data Flow
 
 ```mermaid
 graph TD
-    A[CLI/TUI] -- Scan --> C[YaraScanner]
-    C -- Rules --> D{Detection?}
-    D -- Yes --> E[Snapshot Engine]
-    D -- Yes --> F[Hardening Engine]
-    E -- Save --> G[(Snapshots Zstd)]
-    F -- Lock --> H[Registry/Services]
+    A[CLI/TUI] -- Audit --> B[Audit Engine]
+    B -- State --> C{Analysis}
+    C -- Valid --> D[Snapshot Engine]
+    D -- Save --> E[(Snapshots Zstd)]
+    C -- Valid --> F[Sync Engine]
+    F -- Apply --> G[Registry/Services/API]
 ```
 
 ---
 
-## Architecture TUI (v0.6.0+)
+## TUI Architecture (v0.6.0+)
 
-L'interface utilisateur a été refactorisée vers un modèle **Component-Based** pour une fluidité et une clarté maximales.
+The user interface follows a **Component-Based** model for maximum fluidity and clarity.
 
 ### Component Model
-Chaque vue est un composant autonome implémentant le trait `Component`. Le rendu est orchestré par une boucle centrale dans `ui.rs` qui distribue les zones de rendu (`Rect`) aux composants.
+Each view is an autonomous component implementing the `Component` trait. Rendering is orchestrated by a central loop in `ui.rs` that distributes rendering zones (`Rect`) to components.
 
 ### Navigation Drill-down
-Le système utilise une pile de navigation (`nav_stack`) permettant une exploration hiérarchique profonde sans surcharge cognitive.
+The system uses a navigation stack (`nav_stack`) allowing for deep hierarchical exploration without cognitive overload.
 
 ### HUD Mode
-Les logs et métriques sont gérés en surimpression (Overlay) pour maximiser l'espace de travail utile.
+Logs and metrics are managed as overlays to maximize the useful workspace.
 
 ---
 
 ## Asynchronous Execution Model
 
-Le Dashboard utilise un modèle de communication asynchrone pour garantir une UI fluide (60 FPS) :
-- **Tokio Tasks** : Les opérations lourdes sont déportées dans des tâches de fond.
-- **MPSC Channels** : Les logs et statuts d'exécution sont transmis via des canaux asynchrones.
-- **Event Loop** : Gestion non-bloquante des événements clavier et du rendu Ratatui via un `Store` centralisé (Phase 2).
+The Dashboard utilizes an asynchronous communication model to guarantee a fluid UI (60 FPS):
+- **Tokio Tasks**: Heavy operations are offloaded to background tasks.
+- **MPSC Channels**: Execution logs and statuses are transmitted via asynchronous channels.
+- **Event Loop**: Non-blocking management of keyboard events and Ratatui rendering via a centralized `Store`.
 
 ---
 
@@ -82,57 +86,43 @@ Le Dashboard utilise un modèle de communication asynchrone pour garantir une UI
 
 ### pieuvre-common
 
-- `PieuvreError` enum for all error types
-- Shared structures and types
-- Configuration parsing
+- `PieuvreError`: Centralized error handling.
+- Shared structures and types.
+- Configuration parsing and validation.
 
 ### pieuvre-audit
 
-- Hardware detection (CPU, RAM, GPU via DXGI)
-- Service enumeration (Native API)
-- Telemetry level detection (40+ keys)
-- AppX package inventory
-- **ETW Engine**: Real-time DPC/ISR monitoring with `DriverResolver`
-- **Read-only**: never modifies system state
+- **Hardware Detection**: CPU topology, RAM, and GPU (via DXGI).
+- **Service Enumeration**: Direct interaction with Native APIs.
+- **Telemetry Detection**: Deep inspection of 40+ telemetry-related keys.
+- **AppX Inventory**: Package analysis for cleanup.
+- **ETW Engine**: Real-time DPC/ISR monitoring with `DriverResolver`.
+- **Read-only**: Strictly guaranteed to never modify the system state.
 
 ### pieuvre-sync
 
-30+ optimization modules:
-- `services.rs` - Service state management (Native API)
-- `timer.rs` - `NtSetTimerResolution` (0.5ms)
-- `power.rs` - Power plan configuration (Native API)
-- `firewall.rs` - Firewall rule injection (Native API)
-- `msi.rs` - MSI Mode detection/enabling
-- `registry.rs` - Atomic registry writes
-- `appx.rs` - AppX package removal
-- `hosts.rs` - Hosts file blocking
-- `scheduled_tasks.rs` - Task disabling (Native API)
-- `onedrive.rs` - OneDrive removal
-- `context_menu.rs` - Context menu cleanup
-- `widgets.rs` - Widget disabling
-- `windows_update.rs` - Update control
-- `edge.rs` - Edge management
-- `explorer.rs` - Explorer tweaks
-- `game_mode.rs` - Game mode configuration
-- `network.rs` - Network optimizations
-- `security.rs` - VBS/HVCI/Memory Integrity
-- `dpc.rs` - DPC latency optimizations
-- `cpu.rs` - Core Parking/Memory
-- `hardening.rs` - **System Hardening & IFEO Protection**
-- `interrupts.rs` - **Dynamic Interrupt Affinity Steering**
-- `sentinel/` - **System Monitoring Engine** (v0.4.0: Service Monitoring)
-- `power_plan.rs` - Atomic Power Plan operations (MsiOperation, AppxOperation)
+30+ optimization modules including:
+- `services.rs`: Service state management (Native API).
+- `timer.rs`: `NtSetTimerResolution` (0.5ms) for latency reduction.
+- `power.rs`: Atomic power plan configuration.
+- `firewall.rs`: Native firewall rule injection.
+- `msi.rs`: MSI Mode migration and management.
+- `registry.rs`: Atomic registry operations.
+- `appx.rs`: AppX package removal.
+- `hosts.rs`: High-performance hosts file blocking.
+- `hardening.rs`: System hardening and IFEO protection.
+- `interrupts.rs`: Dynamic interrupt affinity steering.
+- `sentinel/`: System monitoring engine for unauthorized changes.
 
 ### pieuvre-persist
 
-- Snapshot creation before modifications
-- Rollback to any previous state
-- Change record tracking
-- JSON export
+- **Snapshot Creation**: State capture before modifications.
+- **Rollback**: Restoration to any previous state with integrity checks.
+- **Compression**: `zstd` compression for minimal storage footprint.
+- **Integrity**: SHA256 hashing for snapshot verification.
 
 ### pieuvre-cli
 
-- Command parsing (clap)
-- Interactive mode (dialoguer)
-- System state capture
-- ETW analysis
+- **Command Parsing**: Powered by `clap`.
+- **Interactive Mode**: Premium TUI dashboard.
+- **Orchestration**: Coordination between audit, sync, and persist engines.

@@ -1,12 +1,12 @@
 # Contributing to pieuvre
 
-Thank you for your interest in contributing.
+Thank you for your interest in contributing to pieuvre. We welcome contributions from the community to help make Windows better for everyone.
 
 ## Getting Started
 
-1. Fork the repository
-2. Clone your fork locally
-3. Create a feature branch
+1. Fork the repository.
+2. Clone your fork locally.
+3. Create a feature branch:
 
 ```powershell
 git checkout -b feature/your-feature-name
@@ -16,9 +16,9 @@ git checkout -b feature/your-feature-name
 
 ### Prerequisites
 
-- Rust 1.75+
-- Windows 10/11 (target platform)
-- Visual Studio Build Tools (for Windows API bindings)
+- **Rust**: 1.75+
+- **OS**: Windows 10/11 (Target platform)
+- **Build Tools**: Visual Studio Build Tools (required for Windows API bindings)
 
 ### Build
 
@@ -28,40 +28,41 @@ cargo build
 
 ### Test
 
+We recommend using `nextest` for a better testing experience, but standard `cargo test` works as well.
+
 ```powershell
 # Standard tests
 cargo test
 
-# Integration tests (recommended)
+# Enhanced testing (recommended)
 cargo nextest run
 ```
 
-### Lint
+### Lint & Format
+
+All code must be formatted and pass clippy checks before being merged.
 
 ```powershell
+# Check for warnings
 cargo clippy -- -D warnings
-```
 
-### Format
-
-```powershell
+# Format code
 cargo fmt
 ```
 
 ## Code Style
 
-- Follow Rust standard conventions
-- Document public APIs with `///` comments
-- Use `tracing` for logging (not `println!`)
-- Handle errors with `anyhow::Result` in CLI, `PieuvreError` in libraries
-- **Zero Clippy Warnings**: All PRs must pass `cargo clippy` without warnings.
-- **Async First**: Use `tokio` for any I/O or monitoring tasks.
+- **Conventions**: Follow standard Rust naming and structural conventions.
+- **Documentation**: All public APIs must be documented using `///` comments.
+- **Logging**: Use the `tracing` crate for all logging. Avoid `println!`.
+- **Error Handling**: Use `anyhow::Result` in the CLI crate and `PieuvreError` in library crates.
+- **Async**: Use `tokio` for all asynchronous operations and system monitoring.
 
 ## Commit Messages
 
-Use conventional commits:
+We follow the Conventional Commits specification:
 
-```
+```text
 feat: add MSI mode detection
 fix: correct timer resolution on hybrid CPUs
 docs: update installation instructions
@@ -70,36 +71,32 @@ refactor: simplify power plan switching
 
 ## Pull Request Process
 
-1. Ensure all tests pass
-2. Update documentation if needed
-3. Add entry to CHANGELOG if applicable
-4. Request review from maintainers
+1. Ensure all tests pass, including integration tests.
+2. Update relevant documentation in the `docs/` directory.
+3. Add a concise entry to `CHANGELOG.md`.
+4. Request a review from the maintainers.
 
-## Architecture
+## Architecture Overview
 
-- `pieuvre-common`: Shared types and errors
-- `pieuvre-audit`: Read-only system inspection
-- `pieuvre-sync`: System modification functions
-- `pieuvre-persist`: Snapshot and rollback
-- `pieuvre-cli`: Command-line interface
-
-Changes should respect this separation. Audit functions must not modify state.
+- `pieuvre-common`: Shared types, error definitions, and utilities.
+- `pieuvre-audit`: Read-only system inspection engine. **Must never modify system state.**
+- `pieuvre-sync`: Core engine for system modifications and optimizations.
+- `pieuvre-persist`: Snapshot management, compression (zstd), and rollback logic.
+- `pieuvre-cli`: Command-line interface and TUI dashboard.
 
 ## Testing
 
 ### Unit Tests
-
-Located in each module alongside the code.
+Located within each module. Run with `cargo test`.
 
 ### Integration Tests
-
-Run with administrator privileges:
+Integration tests require administrator privileges as they interact with the system.
 
 ```powershell
 # Run as Administrator
 cargo test --features integration
 ```
 
-## Questions
+## Questions & Support
 
-Open an issue for questions or discussions.
+For questions, feature requests, or bug reports, please open a GitHub issue.

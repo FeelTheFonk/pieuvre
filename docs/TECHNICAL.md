@@ -1,45 +1,66 @@
-# Architecture Technique : Pieuvre TUI (v0.6.2)
+# Technical Architecture: pieuvre TUI (v0.6.2)
 
-## 1. Moteur de Navigation Sidebar (v0.6.0)
-La TUI utilise une navigation par volet latéral (Sidebar) pour une gestion efficace des catégories d'optimisation.
+This document details the technical implementation of the pieuvre Terminal User Interface and its underlying optimization engines.
 
-### Navigation & Contrôles
-- **Structure** : Layout horizontal divisé en `Sidebar` (Catégories) et `MainView` (Options & Détails).
-- **Contrôles** :
-    - `Tab` / `BackTab` : Navigation entre les catégories de la Sidebar.
-    - `Up` / `Down` : Navigation verticale dans la liste des options de la catégorie active.
-    - `Space` : Basculer l'état de sélection d'une option ([X] / [ ]).
-    - `Enter` : Exécuter toutes les optimisations sélectionnées.
-    - `Q` / `Esc` : Quitter l'application.
+---
+
+## 1. Sidebar Navigation Engine (v0.6.0)
+
+The TUI utilizes a sidebar-based navigation model for efficient management of optimization categories.
+
+### Navigation & Controls
+- **Structure**: A horizontal layout divided into the `Sidebar` (Categories) and the `MainView` (Options & Details).
+- **Controls**:
+    - `Tab` / `BackTab`: Switch focus between the Sidebar and the MainView.
+    - `Up` / `Down`: Navigate through categories or options within the active view.
+    - `Space`: Toggle the selection state of an optimization item ([X] / [ ]).
+    - `Enter`: Execute all currently selected optimizations.
+    - `Q` / `Esc`: Exit the application.
 
 ### Overlay HUD & Logging
-- **Système de Logs** : Panneau de logs asynchrone en bas de l'écran avec retour visuel en temps réel (RUNNING, SUCCESS, ERROR).
-- **Avantage** : Centralisation du feedback d'exécution sans interrompre le flux de configuration.
+- **Logging System**: An asynchronous log panel at the bottom of the screen provides real-time execution feedback (RUNNING, SUCCESS, ERROR).
+- **Design Benefit**: Centralizes feedback without interrupting the user's configuration flow.
 
-## 2. Durcissement Système (Hardening)
-Pieuvre intègre un moteur de durcissement basé sur les ACLs natives de Windows et la manipulation directe du registre.
-- **SDDL (Security Descriptor Definition Language)** : Verrouillage des clés de registre et services via descripteurs de sécurité.
-- **Privilèges** : Gestion des privilèges `SeTakeOwnershipPrivilege` pour les objets système protégés.
-- **Registre** : Détection précise de l'OS et du Build Number via `winreg`.
+---
 
-## 3. Gestion de l'IA & Confidentialité
-- **Recall Blocking** : Désactivation via GPO (`DisableAIDataAnalysis`) et registres.
-- **CoPilot** : Suppression complète des intégrations barre des tâches et Edge.
-- **Télémétrie** : Blocage multi-niveaux (Services, Tâches planifiées, Fichier Hosts, et Firewall).
+## 2. System Hardening Engine
 
-## 4. Architecture Multi-Crates
-- `pieuvre-cli` : Point d'entrée TUI et orchestrateur.
-- `pieuvre-sync` : Moteur d'exécution des optimisations (Services, Registre, Cleanup).
-- `pieuvre-audit` : Moteur d'analyse et de détection.
-- `pieuvre-persist` : Gestion des snapshots et de la persistance.
+pieuvre implements a hardening engine based on native Windows Access Control Lists (ACLs) and direct registry manipulation.
 
-## 5. Optimisation de la Latence (DPC/ISR)
-- **Timer Resolution** : Forçage à 0.5ms pour réduire l'input lag.
-- **Interrupt Affinity** : Distribution des interruptions sur les cœurs physiques.
-- **MSI (Message Signaled Interrupts)** : Migration PCI vers MSI pour éliminer les conflits d'IRQ.
+- **SDDL (Security Descriptor Definition Language)**: Used to lock critical registry keys and services by applying restrictive security descriptors.
+- **Privilege Management**: Utilizes `SeTakeOwnershipPrivilege` to modify system-protected objects.
+- **Registry Detection**: Accurate OS and Build Number detection via the `winreg` crate.
+
+---
+
+## 3. AI & Privacy Management
+
+- **Recall Blocking**: Disables the Windows Recall feature via Group Policy Objects (`DisableAIDataAnalysis`) and registry keys.
+- **CoPilot Suppression**: Removes CoPilot integrations from the taskbar and the Edge browser.
+- **Telemetry Blocking**: Multi-layered approach involving Services, Scheduled Tasks, Hosts file redirection, and Firewall rules.
+
+---
+
+## 4. Multi-Crate Architecture
+
+- `pieuvre-cli`: TUI entry point and main orchestrator.
+- `pieuvre-sync`: Execution engine for optimizations (Services, Registry, Cleanup).
+- `pieuvre-audit`: Inspection engine for system analysis and detection.
+- `pieuvre-persist`: Management of snapshots, compression, and state persistence.
+
+---
+
+## 5. Latency Optimization (DPC/ISR)
+
+- **Timer Resolution**: Forces the kernel timer to 0.5ms via `NtSetTimerResolution` to minimize input lag.
+- **Interrupt Affinity**: Distributes hardware interrupts across physical CPU cores to avoid saturation and reduce DPC latency.
+- **MSI (Message Signaled Interrupts)**: Migrates PCI devices to MSI mode to eliminate IRQ conflicts and reduce interrupt overhead.
+
+---
 
 ## 6. Monitoring & Audit
-- **Sentinel Engine** : Surveillance des clés critiques via `RegNotifyChangeKeyValue`.
-- **Audit Hardware** : Sondage exhaustif CPU/RAM/Software via `pieuvre-audit`.
-- **Métriques Temps Réel** : Acquisition via `sysinfo` dans un thread dédié.
+
+- **Sentinel Engine**: Monitors critical registry keys for unauthorized changes using `RegNotifyChangeKeyValue`.
+- **Hardware Audit**: Exhaustive probing of CPU, RAM, and software configuration via `pieuvre-audit`.
+- **Real-time Metrics**: High-frequency acquisition of system metrics (CPU/RAM) via `sysinfo` in a dedicated background thread.
 
