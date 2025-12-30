@@ -32,7 +32,11 @@ impl Sentinel {
             let key_path = key_path.to_string();
             std::thread::spawn(move || {
                 if let Err(e) = Self::monitor_registry_key(&key_path) {
-                    tracing::warn!("Sentinel Registry Monitor stopped for {}: {:?}", key_path, e);
+                    tracing::warn!(
+                        "Sentinel Registry Monitor stopped for {}: {:?}",
+                        key_path,
+                        e
+                    );
                 }
             });
         }
@@ -57,7 +61,10 @@ impl Sentinel {
     fn monitor_registry_key(key_path: &str) -> Result<()> {
         // Pre-check key existence before entering monitoring loop
         if !crate::hardening::key_exists(key_path) {
-            tracing::debug!("Sentinel: Key {} does not exist, skipping monitoring.", key_path);
+            tracing::debug!(
+                "Sentinel: Key {} does not exist, skipping monitoring.",
+                key_path
+            );
             return Ok(());
         }
         unsafe {
@@ -99,10 +106,11 @@ impl Sentinel {
                 if res.is_err() {
                     let _ = RegCloseKey(hkey);
                     let _ = windows::Win32::Foundation::CloseHandle(event);
-                    return Err(pieuvre_common::PieuvreError::Registry(format!(
-                        "RegNotifyChangeKeyValue failed for {}",
+                    tracing::error!(
+                        "RegNotifyChangeKeyValue failed for {}. Monitoring stopped for this key.",
                         key_path
-                    )));
+                    );
+                    return Ok(()); // On ne fait pas remonter l'erreur pour ne pas stopper tout le Sentinel
                 }
 
                 // Wait for event (blocking for this dedicated thread)
@@ -154,13 +162,14 @@ impl Sentinel {
         for key in CRITICAL_KEYS {
             // Skip non-existent keys (already handled by lock_registry_key, but avoid log spam)
             if !crate::hardening::key_exists(key) {
-                tracing::debug!("Sentinel: Skipping non-existent key during restore: {}", key);
+                tracing::debug!(
+                    "Sentinel: Skipping non-existent key during restore: {}",
+                    key
+                );
                 continue;
             }
-            if let Err(e) = crate::hardening::lock_registry_key(key) {
-                // Use warn instead of error for protected system keys (Access Denied)
-                tracing::warn!("Sentinel: Cannot lock key {} (likely protected): {:?}", key, e);
-            }
+            // lock_registry_key gère maintenant les logs d'avertissement pour les clés protégées
+            let _ = crate::hardening::lock_registry_key(key);
         }
 
         for service in crate::hardening::CRITICAL_SERVICES {

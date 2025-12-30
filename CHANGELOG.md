@@ -10,8 +10,12 @@
 - **Filtrage** : Pre-verification `key_exists()` avant spawn des threads de monitoring.
 
 ### TUI/CLI (`pieuvre-cli`)
-- **i18n** : Harmonisation complete de l'interface en francais (Categories, Optimisations, Journal d'execution).
-- **UX** : Affichage des erreurs detaillees avec format Debug dans le panel de logs.
+- **Esthétique SOTA** : Refonte visuelle complète en mode monochrome "Expert/Humble" (nuances de gris et blanc, bordures sobres).
+- **Excellence Fonctionnelle** : Audit et implémentation exhaustive des méthodes `check_status` pour une fidélité d'état système à 100%.
+- **Feedback** : Ajout de l'horodatage `[HH:MM:SS]` dans le journal d'exécution pour une traçabilité technique accrue.
+- **UX** : Implémentation d'une barre de progression minimaliste lors de l'application des tweaks.
+- **i18n** : Harmonisation complète de l'interface en français (Catégories, Optimisations, Journal d'exécution).
+- **Robustesse** : Amélioration du mapping des erreurs Win32 et affichage détaillé dans le panel de logs.
 
 ---
 

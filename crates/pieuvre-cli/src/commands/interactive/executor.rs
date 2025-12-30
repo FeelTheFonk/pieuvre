@@ -268,11 +268,18 @@ impl CommandRegistry {
     }
 
     pub async fn execute(&self, id: &str) -> Result<ExecutionResult> {
-        if let Some(cmd) = self.commands.get(id) {
-            cmd.execute().await
-        } else {
-            // Fallback pour les commandes non encore migrées vers le nouveau système
-            anyhow::bail!("Command not yet migrated to SOTA Registry: {}", id)
+        match self.commands.get(id) {
+            Some(cmd) => {
+                tracing::debug!("Executing command: {}", id);
+                cmd.execute().await.map_err(|e| {
+                    tracing::error!("Command {} failed: {:?}", id, e);
+                    anyhow::anyhow!("Erreur lors de l'exécution de {}: {}", id, e)
+                })
+            }
+            None => {
+                tracing::warn!("Command not found in registry: {}", id);
+                anyhow::bail!("Commande non enregistrée dans le registre SOTA : {}", id)
+            }
         }
     }
 
@@ -299,10 +306,15 @@ impl<T: pieuvre_sync::operation::SyncOperation + 'static> SyncOperationCommand<T
 #[async_trait]
 impl<T: pieuvre_sync::operation::SyncOperation + 'static> TweakCommand for SyncOperationCommand<T> {
     async fn execute(&self) -> Result<ExecutionResult> {
-        let changes = self.operation.apply().await?;
+        let name = self.operation.name();
+        tracing::info!("Applying sync operation: {}", name);
+        let changes = self.operation.apply().await.map_err(|e| {
+            anyhow::anyhow!("Échec de l'opération {}: {}", name, e)
+        })?;
+        
         Ok(ExecutionResult::ok_count(
             changes.len(),
-            format!("Operation {} applied", self.operation.name()),
+            format!("Opération {} appliquée ({} changements)", name, changes.len()),
         ))
     }
 
@@ -323,6 +335,10 @@ impl TweakCommand for SecurityDisableHvciCommand {
         tokio::task::spawn_blocking(pieuvre_sync::security::disable_memory_integrity).await??;
         Ok(ExecutionResult::ok("Memory Integrity (HVCI) disabled"))
     }
+
+    async fn check_status(&self) -> Result<bool> {
+        Ok(!tokio::task::spawn_blocking(pieuvre_sync::security::is_memory_integrity_enabled).await?)
+    }
 }
 
 pub struct SecurityDisableVbsCommand;
@@ -332,6 +348,10 @@ impl TweakCommand for SecurityDisableVbsCommand {
         tokio::task::spawn_blocking(pieuvre_sync::security::disable_vbs).await??;
         Ok(ExecutionResult::ok("VBS completely disabled"))
     }
+
+    async fn check_status(&self) -> Result<bool> {
+        Ok(!tokio::task::spawn_blocking(pieuvre_sync::security::is_vbs_enabled).await?)
+    }
 }
 
 pub struct SecurityDisableSpectreCommand;
@@ -340,6 +360,16 @@ impl TweakCommand for SecurityDisableSpectreCommand {
     async fn execute(&self) -> Result<ExecutionResult> {
         tokio::task::spawn_blocking(pieuvre_sync::security::disable_spectre_meltdown).await??;
         Ok(ExecutionResult::ok("Spectre/Meltdown mitigations disabled"))
+    }
+
+    async fn check_status(&self) -> Result<bool> {
+        tokio::task::spawn_blocking(|| {
+            let v = pieuvre_sync::registry::read_dword_value(
+                r"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management",
+                "FeatureSettingsOverride",
+            ).unwrap_or(0);
+            Ok(v == 3)
+        }).await?
     }
 }
 
@@ -362,6 +392,20 @@ impl TweakCommand for SecurityDisableUacCommand {
         .await??;
         Ok(ExecutionResult::ok("UAC disabled (Never Notify)"))
     }
+
+    async fn check_status(&self) -> Result<bool> {
+        tokio::task::spawn_blocking(|| {
+            let v1 = pieuvre_sync::registry::read_dword_value(
+                r"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System",
+                "ConsentPromptBehaviorAdmin",
+            ).unwrap_or(1);
+            let v2 = pieuvre_sync::registry::read_dword_value(
+                r"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System",
+                "PromptOnSecureDesktop",
+            ).unwrap_or(1);
+            Ok(v1 == 0 && v2 == 0)
+        }).await?
+    }
 }
 
 pub struct HardeningLockCommand;
@@ -380,7 +424,10 @@ impl TweakCommand for HardeningLockCommand {
         .await?;
         Ok(ExecutionResult::ok_count(
             count,
-            "Critical registry keys locked with read-only ACLs",
+            format!(
+                "{} critical registry keys locked with read-only ACLs",
+                count
+            ),
         ))
     }
 }
@@ -401,7 +448,10 @@ impl TweakCommand for HardeningUnlockCommand {
         .await?;
         Ok(ExecutionResult::ok_count(
             count,
-            "Critical registry keys unlocked (default ACLs restored)",
+            format!(
+                "{} critical registry keys unlocked (default ACLs restored)",
+                count
+            ),
         ))
     }
 }
@@ -474,6 +524,10 @@ impl TweakCommand for OneDriveUninstallCommand {
         tokio::task::spawn_blocking(pieuvre_sync::onedrive::uninstall_onedrive).await??;
         Ok(ExecutionResult::ok("OneDrive uninstalled"))
     }
+
+    async fn check_status(&self) -> Result<bool> {
+        Ok(!tokio::task::spawn_blocking(pieuvre_sync::onedrive::is_onedrive_installed).await?)
+    }
 }
 
 pub struct ContextMenuClassicCommand;
@@ -484,6 +538,10 @@ impl TweakCommand for ContextMenuClassicCommand {
             .await??;
         Ok(ExecutionResult::ok("Classic context menu enabled"))
     }
+
+    async fn check_status(&self) -> Result<bool> {
+        Ok(tokio::task::spawn_blocking(pieuvre_sync::context_menu::is_classic_context_menu).await?)
+    }
 }
 
 pub struct AppxRemoveCopilotCommand;
@@ -492,6 +550,12 @@ impl TweakCommand for AppxRemoveCopilotCommand {
     async fn execute(&self) -> Result<ExecutionResult> {
         tokio::task::spawn_blocking(pieuvre_sync::appx::remove_copilot).await??;
         Ok(ExecutionResult::ok("Copilot components removed"))
+    }
+
+    async fn check_status(&self) -> Result<bool> {
+        tokio::task::spawn_blocking(|| {
+            Ok(!pieuvre_sync::appx::is_package_installed("Copilot"))
+        }).await?
     }
 }
 
@@ -528,6 +592,14 @@ impl TweakCommand for PowerPlanCommand {
         tokio::task::spawn_blocking(move || pieuvre_sync::power::set_power_plan(plan)).await??;
         Ok(ExecutionResult::ok("Power plan applied"))
     }
+
+    async fn check_status(&self) -> Result<bool> {
+        let plan_guid = self.plan.guid().to_string();
+        tokio::task::spawn_blocking(move || {
+            let current = pieuvre_sync::power::get_active_power_plan()?;
+            Ok(current.to_lowercase() == plan_guid.to_lowercase())
+        }).await?
+    }
 }
 
 pub struct CpuThrottlingDisableCommand;
@@ -536,6 +608,16 @@ impl TweakCommand for CpuThrottlingDisableCommand {
     async fn execute(&self) -> Result<ExecutionResult> {
         tokio::task::spawn_blocking(pieuvre_sync::power::disable_cpu_throttling).await??;
         Ok(ExecutionResult::ok("CPU Throttling disabled"))
+    }
+
+    async fn check_status(&self) -> Result<bool> {
+        tokio::task::spawn_blocking(|| {
+            let v = pieuvre_sync::registry::read_dword_value(
+                r"SYSTEM\CurrentControlSet\Control\Power\PowerThrottling",
+                "PowerThrottlingOff",
+            ).unwrap_or(0);
+            Ok(v == 1)
+        }).await?
     }
 }
 
@@ -565,6 +647,10 @@ impl TweakCommand for HagsDisableCommand {
         tokio::task::spawn_blocking(pieuvre_sync::game_mode::disable_hags).await??;
         Ok(ExecutionResult::ok("HAGS disabled"))
     }
+
+    async fn check_status(&self) -> Result<bool> {
+        Ok(!tokio::task::spawn_blocking(pieuvre_sync::game_mode::is_hags_enabled).await?)
+    }
 }
 
 pub struct NagleDisableCommand;
@@ -577,6 +663,10 @@ impl TweakCommand for NagleDisableCommand {
             n as usize,
             "Nagle algorithm disabled",
         ))
+    }
+
+    async fn check_status(&self) -> Result<bool> {
+        Ok(tokio::task::spawn_blocking(pieuvre_sync::network::is_nagle_disabled).await?)
     }
 }
 
@@ -684,10 +774,13 @@ pub struct ScanYaraCommand;
 #[async_trait]
 impl TweakCommand for ScanYaraCommand {
     async fn execute(&self) -> Result<ExecutionResult> {
-        // [TECH PREVIEW] L'intégration YARA-X est structurelle.
-        // Nécessite le chargement de signatures (.yarx) pour être fonctionnelle.
-        Ok(ExecutionResult::ok(
-            "YARA-X Scan Engine initialized (Tech Preview - 0 threats)",
+        tracing::info!("Démarrage du scan YARA-X...");
+        let engine = pieuvre_scan::engine::ScanEngine::new()?;
+        let findings: Vec<pieuvre_scan::engine::Threat> = engine.run_yara_scan().await?;
+
+        Ok(ExecutionResult::ok_count(
+            findings.len(),
+            format!("Scan YARA-X terminé : {} menaces détectées.", findings.len()),
         ))
     }
 }
@@ -696,23 +789,13 @@ pub struct ScanBrowserCommand;
 #[async_trait]
 impl TweakCommand for ScanBrowserCommand {
     async fn execute(&self) -> Result<ExecutionResult> {
-        use indicatif::{ProgressBar, ProgressStyle};
-        let pb = ProgressBar::new_spinner();
-        pb.set_style(ProgressStyle::default_spinner().template("{spinner:.green} {msg}")?);
-        pb.set_message("Analyse forensique des navigateurs...");
-        pb.enable_steady_tick(std::time::Duration::from_millis(100));
-
+        tracing::info!("Démarrage de l'analyse forensique des navigateurs...");
         let engine = pieuvre_scan::engine::ScanEngine::new()?;
         let findings = engine.run_deep_scan().await?;
 
-        pb.finish_with_message(format!(
-            "Analyse terminée : {} menaces trouvées.",
-            findings.len()
-        ));
-
         Ok(ExecutionResult::ok_count(
             findings.len(),
-            "Browser forensics completed",
+            format!("Analyse navigateurs terminée : {} menaces trouvées.", findings.len()),
         ))
     }
 }
@@ -721,23 +804,13 @@ pub struct ScanRegistryCommand;
 #[async_trait]
 impl TweakCommand for ScanRegistryCommand {
     async fn execute(&self) -> Result<ExecutionResult> {
-        use indicatif::{ProgressBar, ProgressStyle};
-        let pb = ProgressBar::new_spinner();
-        pb.set_style(ProgressStyle::default_spinner().template("{spinner:.blue} {msg}")?);
-        pb.set_message("Scan Blitz du registre (ASEP/IFEO/Services)...");
-        pb.enable_steady_tick(std::time::Duration::from_millis(100));
-
+        tracing::info!("Démarrage du scan Blitz du registre...");
         let engine = pieuvre_scan::engine::ScanEngine::new()?;
         let findings = engine.run_blitz().await?;
 
-        pb.finish_with_message(format!(
-            "Scan Blitz terminé : {} menaces trouvées.",
-            findings.len()
-        ));
-
         Ok(ExecutionResult::ok_count(
             findings.len(),
-            "Registry persistence scan completed",
+            format!("Scan Blitz terminé : {} menaces trouvées.", findings.len()),
         ))
     }
 }
@@ -799,6 +872,16 @@ impl TweakCommand for DisableIPv6Command {
             "IPv6 disabled (reboot required to take effect)",
         ))
     }
+
+    async fn check_status(&self) -> Result<bool> {
+        tokio::task::spawn_blocking(|| {
+            let v = pieuvre_sync::registry::read_dword_value(
+                r"SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters",
+                "DisabledComponents",
+            ).unwrap_or(0);
+            Ok(v == 0xFF)
+        }).await?
+    }
 }
 
 // --- COMMANDES MAINTENANCE ADDITIONNELLES ---
@@ -812,6 +895,14 @@ impl TweakCommand for DisableHibernationCommand {
             "Hibernation disabled, hiberfil.sys removed",
         ))
     }
-}
 
-// --- FIN DES COMMANDES SOTA v0.8.3 ---
+    async fn check_status(&self) -> Result<bool> {
+        tokio::task::spawn_blocking(|| {
+            let v = pieuvre_sync::registry::read_dword_value(
+                r"SYSTEM\CurrentControlSet\Control\Power",
+                "HibernateEnabled",
+            ).unwrap_or(1);
+            Ok(v == 0)
+        }).await?
+    }
+}

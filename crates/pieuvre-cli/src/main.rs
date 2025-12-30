@@ -119,6 +119,13 @@ async fn main() -> Result<()> {
         .with(EnvFilter::new(filter))
         .init();
 
+    // Check for Administrator privileges
+    if !commands::interactive::tui::is_elevated() {
+        eprintln!("ERREUR : Privilèges Administrateur requis.");
+        eprintln!("Veuillez relancer pieuvre en tant qu'administrateur.");
+        std::process::exit(1);
+    }
+
     match cli.command {
         // Launch Interactive Mode by default
         None => commands::interactive::tui::run().await,

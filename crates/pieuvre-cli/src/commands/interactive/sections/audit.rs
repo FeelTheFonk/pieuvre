@@ -4,22 +4,22 @@ pub fn get_options() -> Vec<OptItem> {
     vec![
         OptItem {
             id: "audit_hardware",
-            label: "Hardware Inventory",
-            description: "Detailed analysis of CPU, GPU, and Storage.",
+            label: "Inventaire matériel",
+            description: "Analyse détaillée du CPU, du GPU et du stockage.",
             default: true,
             risk: RiskLevel::Low,
         },
         OptItem {
             id: "audit_security",
-            label: "Security Policy Audit",
-            description: "Verify Windows Defender and Firewall status.",
+            label: "Audit des politiques de sécurité",
+            description: "Vérifie l'état de Windows Defender et du pare-feu.",
             default: true,
             risk: RiskLevel::Low,
         },
         OptItem {
             id: "audit_services",
-            label: "Services & Drivers Audit",
-            description: "Identify non-standard or suspicious services.",
+            label: "Audit des services et pilotes",
+            description: "Identifie les services non standard ou suspects.",
             default: true,
             risk: RiskLevel::Medium,
         },

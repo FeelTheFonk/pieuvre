@@ -4,38 +4,36 @@ pub fn get_options() -> Vec<OptItem> {
     vec![
         OptItem {
             id: "bloat_copilot",
-            label: "Remove Microsoft Copilot",
-            description:
-                "Uninstalls Copilot and removes its integration from the taskbar and settings.",
+            label: "Supprimer Microsoft Copilot",
+            description: "Désinstalle Copilot et supprime son intégration de la barre des tâches et des paramètres.",
             default: true,
             risk: RiskLevel::Safe,
         },
         OptItem {
             id: "bloat_onedrive",
-            label: "Uninstall Microsoft OneDrive",
-            description:
-                "Completely removes OneDrive from the system and stops its background processes.",
+            label: "Désinstaller Microsoft OneDrive",
+            description: "Supprime complètement OneDrive du système et arrête ses processus en arrière-plan.",
             default: true,
             risk: RiskLevel::Safe,
         },
         OptItem {
             id: "bloat_edge",
-            label: "Disable Microsoft Edge Bloat",
-            description: "Disables Edge background services, startup boost, and telemetry.",
+            label: "Désactiver le superflu de Microsoft Edge",
+            description: "Désactive les services en arrière-plan d'Edge, le boost au démarrage et la télémétrie.",
             default: true,
             risk: RiskLevel::Safe,
         },
         OptItem {
             id: "bloat_standard",
-            label: "Remove Standard Bloatware",
-            description: "Removes common pre-installed apps like Solitaire, People, Maps, etc.",
+            label: "Supprimer les Bloatwares standards",
+            description: "Supprime les applications pré-installées communes (Solitaire, People, Maps, etc.).",
             default: false,
             risk: RiskLevel::Low,
         },
         OptItem {
             id: "bloat_cortana",
-            label: "Disable Cortana",
-            description: "Disables Cortana voice assistant and its search integration.",
+            label: "Désactiver Cortana",
+            description: "Désactive l'assistant vocal Cortana et son intégration à la recherche.",
             default: true,
             risk: RiskLevel::Safe,
         },

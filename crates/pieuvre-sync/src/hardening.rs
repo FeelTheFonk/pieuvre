@@ -21,7 +21,9 @@ const SDDL_REVISION_1: u32 = 1;
 
 /// Vérifie si une clé de registre existe
 pub fn key_exists(key_path: &str) -> bool {
-    use windows::Win32::System::Registry::{RegOpenKeyExW, RegCloseKey, HKEY_LOCAL_MACHINE, KEY_READ};
+    use windows::Win32::System::Registry::{
+        RegCloseKey, RegOpenKeyExW, HKEY_LOCAL_MACHINE, KEY_READ,
+    };
     unsafe {
         let subkey_wide: Vec<u16> = key_path.encode_utf16().chain(std::iter::once(0)).collect();
         let mut hkey = Default::default();
@@ -45,7 +47,10 @@ pub fn key_exists(key_path: &str) -> bool {
 /// SDDL: D:P(A;;KR;;;WD)(A;;KA;;;SY) -> Allow Read (KR) to Everyone (WD), Full Control (KA) to SYSTEM (SY)
 pub fn lock_registry_key(key_path: &str) -> Result<()> {
     if !key_exists(key_path) {
-        return Err(PieuvreError::Registry(format!("Key does not exist: {}", key_path)));
+        return Err(PieuvreError::Registry(format!(
+            "Key does not exist: {}",
+            key_path
+        )));
     }
     apply_sddl(key_path, "D:P(A;;KR;;;WD)(A;;KA;;;SY)")
 }
@@ -199,36 +204,46 @@ fn apply_sddl(key_path: &str, sddl: &str) -> Result<()> {
         // Si Access Denied (5), tenter de prendre possession (Ownership) d'abord
         if let Err(e) = &result {
             if e.code().0 as u32 == 5 {
-                tracing::warn!(
+                tracing::debug!(
                     "Access Denied for {}, attempting to take ownership...",
                     full_path
                 );
-                let _ = take_ownership(&full_path);
-                // Réessayer après ownership
-                result = SetNamedSecurityInfoW(
-                    PCWSTR(path_wide.as_ptr()),
-                    SE_REGISTRY_KEY,
-                    DACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION,
-                    None,
-                    None,
-                    Some(dacl),
-                    None,
-                )
-                .ok();
+                if take_ownership(&full_path).is_ok() {
+                    // Réessayer après ownership
+                    result = SetNamedSecurityInfoW(
+                        PCWSTR(path_wide.as_ptr()),
+                        SE_REGISTRY_KEY,
+                        DACL_SECURITY_INFORMATION | PROTECTED_DACL_SECURITY_INFORMATION,
+                        None,
+                        None,
+                        Some(dacl),
+                        None,
+                    )
+                    .ok();
+                }
             }
         }
 
         let _ = LocalFree(Some(HLOCAL(sd.0 as *mut _)));
 
-        if let Err(e) = result {
-            return Err(PieuvreError::Internal(format!(
+        match result {
+            Ok(_) => {
+                tracing::info!(path = %full_path, "ACL appliquée avec succès");
+                Ok(())
+            }
+            Err(e) if e.code().0 as u32 == 5 => {
+                // Log plus discret pour les clés protégées par TrustedInstaller
+                tracing::warn!(
+                    "Sentinel: Key {} is system-protected (TrustedInstaller). Skipping lock.",
+                    full_path
+                );
+                Ok(())
+            }
+            Err(e) => Err(PieuvreError::Internal(format!(
                 "SetNamedSecurityInfo failed for {}: {:?}",
                 full_path, e
-            )));
+            ))),
         }
-
-        tracing::info!(path = %full_path, sddl = %sddl, "ACL appliquée avec succès");
-        Ok(())
     }
 }
 
@@ -237,59 +252,64 @@ fn take_ownership(path: &str) -> Result<()> {
     unsafe {
         let path_wide: Vec<u16> = path.encode_utf16().chain(std::iter::once(0)).collect();
 
-        // Obtenir le SID de SYSTEM
-        let mut sid_size = 0u32;
-        let mut domain_size = 0u32;
-        let mut sid_name_use = SID_NAME_USE::default();
-        let system_name: Vec<u16> = "SYSTEM".encode_utf16().chain(std::iter::once(0)).collect();
+        // Tentative d'obtenir le SID de SYSTEM, puis Administrateurs si échec
+        let candidates = ["SYSTEM", "Administrators"];
+        let mut last_err = None;
 
-        let _ = LookupAccountNameW(
-            None,
-            PCWSTR(system_name.as_ptr()),
-            None,
-            &mut sid_size,
-            None,
-            &mut domain_size,
-            &mut sid_name_use,
-        );
+        for name in candidates {
+            let mut sid_size = 0u32;
+            let mut domain_size = 0u32;
+            let mut sid_name_use = SID_NAME_USE::default();
+            let name_wide: Vec<u16> = name.encode_utf16().chain(std::iter::once(0)).collect();
 
-        let mut sid = vec![0u8; sid_size as usize];
-        let mut domain = vec![0u16; domain_size as usize];
+            let _ = LookupAccountNameW(
+                None,
+                PCWSTR(name_wide.as_ptr()),
+                None,
+                &mut sid_size,
+                None,
+                &mut domain_size,
+                &mut sid_name_use,
+            );
 
-        if LookupAccountNameW(
-            None,
-            PCWSTR(system_name.as_ptr()),
-            Some(PSID(sid.as_mut_ptr() as _)),
-            &mut sid_size,
-            Some(PWSTR(domain.as_mut_ptr())),
-            &mut domain_size,
-            &mut sid_name_use,
-        )
-        .is_err()
-        {
-            return Err(PieuvreError::Internal(
-                "LookupAccountName failed".to_string(),
-            ));
+            let mut sid = vec![0u8; sid_size as usize];
+            let mut domain = vec![0u16; domain_size as usize];
+
+            if LookupAccountNameW(
+                None,
+                PCWSTR(name_wide.as_ptr()),
+                Some(PSID(sid.as_mut_ptr() as _)),
+                &mut sid_size,
+                Some(PWSTR(domain.as_mut_ptr())),
+                &mut domain_size,
+                &mut sid_name_use,
+            )
+            .is_ok()
+            {
+                let res = SetNamedSecurityInfoW(
+                    PCWSTR(path_wide.as_ptr()),
+                    SE_REGISTRY_KEY,
+                    OWNER_SECURITY_INFORMATION,
+                    Some(PSID(sid.as_ptr() as _)),
+                    None,
+                    None,
+                    None,
+                )
+                .ok();
+
+                if res.is_ok() {
+                    tracing::debug!("Ownership taken by {} for {}", name, path);
+                    return Ok(());
+                } else {
+                    last_err = res.err();
+                }
+            }
         }
 
-        if let Err(e) = SetNamedSecurityInfoW(
-            PCWSTR(path_wide.as_ptr()),
-            SE_REGISTRY_KEY,
-            OWNER_SECURITY_INFORMATION,
-            Some(PSID(sid.as_ptr() as _)),
-            None,
-            None,
-            None,
-        )
-        .ok()
-        {
-            return Err(PieuvreError::Internal(format!(
-                "SetNamedSecurityInfo (Ownership) failed: {}",
-                e
-            )));
-        }
-
-        Ok(())
+        Err(PieuvreError::Internal(format!(
+            "Failed to take ownership of {}: {:?}",
+            path, last_err
+        )))
     }
 }
 
@@ -440,8 +460,6 @@ pub const CRITICAL_KEYS: &[&str] = &[
     PRIORITY_CONTROL_KEY,
     MEMORY_MANAGEMENT_KEY,
     MULTIMEDIA_PROFILE_KEY,
-    r"SYSTEM\CurrentControlSet\Services\DiagTrack",
-    r"SYSTEM\CurrentControlSet\Services\SysMain",
     WINDOWS_AI_KEY,
     WINDOWS_COPILOT_KEY,
     DNS_CACHE_PARAMS_KEY,

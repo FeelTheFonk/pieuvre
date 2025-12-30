@@ -25,6 +25,7 @@ pub enum Action {
     UpdateStatus(String, bool),
     ConfirmExecute,
     CancelExecute,
+    UpdateProgress(usize, usize),
 }
 
 pub struct AppState {
@@ -39,6 +40,8 @@ pub struct AppState {
     pub logs: Vec<String>,
     pub is_admin: bool,
     pub show_confirm: bool,
+    pub progress: usize,
+    pub total_progress: usize,
     pub action_tx: Option<tokio::sync::mpsc::UnboundedSender<Action>>,
 }
 
@@ -70,6 +73,8 @@ impl AppState {
             logs: Vec::new(),
             is_admin: crate::commands::interactive::tui::is_elevated(),
             show_confirm: false,
+            progress: 0,
+            total_progress: 0,
             action_tx: None,
         }
     }
@@ -154,6 +159,10 @@ impl AppState {
             }
             Action::CancelExecute => {
                 self.show_confirm = false;
+            }
+            Action::UpdateProgress(current, total) => {
+                self.progress = current;
+                self.total_progress = total;
             }
         }
     }

@@ -37,9 +37,9 @@ impl Component for MainView {
                 let prefix = if is_selected { " [X] " } else { " [ ] " };
 
                 let style = if i == state.selected_index {
-                    Style::default().fg(Color::Black).bg(Color::Cyan)
+                    Style::default().fg(Color::Black).bg(Color::White)
                 } else {
-                    Style::default().fg(Color::White)
+                    Style::default().fg(Color::Rgb(200, 200, 200))
                 };
 
                 ListItem::new(format!("{}{}", prefix, opt.label)).style(style)
@@ -51,38 +51,38 @@ impl Component for MainView {
                 Block::default()
                     .title(i18n::OPTIMIZATIONS)
                     .borders(Borders::ALL)
-                    .border_type(BorderType::Rounded)
-                    .border_style(Style::default().fg(Color::DarkGray)),
+                    .border_type(BorderType::Plain)
+                    .border_style(Style::default().fg(Color::Rgb(60, 60, 60))),
             )
-            .highlight_symbol(">> ");
+            .highlight_symbol("> ");
 
         f.render_widget(list, chunks[0]);
 
         // Details
         if let Some(opt) = options.get(state.selected_index) {
             let risk_color = match opt.risk {
-                RiskLevel::Safe => Color::Green,
-                RiskLevel::Low => Color::Cyan,
-                RiskLevel::Medium => Color::Yellow,
-                RiskLevel::High => Color::Red,
-                RiskLevel::Critical => Color::LightRed,
-                RiskLevel::Performance => Color::Blue,
-                RiskLevel::Conditional => Color::Magenta,
-                RiskLevel::Warning => Color::LightYellow,
+                RiskLevel::Safe => Color::Rgb(150, 150, 150),
+                RiskLevel::Low => Color::Rgb(150, 150, 150),
+                RiskLevel::Medium => Color::Rgb(200, 200, 100), // Jaune désaturé
+                RiskLevel::High => Color::Rgb(200, 100, 100),   // Rouge désaturé
+                RiskLevel::Critical => Color::Rgb(255, 100, 100),
+                RiskLevel::Performance => Color::Rgb(100, 150, 200), // Bleu technique
+                RiskLevel::Conditional => Color::Rgb(150, 100, 150),
+                RiskLevel::Warning => Color::Rgb(200, 150, 100),
             };
 
             let details_text = vec![
                 Line::from(vec![
-                    Span::styled(i18n::ID, Style::default().fg(Color::DarkGray)),
+                    Span::styled(i18n::ID, Style::default().fg(Color::Rgb(100, 100, 100))),
                     Span::styled(
                         opt.id,
                         Style::default()
-                            .fg(Color::White)
+                            .fg(Color::Rgb(200, 200, 200))
                             .add_modifier(Modifier::BOLD),
                     ),
                 ]),
                 Line::from(vec![
-                    Span::styled(i18n::RISK, Style::default().fg(Color::DarkGray)),
+                    Span::styled(i18n::RISK, Style::default().fg(Color::Rgb(100, 100, 100))),
                     Span::styled(
                         format!("{:?}", opt.risk).to_uppercase(),
                         Style::default().fg(risk_color).add_modifier(Modifier::BOLD),
@@ -92,8 +92,8 @@ impl Component for MainView {
                 Line::from(Span::styled(
                     i18n::DESCRIPTION,
                     Style::default()
-                        .fg(Color::Cyan)
-                        .add_modifier(Modifier::UNDERLINED),
+                        .fg(Color::White)
+                        .add_modifier(Modifier::BOLD),
                 )),
                 Line::from(""),
                 Line::from(opt.description),
@@ -104,8 +104,8 @@ impl Component for MainView {
                     Block::default()
                         .title(i18n::DETAILS)
                         .borders(Borders::ALL)
-                        .border_type(BorderType::Rounded)
-                        .border_style(Style::default().fg(Color::DarkGray)),
+                        .border_type(BorderType::Plain)
+                        .border_style(Style::default().fg(Color::Rgb(60, 60, 60))),
                 )
                 .wrap(Wrap { trim: true });
 

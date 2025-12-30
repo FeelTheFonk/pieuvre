@@ -18,6 +18,14 @@ use crate::commands::interactive::tui::app::{Action, AppState, SystemMetrics};
 use crate::commands::interactive::tui::events::{Event, EventHandler};
 
 pub async fn run() -> Result<()> {
+    // Setup panic hook to restore terminal
+    let original_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |panic_info| {
+        let _ = disable_raw_mode();
+        let _ = execute!(io::stdout(), LeaveAlternateScreen);
+        original_hook(panic_info);
+    }));
+
     // Setup terminal
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -123,18 +131,30 @@ pub async fn run() -> Result<()> {
                         let log_tx = action_tx.clone();
                         let reg = registry.clone();
                         tokio::spawn(async move {
-                            for (id, label) in options_to_run {
-                                let _ = log_tx.send(Action::AddLog(format!("{} Applying {}...", i18n::LOG_RUNNING, label)));
+                            let total = options_to_run.len();
+                            let mut success_count = 0;
+                            
+                            for (i, (id, label)) in options_to_run.into_iter().enumerate() {
+                                let _ = log_tx.send(Action::UpdateProgress(i + 1, total));
+                                let now = chrono::Local::now().format("%H:%M:%S").to_string();
+                                let _ = log_tx.send(Action::AddLog(format!("[{}] {} Application de : {}...", now, i18n::LOG_RUNNING, label)));
                                 match reg.execute(&id).await {
                                     Ok(res) => {
-                                        let _ = log_tx.send(Action::AddLog(format!("{} {}: {}", i18n::LOG_SUCCESS, label, res.message)));
+                                        success_count += 1;
+                                        let now = chrono::Local::now().format("%H:%M:%S").to_string();
+                                        let _ = log_tx.send(Action::AddLog(format!("[{}] {} {}: {}", now, i18n::LOG_SUCCESS, label, res.message)));
                                     }
                                     Err(e) => {
-                                        let _ = log_tx.send(Action::AddLog(format!("{} {}: {:?}", i18n::LOG_ERROR, label, e)));
+                                        let now = chrono::Local::now().format("%H:%M:%S").to_string();
+                                        let _ = log_tx.send(Action::AddLog(format!("[{}] {} {}: {}", now, i18n::LOG_ERROR, label, e)));
                                     }
                                 }
                             }
-                            let _ = log_tx.send(Action::AddLog(i18n::LOG_ALL_APPLIED.to_string()));
+                            
+                            let _ = log_tx.send(Action::UpdateProgress(0, 0));
+                            let now = chrono::Local::now().format("%H:%M:%S").to_string();
+                            let final_msg = format!("[{}] {} Terminé : {}/{} appliqués avec succès.", now, i18n::LOG_SUCCESS, success_count, total);
+                            let _ = log_tx.send(Action::AddLog(final_msg));
                             let _ = log_tx.send(Action::RefreshStatus);
                         });
                     }

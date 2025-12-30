@@ -175,4 +175,11 @@ impl ScanEngine {
         );
         Ok(findings)
     }
+
+    pub async fn run_yara_scan(&self) -> Result<Vec<Threat>> {
+        tracing::info!("Démarrage du Scan YARA-X...");
+        // Pour l'instant, on réutilise le deep scan qui intègre déjà YARA-X sur les fichiers critiques
+        // mais on pourrait isoler ici un scan purement basé sur des signatures de fichiers.
+        self.run_deep_scan().await
+    }
 }

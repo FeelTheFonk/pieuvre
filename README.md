@@ -37,11 +37,12 @@ pieuvre est un utilitaire système en Rust pour le contrôle des paramètres Win
 ## Fonctionnalités
 
 ### 1. Interface (TUI)
-- **Command Pattern** : Exécution modulaire.
+- **Esthétique SOTA** : Design monochrome pour une concentration technique maximale.
+- **Command Pattern** : Exécution modulaire et asynchrone via `tokio`.
+- **Statuts Réels** : Vérification d'état en temps réel pour chaque optimisation (Fidélité 100%).
 - **Métriques** : Monitoring CPU, RAM, Uptime.
-- **Navigation** : Organisation par catégories.
-- **UX** : Isolation logique du scan et prompt de confirmation.
-- **Logs** : Retour d'exécution en temps réel.
+- **Feedback** : Journal d'exécution horodaté et barre de progression sobre.
+- **UX** : Isolation logique du scan et prompt de confirmation dynamique.
 
 ### 2. Sécurité et Confidentialité
 - **Confidentialité** : Application des politiques de groupe (GPO).

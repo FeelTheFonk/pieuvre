@@ -17,9 +17,19 @@ pub const CATEGORIES: &str = " Catégories ";
 // Main View
 pub const OPTIMIZATIONS: &str = " Optimisations ";
 pub const DETAILS: &str = " Détails ";
-pub const ID: &str = " ID: ";
-pub const RISK: &str = " Risque: ";
-pub const DESCRIPTION: &str = " Description:";
+pub const ID: &str = " ID : ";
+pub const RISK: &str = " Risque : ";
+pub const DESCRIPTION: &str = " Description :";
+
+// Catégories (Fusionnées)
+pub const CAT_ANALYSIS: &str = " Analyse & Diagnostic ";
+pub const CAT_CONFIDENTIALITY: &str = " Confidentialité & Télémétrie ";
+pub const CAT_PERFORMANCE: &str = " Performance ";
+pub const CAT_SECURITY: &str = " Sécurité ";
+pub const CAT_SYSTEM: &str = " Système & Nettoyage ";
+pub const CAT_SERVICES: &str = " Services ";
+pub const CAT_NETWORK: &str = " Réseau ";
+pub const CAT_SYNC: &str = " Synchronisation ";
 
 // Footer
 pub const KEY_TABS: &str = " ←→ ";
@@ -41,8 +51,6 @@ pub const CONFIRM_KEYS: &str = " [ENTRÉE] Confirmer | [ESC] Annuler ";
 
 // Logs
 pub const LOGS_TITLE: &str = " Journal d'exécution ";
-pub const LOG_RUNNING: &str = "[EN COURS]";
-pub const LOG_SUCCESS: &str = "[SUCCÈS]";
-pub const LOG_ERROR: &str = "[ERREUR]";
-pub const LOG_ALL_APPLIED: &str = "Toutes les optimisations ont été appliquées. Appuyez sur Q pour quitter.";
-
+pub const LOG_RUNNING: &str = " ⚙ ";
+pub const LOG_SUCCESS: &str = " ✔ ";
+pub const LOG_ERROR: &str = " ✖ ";

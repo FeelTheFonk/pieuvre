@@ -4,22 +4,22 @@ pub fn get_options() -> Vec<OptItem> {
     vec![
         OptItem {
             id: "scan_yara",
-            label: "YARA-X Signature Scan",
-            description: "Deep scan for malware signatures using YARA-X.",
+            label: "Analyse de signatures YARA-X",
+            description: "Analyse approfondie des menaces via signatures YARA-X (Tech Preview).",
             default: false,
             risk: RiskLevel::Low,
         },
         OptItem {
             id: "scan_browser",
-            label: "Browser Forensics",
-            description: "Analyze browser history and extensions for threats.",
+            label: "Analyse forensique des navigateurs",
+            description: "Analyse l'historique et les extensions des navigateurs pour détecter des menaces.",
             default: false,
             risk: RiskLevel::Low,
         },
         OptItem {
             id: "scan_registry",
-            label: "Registry Persistence Scan",
-            description: "Check for malicious registry keys and startup items.",
+            label: "Analyse de persistance du registre",
+            description: "Vérifie les clés de registre malveillantes et les éléments de démarrage (ASEP).",
             default: false,
             risk: RiskLevel::Medium,
         },
