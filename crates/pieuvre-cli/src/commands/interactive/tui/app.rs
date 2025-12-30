@@ -23,6 +23,8 @@ pub enum Action {
     UpdateMetrics(SystemMetrics),
     RefreshStatus,
     UpdateStatus(String, bool),
+    ConfirmExecute,
+    CancelExecute,
 }
 
 pub struct AppState {
@@ -36,6 +38,7 @@ pub struct AppState {
     pub metrics: SystemMetrics,
     pub logs: Vec<String>,
     pub is_admin: bool,
+    pub show_confirm: bool,
     pub action_tx: Option<tokio::sync::mpsc::UnboundedSender<Action>>,
 }
 
@@ -66,6 +69,7 @@ impl AppState {
             metrics: SystemMetrics::default(),
             logs: Vec::new(),
             is_admin: crate::commands::interactive::tui::is_elevated(),
+            show_confirm: false,
             action_tx: None,
         }
     }
@@ -144,6 +148,12 @@ impl AppState {
             Action::RefreshStatus => {}
             Action::UpdateStatus(id, applied) => {
                 self.applied_state.insert(id, applied);
+            }
+            Action::ConfirmExecute => {
+                self.show_confirm = true;
+            }
+            Action::CancelExecute => {
+                self.show_confirm = false;
             }
         }
     }

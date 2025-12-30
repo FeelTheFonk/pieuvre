@@ -2,7 +2,7 @@
 //! Centralizes all UI strings for easy localization.
 
 pub const TITLE: &str = " pieuvre ";
-pub const VERSION: &str = "0.7.0";
+pub const VERSION: &str = "0.8.2";
 
 // Header
 pub const CPU: &str = " CPU ";
@@ -32,6 +32,12 @@ pub const KEY_ENTER: &str = " ENTER ";
 pub const KEY_APPLY: &str = "Apply | ";
 pub const KEY_Q: &str = " Q ";
 pub const KEY_QUIT: &str = "Quit";
+
+// Confirmation
+pub const CONFIRM_APPLY_TITLE: &str = " Confirm Changes ";
+pub const CONFIRM_APPLY_MSG: &str = "Are you sure you want to apply the selected optimizations?";
+pub const CONFIRM_SCAN_MSG: &str = "Are you sure you want to run the selected scans?";
+pub const CONFIRM_KEYS: &str = " [ENTER] Confirm | [ESC] Cancel ";
 
 // Logs
 pub const LOGS_TITLE: &str = " Execution Logs ";

@@ -69,13 +69,27 @@ pub async fn run() -> Result<()> {
                     Event::Key(key) => {
                         use crossterm::event::KeyCode;
                         match key.code {
-                            KeyCode::Char('q') | KeyCode::Esc => app.dispatch(Action::Quit),
+                            KeyCode::Char('q') => app.dispatch(Action::Quit),
                             KeyCode::Tab | KeyCode::Right => app.dispatch(Action::NextTab),
                             KeyCode::BackTab | KeyCode::Left => app.dispatch(Action::PrevTab),
                             KeyCode::Up => app.dispatch(Action::PrevItem),
                             KeyCode::Down => app.dispatch(Action::NextItem),
                             KeyCode::Char(' ') => app.dispatch(Action::ToggleSelected),
-                            KeyCode::Enter => app.dispatch(Action::Execute),
+                            KeyCode::Enter => {
+                                if app.show_confirm {
+                                    app.dispatch(Action::Execute);
+                                    app.dispatch(Action::CancelExecute);
+                                } else {
+                                    app.dispatch(Action::ConfirmExecute);
+                                }
+                            }
+                            KeyCode::Esc => {
+                                if app.show_confirm {
+                                    app.dispatch(Action::CancelExecute);
+                                } else {
+                                    app.dispatch(Action::Quit);
+                                }
+                            }
                             _ => {}
                         }
                     }
@@ -87,7 +101,19 @@ pub async fn run() -> Result<()> {
             Some(action) = action_rx.recv() => {
                 match action {
                     Action::Execute => {
-                        let options_to_run: Vec<(String, String)> = app.tabs.iter().flat_map(|tab| {
+                        let active_tab_name = &app.tabs[app.active_tab];
+                        let is_scan_tab = active_tab_name == "Scan";
+
+                        let options_to_run: Vec<(String, String)> = app.tabs.iter().enumerate().flat_map(|(_, tab)| {
+                            let is_this_scan_tab = tab == "Scan";
+
+                            // Isolation logic:
+                            // If we are on Scan tab, only run scans.
+                            // If we are NOT on Scan tab, run everything EXCEPT scans.
+                            if (is_scan_tab && !is_this_scan_tab) || (!is_scan_tab && is_this_scan_tab) {
+                                return vec![];
+                            }
+
                             app.tab_options.get(tab).unwrap_or(&vec![]).iter()
                                 .filter(|opt| *app.options_state.get(opt.id as &str).unwrap_or(&false))
                                 .map(|opt| (opt.id.to_string(), opt.label.to_string()))

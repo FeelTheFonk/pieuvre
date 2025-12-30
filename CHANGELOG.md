@@ -1,5 +1,13 @@
 # Changelog - pieuvre
 
+## [0.8.2] - 2025-12-30
+
+### TUI/CLI (`pieuvre-cli`)
+- **Scan** : Désactivation par défaut des options de scan pour éviter les exécutions accidentelles.
+- **Isolation** : Séparation logique stricte entre les scans et les optimisations système dans l'interface interactive.
+- **UX** : Implémentation d'un prompt de confirmation dynamique avant toute application de changements.
+- **Robustesse** : Correction de warnings de compilation et optimisation de la gestion des événements clavier (`ESC`, `ENTER`).
+
 ## [0.8.1] - 2025-12-30
 
 ### Sentinel (`pieuvre-sync`)

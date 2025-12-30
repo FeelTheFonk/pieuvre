@@ -40,6 +40,53 @@ pub fn render(f: &mut Frame, state: &AppState) {
 
     // Render Footer
     let _ = Footer.render(f, chunks[3], state);
+
+    // Render Confirmation Popup
+    if state.show_confirm {
+        render_confirm_popup(f, state);
+    }
+}
+
+fn render_confirm_popup(f: &mut Frame, state: &AppState) {
+    let area = f.area();
+    let popup_area = Rect {
+        x: area.width / 2 - 30,
+        y: area.height / 2 - 5,
+        width: 60,
+        height: 10,
+    };
+
+    let active_tab_name = &state.tabs[state.active_tab];
+    let is_scan_tab = active_tab_name == "Scan";
+    let msg = if is_scan_tab {
+        i18n::CONFIRM_SCAN_MSG
+    } else {
+        i18n::CONFIRM_APPLY_MSG
+    };
+
+    let block = Block::default()
+        .title(i18n::CONFIRM_APPLY_TITLE)
+        .borders(Borders::ALL)
+        .border_type(BorderType::Double)
+        .border_style(Style::default().fg(Color::Cyan));
+
+    let text = vec![
+        Line::from(""),
+        Line::from(Span::styled(msg, Style::default().fg(Color::White))),
+        Line::from(""),
+        Line::from(Span::styled(
+            i18n::CONFIRM_KEYS,
+            Style::default().fg(Color::Yellow),
+        )),
+    ];
+
+    let paragraph = Paragraph::new(text)
+        .block(block)
+        .alignment(ratatui::layout::Alignment::Center)
+        .wrap(Wrap { trim: true });
+
+    f.render_widget(ratatui::widgets::Clear, popup_area);
+    f.render_widget(paragraph, popup_area);
 }
 
 fn render_logs(f: &mut Frame, area: Rect, state: &AppState) {

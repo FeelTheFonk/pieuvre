@@ -40,6 +40,7 @@ pieuvre est un utilitaire système en Rust pour le contrôle des paramètres Win
 - **Command Pattern** : Exécution modulaire.
 - **Métriques** : Monitoring CPU, RAM, Uptime.
 - **Navigation** : Organisation par catégories.
+- **UX** : Isolation logique du scan et prompt de confirmation.
 - **Logs** : Retour d'exécution en temps réel.
 
 ### 2. Sécurité et Confidentialité
