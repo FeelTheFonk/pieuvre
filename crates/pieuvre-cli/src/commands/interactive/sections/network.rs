@@ -10,13 +10,6 @@ pub fn get_options() -> Vec<OptItem> {
             risk: RiskLevel::Safe,
         },
         OptItem {
-            id: "net_nagle",
-            label: "Disable Nagle's Algorithm",
-            description: "Reduces network latency by disabling TCP packet bundling.",
-            default: true,
-            risk: RiskLevel::Performance,
-        },
-        OptItem {
             id: "net_firewall",
             label: "Apply Firewall Hardening",
             description: "Blocks known telemetry and tracking IP ranges in Windows Firewall.",

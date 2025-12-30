@@ -17,34 +17,11 @@ pub fn get_options() -> Vec<OptItem> {
             risk: RiskLevel::Safe,
         },
         OptItem {
-            id: "dns_doh",
-            label: "Enable DNS-over-HTTPS (Cloudflare)",
-            description:
-                "Configures system-wide DoH using Cloudflare DNS for better privacy and security.",
-            default: true,
-            risk: RiskLevel::Safe,
-        },
-        OptItem {
-            id: "dns_flush",
-            label: "Flush DNS Cache",
-            description: "Clears the local DNS resolver cache.",
-            default: true,
-            risk: RiskLevel::Safe,
-        },
-        OptItem {
             id: "explorer_optimize",
             label: "Optimize Explorer Settings",
             description: "Shows file extensions, hidden files, and disables recent items.",
             default: true,
             risk: RiskLevel::Safe,
-        },
-        OptItem {
-            id: "hardening_lock",
-            label: "Lock Critical Registry Keys",
-            description:
-                "Applies read-only ACLs to critical privacy and system keys to prevent resets.",
-            default: false,
-            risk: RiskLevel::Warning,
         },
         OptItem {
             id: "hardening_unlock",
@@ -53,13 +30,6 @@ pub fn get_options() -> Vec<OptItem> {
                 "Restores default permissions to critical registry keys (use before uninstalling).",
             default: false,
             risk: RiskLevel::Warning,
-        },
-        OptItem {
-            id: "hardening_ppl",
-            label: "Enable PPL Protection",
-            description: "Enables Protected Process Light for the pieuvre process.",
-            default: false,
-            risk: RiskLevel::Safe,
         },
         OptItem {
             id: "windows_update",

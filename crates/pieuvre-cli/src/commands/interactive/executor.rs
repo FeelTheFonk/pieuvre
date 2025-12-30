@@ -175,13 +175,10 @@ impl CommandRegistry {
         self.register("cleanup_temp", CleanupTempCommand);
         self.register("cleanup_winsxs", CleanupWinSxSCommand);
         self.register("cleanup_edge", CleanupEdgeCommand);
-        self.register("dns_doh", DnsDohCommand);
-        self.register("dns_flush", DnsFlushCommand);
+
         self.register("explorer_optimize", ExplorerOptimizeCommand);
         self.register("explorer_restart", ExplorerRestartCommand);
-        self.register("hardening_lock", HardeningLockCommand);
-        self.register("hardening_unlock", HardeningUnlockCommand);
-        self.register("hardening_ppl", HardeningPplCommand);
+
         self.register("windows_update", WindowsUpdateConfigureCommand);
 
         // --- BLOATWARE ---
@@ -246,13 +243,13 @@ impl CommandRegistry {
 
         // --- NETWORK ---
         self.register("net_doh", DnsDohCommand);
-        self.register("net_nagle", NagleDisableCommand);
+
         self.register("net_firewall", FirewallTelemetryBlockCommand);
         self.register("net_hosts", HostsTelemetryCommand);
 
         // --- MAINTENANCE ---
         self.register(
-            "maint_cleanup",
+            "maint_cleanup_full",
             SyncOperationCommand::new(pieuvre_sync::operation::MemoryOptimizationOperation {
                 enable_large_system_cache: true,
                 io_page_lock_limit_mb: None,
@@ -599,14 +596,7 @@ impl TweakCommand for DnsDohCommand {
     }
 }
 
-pub struct DnsFlushCommand;
-#[async_trait]
-impl TweakCommand for DnsFlushCommand {
-    async fn execute(&self) -> Result<ExecutionResult> {
-        tokio::task::spawn_blocking(pieuvre_sync::dns::flush_dns_cache).await??;
-        Ok(ExecutionResult::ok("DNS cache flushed"))
-    }
-}
+
 
 pub struct ExplorerOptimizeCommand;
 #[async_trait]
@@ -626,47 +616,11 @@ impl TweakCommand for ExplorerRestartCommand {
     }
 }
 
-pub struct HardeningLockCommand;
-#[async_trait]
-impl TweakCommand for HardeningLockCommand {
-    async fn execute(&self) -> Result<ExecutionResult> {
-        tokio::task::spawn_blocking(|| {
-            for key in pieuvre_sync::hardening::CRITICAL_KEYS {
-                let _ = pieuvre_sync::hardening::lock_registry_key(key);
-            }
-            for svc in pieuvre_sync::hardening::CRITICAL_SERVICES {
-                let _ = pieuvre_sync::hardening::lock_service(svc);
-            }
-            Ok::<(), anyhow::Error>(())
-        })
-        .await??;
-        Ok(ExecutionResult::ok("Critical keys and services locked"))
-    }
-}
 
-pub struct HardeningUnlockCommand;
-#[async_trait]
-impl TweakCommand for HardeningUnlockCommand {
-    async fn execute(&self) -> Result<ExecutionResult> {
-        tokio::task::spawn_blocking(|| {
-            for key in pieuvre_sync::hardening::CRITICAL_KEYS {
-                let _ = pieuvre_sync::hardening::unlock_registry_key(key);
-            }
-            Ok::<(), anyhow::Error>(())
-        })
-        .await??;
-        Ok(ExecutionResult::ok("Critical keys unlocked"))
-    }
-}
 
-pub struct HardeningPplCommand;
-#[async_trait]
-impl TweakCommand for HardeningPplCommand {
-    async fn execute(&self) -> Result<ExecutionResult> {
-        tokio::task::spawn_blocking(pieuvre_sync::hardening::enable_ppl_protection).await??;
-        Ok(ExecutionResult::ok("PPL protection enabled"))
-    }
-}
+
+
+
 
 pub struct WindowsUpdateConfigureCommand;
 #[async_trait]

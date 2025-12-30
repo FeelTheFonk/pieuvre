@@ -3,10 +3,10 @@ use crate::commands::interactive::types::{OptItem, RiskLevel};
 pub fn get_options() -> Vec<OptItem> {
     vec![
         OptItem {
-            id: "maint_cleanup",
-            label: "Deep System Cleanup",
-            description: "Cleans Temp, WinSxS, and browser caches.",
-            default: true,
+            id: "maint_cleanup_full",
+            label: "Full System Purge",
+            description: "Deep cleaning of Temp, WinSxS, and all browser caches.",
+            default: false,
             risk: RiskLevel::Safe,
         },
         OptItem {
