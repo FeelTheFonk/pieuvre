@@ -481,7 +481,9 @@ impl TweakCommand for DnsDohCommand {
             pieuvre_sync::dns::set_doh_provider(pieuvre_sync::dns::DNSProvider::Cloudflare)
         })
         .await??;
-        Ok(ExecutionResult::ok("DNS-over-HTTPS configured (Cloudflare)"))
+        Ok(ExecutionResult::ok(
+            "DNS-over-HTTPS configured (Cloudflare)",
+        ))
     }
 }
 

@@ -21,7 +21,11 @@ pub fn disable_game_bar() -> Result<()> {
     set_value_multi_hive_dword(r"Software\Microsoft\GameBar", "ShowStartupPanel", 0)?;
 
     // Disable Game Bar controller hints
-    set_value_multi_hive_dword(r"Software\Microsoft\GameBar", "UseNexusForGameBarEnabled", 0)?;
+    set_value_multi_hive_dword(
+        r"Software\Microsoft\GameBar",
+        "UseNexusForGameBarEnabled",
+        0,
+    )?;
 
     tracing::info!("Game Bar disabled");
     Ok(())
@@ -37,7 +41,11 @@ pub fn enable_game_mode() -> Result<()> {
 /// Disable fullscreen optimizations globally
 pub fn disable_fullscreen_optimizations() -> Result<()> {
     set_value_multi_hive_dword(r"System\GameConfigStore", "GameDVR_FSEBehaviorMode", 2)?;
-    set_value_multi_hive_dword(r"System\GameConfigStore", "GameDVR_HonorUserFSEBehaviorMode", 1)?;
+    set_value_multi_hive_dword(
+        r"System\GameConfigStore",
+        "GameDVR_HonorUserFSEBehaviorMode",
+        1,
+    )?;
     set_value_multi_hive_dword(
         r"System\GameConfigStore",
         "GameDVR_DXGIHonorFSEWindowsCompatible",

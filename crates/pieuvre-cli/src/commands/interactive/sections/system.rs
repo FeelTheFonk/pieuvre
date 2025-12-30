@@ -19,7 +19,8 @@ pub fn get_options() -> Vec<OptItem> {
         OptItem {
             id: "dns_doh",
             label: "Enable DNS-over-HTTPS (Cloudflare)",
-            description: "Configures system-wide DoH using Cloudflare DNS for better privacy and security.",
+            description:
+                "Configures system-wide DoH using Cloudflare DNS for better privacy and security.",
             default: true,
             risk: RiskLevel::Safe,
         },
@@ -40,14 +41,16 @@ pub fn get_options() -> Vec<OptItem> {
         OptItem {
             id: "hardening_lock",
             label: "Lock Critical Registry Keys",
-            description: "Applies read-only ACLs to critical privacy and system keys to prevent resets.",
+            description:
+                "Applies read-only ACLs to critical privacy and system keys to prevent resets.",
             default: false,
             risk: RiskLevel::Warning,
         },
         OptItem {
             id: "hardening_unlock",
             label: "Unlock Critical Registry Keys",
-            description: "Restores default permissions to critical registry keys (use before uninstalling).",
+            description:
+                "Restores default permissions to critical registry keys (use before uninstalling).",
             default: false,
             risk: RiskLevel::Warning,
         },
