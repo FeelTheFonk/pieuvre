@@ -50,9 +50,10 @@ pieuvre est un utilitaire système en Rust pour le contrôle des paramètres Win
 - **Sentinel** : Surveillance des clés critiques.
 
 ### 3. Analyse
-- **Moteur YARA-X** : Scan de signatures.
-- **Navigateurs** : Analyse Chrome, Edge, Firefox.
-- **Persistance** : Détection des mécanismes dans le registre.
+- **Moteur YARA-X** : 8 regles de detection (adware, stealers, obfuscation, droppers, LNK).
+- **Navigateurs** : Analyse Chrome, Edge, Brave, Firefox (extensions forcees, moteurs de recherche).
+- **LNK Forensics** : Detection de raccourcis malveillants (11 patterns).
+- **Persistance** : Detection des mecanismes dans le registre (10 cles ASEP).
 
 ### 4. Optimisation
 - **Latence** : Timer kernel (0.5ms), MSI mode, DPC/ISR.
@@ -103,6 +104,7 @@ pieuvre rollback --last
 | `audit` | Inspection et rapport. |
 | `interactive` | Interface TUI. |
 | `tweak` | Gestion des optimisations. |
+| `scan` | Analyse de sécurité (YARA-X, navigateurs, registre). |
 | `status` | État de l'alignement. |
 | `verify` | Vérification d'intégrité. |
 | `rollback` | Restauration snapshot. |

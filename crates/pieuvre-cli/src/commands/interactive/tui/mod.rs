@@ -104,7 +104,7 @@ pub async fn run() -> Result<()> {
                         let active_tab_name = &app.tabs[app.active_tab];
                         let is_scan_tab = active_tab_name == "Scan";
 
-                        let options_to_run: Vec<(String, String)> = app.tabs.iter().enumerate().flat_map(|(_, tab)| {
+                        let options_to_run: Vec<(String, String)> = app.tabs.iter().flat_map(|tab| {
                             let is_this_scan_tab = tab == "Scan";
 
                             // Isolation logic:
@@ -130,7 +130,7 @@ pub async fn run() -> Result<()> {
                                         let _ = log_tx.send(Action::AddLog(format!("{} {}: {}", i18n::LOG_SUCCESS, label, res.message)));
                                     }
                                     Err(e) => {
-                                        let _ = log_tx.send(Action::AddLog(format!("{} {}: {}", i18n::LOG_ERROR, label, e)));
+                                        let _ = log_tx.send(Action::AddLog(format!("{} {}: {:?}", i18n::LOG_ERROR, label, e)));
                                     }
                                 }
                             }

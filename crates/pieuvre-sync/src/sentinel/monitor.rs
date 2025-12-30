@@ -23,12 +23,16 @@ impl Sentinel {
         // Perform initial restoration to start from a clean state
         let _ = Self::check_and_restore();
 
-        // Monitor registry keys via native notifications
+        // Monitor registry keys via native notifications (filtered by existence)
         for key_path in CRITICAL_KEYS {
+            if !crate::hardening::key_exists(key_path) {
+                tracing::debug!("Sentinel: Skipping non-existent key: {}", key_path);
+                continue;
+            }
             let key_path = key_path.to_string();
             std::thread::spawn(move || {
                 if let Err(e) = Self::monitor_registry_key(&key_path) {
-                    tracing::error!("Sentinel Registry Monitor error for {}: {:?}", key_path, e);
+                    tracing::warn!("Sentinel Registry Monitor stopped for {}: {:?}", key_path, e);
                 }
             });
         }
@@ -51,6 +55,11 @@ impl Sentinel {
     }
 
     fn monitor_registry_key(key_path: &str) -> Result<()> {
+        // Pre-check key existence before entering monitoring loop
+        if !crate::hardening::key_exists(key_path) {
+            tracing::debug!("Sentinel: Key {} does not exist, skipping monitoring.", key_path);
+            return Ok(());
+        }
         unsafe {
             let subkey_wide: Vec<u16> = key_path.encode_utf16().chain(std::iter::once(0)).collect();
             let mut hkey = Default::default();
@@ -143,8 +152,14 @@ impl Sentinel {
 
     fn check_and_restore() -> Result<()> {
         for key in CRITICAL_KEYS {
+            // Skip non-existent keys (already handled by lock_registry_key, but avoid log spam)
+            if !crate::hardening::key_exists(key) {
+                tracing::debug!("Sentinel: Skipping non-existent key during restore: {}", key);
+                continue;
+            }
             if let Err(e) = crate::hardening::lock_registry_key(key) {
-                tracing::error!("Initial restoration failed for key {}: {:?}", key, e);
+                // Use warn instead of error for protected system keys (Access Denied)
+                tracing::warn!("Sentinel: Cannot lock key {} (likely protected): {:?}", key, e);
             }
         }
 

@@ -13,7 +13,7 @@ pub fn get_options() -> Vec<OptItem> {
             id: "power_ultimate",
             label: "Enable Ultimate Performance Plan",
             description: "Unlocks and activates the hidden 'Ultimate Performance' power scheme.",
-            default: true,
+            default: false,
             risk: RiskLevel::Low,
         },
         OptItem {

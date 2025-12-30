@@ -19,9 +19,34 @@ use windows::Win32::System::Threading::{GetCurrentProcess, OpenProcessToken};
 
 const SDDL_REVISION_1: u32 = 1;
 
+/// Vérifie si une clé de registre existe
+pub fn key_exists(key_path: &str) -> bool {
+    use windows::Win32::System::Registry::{RegOpenKeyExW, RegCloseKey, HKEY_LOCAL_MACHINE, KEY_READ};
+    unsafe {
+        let subkey_wide: Vec<u16> = key_path.encode_utf16().chain(std::iter::once(0)).collect();
+        let mut hkey = Default::default();
+        let result = RegOpenKeyExW(
+            HKEY_LOCAL_MACHINE,
+            PCWSTR(subkey_wide.as_ptr()),
+            Some(0),
+            KEY_READ,
+            &mut hkey,
+        );
+        if result.is_ok() {
+            let _ = RegCloseKey(hkey);
+            true
+        } else {
+            false
+        }
+    }
+}
+
 /// Verrouille une clé de registre en lecture seule
 /// SDDL: D:P(A;;KR;;;WD)(A;;KA;;;SY) -> Allow Read (KR) to Everyone (WD), Full Control (KA) to SYSTEM (SY)
 pub fn lock_registry_key(key_path: &str) -> Result<()> {
+    if !key_exists(key_path) {
+        return Err(PieuvreError::Registry(format!("Key does not exist: {}", key_path)));
+    }
     apply_sddl(key_path, "D:P(A;;KR;;;WD)(A;;KA;;;SY)")
 }
 
@@ -408,19 +433,16 @@ pub const SERVICE_USOSVC: &str = "UsoSvc";
 pub const SERVICE_DOSVC: &str = "DoSvc";
 
 /// Clés critiques à verrouiller
+/// Note: Clés TrustedInstaller protégées (SESSION_MANAGER_KERNEL_KEY, IFEO_KEY, WINLOGON_KEY)
+/// et clés potentiellement inexistantes (APPINIT_DLLS_KEY, AI_DATA_ANALYSIS_KEY, EXPLORER_SHELL_DELAY_KEY)
+/// ont été retirées car elles causent des erreurs Access Denied ou File Not Found.
 pub const CRITICAL_KEYS: &[&str] = &[
     PRIORITY_CONTROL_KEY,
     MEMORY_MANAGEMENT_KEY,
     MULTIMEDIA_PROFILE_KEY,
-    SESSION_MANAGER_KERNEL_KEY,
     r"SYSTEM\CurrentControlSet\Services\DiagTrack",
     r"SYSTEM\CurrentControlSet\Services\SysMain",
-    IFEO_KEY,
-    APPINIT_DLLS_KEY,
-    WINLOGON_KEY,
-    EXPLORER_SHELL_DELAY_KEY,
     WINDOWS_AI_KEY,
-    AI_DATA_ANALYSIS_KEY,
     WINDOWS_COPILOT_KEY,
     DNS_CACHE_PARAMS_KEY,
     DATA_COLLECTION_KEY,

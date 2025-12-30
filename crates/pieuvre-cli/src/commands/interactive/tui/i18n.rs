@@ -2,7 +2,7 @@
 //! Centralizes all UI strings for easy localization.
 
 pub const TITLE: &str = " pieuvre ";
-pub const VERSION: &str = "0.8.2";
+pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // Header
 pub const CPU: &str = " CPU ";
@@ -12,36 +12,37 @@ pub const ADMIN: &str = " ADMIN ";
 pub const USER: &str = " USER ";
 
 // Sidebar
-pub const CATEGORIES: &str = " Categories ";
+pub const CATEGORIES: &str = " Catégories ";
 
 // Main View
-pub const OPTIMIZATIONS: &str = " Optimizations ";
-pub const DETAILS: &str = " Details ";
+pub const OPTIMIZATIONS: &str = " Optimisations ";
+pub const DETAILS: &str = " Détails ";
 pub const ID: &str = " ID: ";
-pub const RISK: &str = " Risk: ";
+pub const RISK: &str = " Risque: ";
 pub const DESCRIPTION: &str = " Description:";
 
 // Footer
 pub const KEY_TABS: &str = " ←→ ";
-pub const KEY_NEXT: &str = "Tabs | ";
+pub const KEY_NEXT: &str = "Onglets | ";
 pub const KEY_NAV: &str = " ↑↓ ";
-pub const KEY_NAVIGATE: &str = "Navigate | ";
-pub const KEY_SPACE: &str = " SPACE ";
-pub const KEY_TOGGLE: &str = "Toggle | ";
-pub const KEY_ENTER: &str = " ENTER ";
-pub const KEY_APPLY: &str = "Apply | ";
+pub const KEY_NAVIGATE: &str = "Naviguer | ";
+pub const KEY_SPACE: &str = " ESPACE ";
+pub const KEY_TOGGLE: &str = "Sélection | ";
+pub const KEY_ENTER: &str = " ENTRÉE ";
+pub const KEY_APPLY: &str = "Appliquer | ";
 pub const KEY_Q: &str = " Q ";
-pub const KEY_QUIT: &str = "Quit";
+pub const KEY_QUIT: &str = "Quitter";
 
 // Confirmation
-pub const CONFIRM_APPLY_TITLE: &str = " Confirm Changes ";
-pub const CONFIRM_APPLY_MSG: &str = "Are you sure you want to apply the selected optimizations?";
-pub const CONFIRM_SCAN_MSG: &str = "Are you sure you want to run the selected scans?";
-pub const CONFIRM_KEYS: &str = " [ENTER] Confirm | [ESC] Cancel ";
+pub const CONFIRM_APPLY_TITLE: &str = " Confirmer les changements ";
+pub const CONFIRM_APPLY_MSG: &str = "Voulez-vous appliquer les optimisations sélectionnées ?";
+pub const CONFIRM_SCAN_MSG: &str = "Voulez-vous exécuter les scans sélectionnés ?";
+pub const CONFIRM_KEYS: &str = " [ENTRÉE] Confirmer | [ESC] Annuler ";
 
 // Logs
-pub const LOGS_TITLE: &str = " Execution Logs ";
-pub const LOG_RUNNING: &str = "[RUNNING]";
-pub const LOG_SUCCESS: &str = "[SUCCESS]";
-pub const LOG_ERROR: &str = "[ERROR]";
-pub const LOG_ALL_APPLIED: &str = "All optimizations applied, press Q to quit.";
+pub const LOGS_TITLE: &str = " Journal d'exécution ";
+pub const LOG_RUNNING: &str = "[EN COURS]";
+pub const LOG_SUCCESS: &str = "[SUCCÈS]";
+pub const LOG_ERROR: &str = "[ERREUR]";
+pub const LOG_ALL_APPLIED: &str = "Toutes les optimisations ont été appliquées. Appuyez sur Q pour quitter.";
+

@@ -174,3 +174,38 @@ pub fn apply_all_network_optimizations() -> Result<u32> {
     tracing::info!("All network latency optimizations applied");
     Ok(count)
 }
+
+/// Disables IPv6 on all network interfaces
+/// 0xFF = Disable all IPv6 components
+pub fn disable_ipv6() -> Result<()> {
+    crate::registry::set_dword_value(
+        r"SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters",
+        "DisabledComponents",
+        0xFF,
+    )?;
+
+    tracing::info!("IPv6 disabled (requires reboot)");
+    Ok(())
+}
+
+/// Enables IPv6 (restore default)
+pub fn enable_ipv6() -> Result<()> {
+    crate::registry::set_dword_value(
+        r"SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters",
+        "DisabledComponents",
+        0,
+    )?;
+
+    tracing::info!("IPv6 enabled");
+    Ok(())
+}
+
+/// Checks if IPv6 is disabled
+pub fn is_ipv6_disabled() -> bool {
+    crate::registry::read_dword_value(
+        r"SYSTEM\CurrentControlSet\Services\Tcpip6\Parameters",
+        "DisabledComponents",
+    )
+    .map(|v| v == 0xFF)
+    .unwrap_or(false)
+}

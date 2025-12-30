@@ -157,6 +157,9 @@ impl CommandRegistry {
         self.register("vbs", SecurityDisableVbsCommand);
         self.register("spectre", SecurityDisableSpectreCommand);
         self.register("uac_level", SecurityDisableUacCommand);
+        self.register("hardening_lock", HardeningLockCommand);
+        self.register("hardening_unlock", HardeningUnlockCommand);
+        self.register("hardening_ppl", HardeningPplCommand);
 
         // --- SCAN ---
         self.register("scan_yara", ScanYaraCommand);
@@ -243,7 +246,7 @@ impl CommandRegistry {
 
         // --- NETWORK ---
         self.register("net_doh", DnsDohCommand);
-
+        self.register("net_ipv6", DisableIPv6Command);
         self.register("net_firewall", FirewallTelemetryBlockCommand);
         self.register("net_hosts", HostsTelemetryCommand);
 
@@ -257,6 +260,7 @@ impl CommandRegistry {
         );
         self.register("maint_updates_pause", WindowsUpdateConfigureCommand);
         self.register("maint_tasks", ScheduledTasksTelemetryCommand);
+        self.register("maint_hibernation", DisableHibernationCommand);
     }
 
     pub fn register(&mut self, id: &str, command: impl TweakCommand + 'static) {
@@ -357,6 +361,57 @@ impl TweakCommand for SecurityDisableUacCommand {
         })
         .await??;
         Ok(ExecutionResult::ok("UAC disabled (Never Notify)"))
+    }
+}
+
+pub struct HardeningLockCommand;
+#[async_trait]
+impl TweakCommand for HardeningLockCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        let count = tokio::task::spawn_blocking(|| {
+            let mut locked = 0usize;
+            for key in pieuvre_sync::hardening::CRITICAL_KEYS {
+                if pieuvre_sync::hardening::lock_registry_key(key).is_ok() {
+                    locked += 1;
+                }
+            }
+            locked
+        })
+        .await?;
+        Ok(ExecutionResult::ok_count(
+            count,
+            "Critical registry keys locked with read-only ACLs",
+        ))
+    }
+}
+
+pub struct HardeningUnlockCommand;
+#[async_trait]
+impl TweakCommand for HardeningUnlockCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        let count = tokio::task::spawn_blocking(|| {
+            let mut unlocked = 0usize;
+            for key in pieuvre_sync::hardening::CRITICAL_KEYS {
+                if pieuvre_sync::hardening::unlock_registry_key(key).is_ok() {
+                    unlocked += 1;
+                }
+            }
+            unlocked
+        })
+        .await?;
+        Ok(ExecutionResult::ok_count(
+            count,
+            "Critical registry keys unlocked (default ACLs restored)",
+        ))
+    }
+}
+
+pub struct HardeningPplCommand;
+#[async_trait]
+impl TweakCommand for HardeningPplCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::hardening::enable_ppl_protection).await??;
+        Ok(ExecutionResult::ok("PPL protection enabled"))
     }
 }
 
@@ -596,8 +651,6 @@ impl TweakCommand for DnsDohCommand {
     }
 }
 
-
-
 pub struct ExplorerOptimizeCommand;
 #[async_trait]
 impl TweakCommand for ExplorerOptimizeCommand {
@@ -615,12 +668,6 @@ impl TweakCommand for ExplorerRestartCommand {
         Ok(ExecutionResult::ok("Explorer restarted"))
     }
 }
-
-
-
-
-
-
 
 pub struct WindowsUpdateConfigureCommand;
 #[async_trait]
@@ -649,8 +696,20 @@ pub struct ScanBrowserCommand;
 #[async_trait]
 impl TweakCommand for ScanBrowserCommand {
     async fn execute(&self) -> Result<ExecutionResult> {
+        use indicatif::{ProgressBar, ProgressStyle};
+        let pb = ProgressBar::new_spinner();
+        pb.set_style(ProgressStyle::default_spinner().template("{spinner:.green} {msg}")?);
+        pb.set_message("Analyse forensique des navigateurs...");
+        pb.enable_steady_tick(std::time::Duration::from_millis(100));
+
         let engine = pieuvre_scan::engine::ScanEngine::new()?;
         let findings = engine.run_deep_scan().await?;
+
+        pb.finish_with_message(format!(
+            "Analyse terminée : {} menaces trouvées.",
+            findings.len()
+        ));
+
         Ok(ExecutionResult::ok_count(
             findings.len(),
             "Browser forensics completed",
@@ -662,8 +721,20 @@ pub struct ScanRegistryCommand;
 #[async_trait]
 impl TweakCommand for ScanRegistryCommand {
     async fn execute(&self) -> Result<ExecutionResult> {
+        use indicatif::{ProgressBar, ProgressStyle};
+        let pb = ProgressBar::new_spinner();
+        pb.set_style(ProgressStyle::default_spinner().template("{spinner:.blue} {msg}")?);
+        pb.set_message("Scan Blitz du registre (ASEP/IFEO/Services)...");
+        pb.enable_steady_tick(std::time::Duration::from_millis(100));
+
         let engine = pieuvre_scan::engine::ScanEngine::new()?;
         let findings = engine.run_blitz().await?;
+
+        pb.finish_with_message(format!(
+            "Scan Blitz terminé : {} menaces trouvées.",
+            findings.len()
+        ));
+
         Ok(ExecutionResult::ok_count(
             findings.len(),
             "Registry persistence scan completed",
@@ -717,4 +788,30 @@ impl TweakCommand for SyncPersistCommand {
     }
 }
 
-// --- FIN DES COMMANDES SOTA v0.7.0 ---
+// --- COMMANDES RÉSEAU ADDITIONNELLES ---
+
+pub struct DisableIPv6Command;
+#[async_trait]
+impl TweakCommand for DisableIPv6Command {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::network::disable_ipv6).await??;
+        Ok(ExecutionResult::ok(
+            "IPv6 disabled (reboot required to take effect)",
+        ))
+    }
+}
+
+// --- COMMANDES MAINTENANCE ADDITIONNELLES ---
+
+pub struct DisableHibernationCommand;
+#[async_trait]
+impl TweakCommand for DisableHibernationCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::power::disable_hibernation).await??;
+        Ok(ExecutionResult::ok(
+            "Hibernation disabled, hiberfil.sys removed",
+        ))
+    }
+}
+
+// --- FIN DES COMMANDES SOTA v0.8.3 ---

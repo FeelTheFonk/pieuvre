@@ -31,5 +31,3 @@ pub fn get_all_sections() -> Vec<(&'static str, Vec<OptItem>)> {
         ("Sync", sync::get_options()),
     ]
 }
-
-// --- FIN DES SECTIONS SOTA v0.7.0 ---

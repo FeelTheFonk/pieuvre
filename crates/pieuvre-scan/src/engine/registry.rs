@@ -1,3 +1,5 @@
+use crate::engine::walker::FastFilter;
+use crate::engine::{Threat, ThreatSeverity};
 use crate::Result;
 use std::ptr;
 use windows_sys::Win32::System::Registry::{
@@ -12,6 +14,7 @@ unsafe impl Sync for SendHKey {}
 
 pub struct RegistryWalker {
     asep_keys: Vec<(&'static str, SendHKey)>,
+    fast_filter: FastFilter,
 }
 
 impl Default for RegistryWalker {
@@ -52,20 +55,43 @@ impl RegistryWalker {
                     r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows",
                     SendHKey(HKEY_LOCAL_MACHINE),
                 ),
+                (
+                    r"SYSTEM\CurrentControlSet\Services",
+                    SendHKey(HKEY_LOCAL_MACHINE),
+                ),
+                (
+                    r"SOFTWARE\Microsoft\Windows\CurrentVersion\Winlogon",
+                    SendHKey(HKEY_LOCAL_MACHINE),
+                ),
+                (
+                    r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders",
+                    SendHKey(HKEY_CURRENT_USER),
+                ),
             ],
+            fast_filter: FastFilter::default(),
         }
     }
 
-    pub fn scan_asep(&self) -> Result<Vec<String>> {
+    pub fn scan_asep(&self) -> Result<Vec<Threat>> {
         let mut findings = Vec::new();
-        let mut name_buffer = [0u16; 16384]; // Buffer réutilisable (SOTA)
+        let mut name_buffer = [0u16; 16384];
         let mut data_buffer = [0u8; 16384];
 
         for (path, root) in &self.asep_keys {
             if let Ok(values) =
                 self.enumerate_values(root.0, path, &mut name_buffer, &mut data_buffer)
             {
-                findings.extend(values);
+                for val in values {
+                    if self.fast_filter.is_suspicious(&val) {
+                        findings.push(Threat {
+                            name: "Persistence Registry Hijack".to_string(),
+                            description: format!("Clé de registre suspecte trouvée dans {}", path),
+                            severity: ThreatSeverity::High,
+                            source: "Registry".to_string(),
+                            location: val,
+                        });
+                    }
+                }
             }
         }
         Ok(findings)

@@ -284,3 +284,41 @@ pub fn apply_gaming_power_config() -> Result<()> {
     configure_power_settings(false, false, 100, 100)?;
     Ok(())
 }
+
+/// Disables hibernation to free disk space (removes hiberfil.sys)
+pub fn disable_hibernation() -> Result<()> {
+    use std::process::Command;
+
+    let output = Command::new("powercfg")
+        .args(["/hibernate", "off"])
+        .output()
+        .map_err(PieuvreError::Io)?;
+
+    if !output.status.success() {
+        return Err(PieuvreError::System(
+            "Failed to disable hibernation".to_string(),
+        ));
+    }
+
+    tracing::info!("Hibernation disabled, hiberfil.sys will be removed");
+    Ok(())
+}
+
+/// Enables hibernation
+pub fn enable_hibernation() -> Result<()> {
+    use std::process::Command;
+
+    let output = Command::new("powercfg")
+        .args(["/hibernate", "on"])
+        .output()
+        .map_err(PieuvreError::Io)?;
+
+    if !output.status.success() {
+        return Err(PieuvreError::System(
+            "Failed to enable hibernation".to_string(),
+        ));
+    }
+
+    tracing::info!("Hibernation enabled");
+    Ok(())
+}

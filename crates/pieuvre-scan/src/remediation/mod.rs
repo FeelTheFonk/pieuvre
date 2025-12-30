@@ -13,7 +13,29 @@ impl Remediator {
         }
     }
 
-    /// Supprime un fichier au prochain redémarrage
+    /// Supprime un fichier immédiatement, avec fallback sur le redémarrage si verrouillé.
+    pub fn delete_file(&self, file_path: &str) -> Result<()> {
+        let path = Path::new(file_path);
+        if !path.exists() {
+            return Ok(());
+        }
+
+        if let Err(e) = std::fs::remove_file(path) {
+            if e.kind() == std::io::ErrorKind::PermissionDenied {
+                tracing::warn!(
+                    "Accès refusé pour {}, planification au redémarrage...",
+                    file_path
+                );
+                self.delete_on_reboot(file_path)?;
+            } else {
+                return Err(ScanError::Io(e));
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Supprime un fichier au prochain redémarrage (SOTA: MOVEFILE_DELAY_UNTIL_REBOOT)
     pub fn delete_on_reboot(&self, file_path: &str) -> Result<()> {
         let path_u16: Vec<u16> = file_path.encode_utf16().chain(std::iter::once(0)).collect();
 

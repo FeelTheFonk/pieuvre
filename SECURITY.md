@@ -6,8 +6,9 @@ We provide security updates for the current major version of pieuvre.
 
 | Version | Supported |
 |:---|:---|
-| 0.6.x | Supported |
-| < 0.6 | End of Life |
+| 0.8.x | Supported |
+| 0.7.x | Security fixes only |
+| < 0.7 | End of Life |
 
 ## Reporting a Vulnerability
 

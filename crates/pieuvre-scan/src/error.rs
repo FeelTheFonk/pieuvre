@@ -23,6 +23,12 @@ pub enum ScanError {
     #[error("Database error: {0}")]
     Database(#[from] rusqlite::Error),
 
+    #[error("Access denied (Insufficient privileges)")]
+    AccessDenied,
+
+    #[error("Forensic error: {0}")]
+    Forensic(String),
+
     #[error("Other error: {0}")]
     Other(String),
 }
