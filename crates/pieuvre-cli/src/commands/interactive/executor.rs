@@ -1,427 +1,566 @@
+use crate::commands::interactive::types::{ExecutionResult, TweakCommand};
 use anyhow::Result;
 use async_trait::async_trait;
-use tracing::instrument;
+use std::collections::HashMap;
+use std::sync::Arc;
 
-pub struct ExecutionResult {
-    pub _affected_count: usize,
-    #[allow(dead_code)]
-    pub message: String,
-}
-impl ExecutionResult {
-    pub fn ok(msg: impl Into<String>) -> Self {
-        Self {
-            _affected_count: 1,
-            message: msg.into(),
-        }
-    }
-    pub fn ok_count(count: usize, msg: impl Into<String>) -> Self {
-        Self {
-            _affected_count: count,
-            message: msg.into(),
-        }
-    }
+/// Registre central des commandes de tweaks (SOTA v0.7.0)
+pub struct CommandRegistry {
+    commands: HashMap<String, Arc<dyn TweakCommand>>,
 }
 
+impl CommandRegistry {
+    pub fn new() -> Self {
+        let mut registry = Self {
+            commands: HashMap::new(),
+        };
+        registry.register_all();
+        registry
+    }
+
+    fn register_all(&mut self) {
+        // --- TÉLÉMÉTRIE ---
+        self.register("diagtrack", ServiceDisableCommand::new("DiagTrack"));
+        self.register("dmwappush", ServiceDisableCommand::new("dmwappushservice"));
+        self.register("wersvc", ServiceDisableCommand::new("WerSvc"));
+        self.register("firewall", FirewallTelemetryBlockCommand);
+        self.register("sched_tasks", ScheduledTasksTelemetryCommand);
+        self.register("hosts", HostsTelemetryCommand);
+        self.register("onedrive", OneDriveUninstallCommand);
+
+        // --- PRIVACY ---
+        self.register(
+            "telemetry_level",
+            RegistryDwordCommand::new(
+                r"SOFTWARE\Policies\Microsoft\Windows\DataCollection",
+                "AllowTelemetry",
+                0,
+            ),
+        );
+        self.register("advertising_id", RegistryDisableAdvIdCommand);
+        self.register("location", RegistryDisableLocationCommand);
+        self.register("activity_history", RegistryDisableActivityHistoryCommand);
+        self.register("cortana", RegistryDisableCortanaCommand);
+        self.register("recall", RegistryDisableRecallCommand);
+        self.register("context_menu", ContextMenuClassicCommand);
+        self.register("edge_telemetry", EdgeTelemetryDisableCommand);
+
+        // --- O&O PRIVACY ---
+        self.register("oo_telemetry", OORecommendedPrivacyCommand);
+        self.register("oo_advertising", RegistryDisableAdvIdCommand);
+        self.register("oo_copilot", AppxRemoveCopilotCommand);
+        self.register("oo_recall", RegistryDisableRecallCommand);
+        self.register("oo_widgets", OORecommendedPrivacyCommand);
+        self.register("oo_search_highlights", RegistryDisableCortanaCommand);
+        self.register("oo_wudo", OORecommendedPrivacyCommand);
+        self.register("oo_wifi_sense", OORecommendedPrivacyCommand);
+        self.register("oo_app_permissions", RegistryDisableLocationCommand);
+        self.register("oo_bg_apps", OORecommendedPrivacyCommand);
+
+        // --- PERFORMANCE ---
+        self.register("timer", TimerResolutionCommand::new(5000));
+        self.register(
+            "power_ultimate",
+            PowerPlanCommand::new(pieuvre_sync::power::PowerPlan::UltimatePerformance),
+        );
+        self.register("cpu_throttle", CpuThrottlingDisableCommand);
+        self.register("msi", MsiEnableAllCommand);
+        self.register("hags", HagsDisableCommand);
+        self.register("nagle", NagleDisableCommand);
+        self.register("interrupts", InterruptsOptimizeCommand);
+        self.register("memory", MemoryOptimizeCommand);
+
+        // --- SECURITY ---
+        self.register("hvci", SecurityDisableHvciCommand);
+        self.register("vbs", SecurityDisableVbsCommand);
+        self.register("spectre", SecurityDisableSpectreCommand);
+        self.register("uac_level", SecurityDisableUacCommand);
+
+        // --- SYSTEM & MAINTENANCE ---
+        self.register("cleanup_temp", CleanupTempCommand);
+        self.register("cleanup_winsxs", CleanupWinSxSCommand);
+        self.register("cleanup_edge", CleanupEdgeCommand);
+        self.register("dns_doh", DnsDohCommand);
+        self.register("dns_flush", DnsFlushCommand);
+        self.register("explorer_optimize", ExplorerOptimizeCommand);
+        self.register("explorer_restart", ExplorerRestartCommand);
+        self.register("hardening_lock", HardeningLockCommand);
+        self.register("hardening_unlock", HardeningUnlockCommand);
+        self.register("hardening_ppl", HardeningPplCommand);
+        self.register("windows_update", WindowsUpdateConfigureCommand);
+    }
+
+    pub fn register(&mut self, id: &str, command: impl TweakCommand + 'static) {
+        self.commands.insert(id.to_string(), Arc::new(command));
+    }
+
+    pub async fn execute(&self, id: &str) -> Result<ExecutionResult> {
+        if let Some(cmd) = self.commands.get(id) {
+            cmd.execute().await
+        } else {
+            // Fallback pour les commandes non encore migrées vers le nouveau système
+            anyhow::bail!("Command not yet migrated to SOTA Registry: {}", id)
+        }
+    }
+}
+
+// --- COMMANDES DE SERVICES ---
+
+pub struct ServiceDisableCommand {
+    name: String,
+}
+impl ServiceDisableCommand {
+    pub fn new(name: impl Into<String>) -> Self {
+        Self { name: name.into() }
+    }
+}
 #[async_trait]
-pub trait OptExecutor: Send + Sync {
-    async fn execute(&self, id: &str) -> Result<ExecutionResult>;
-}
-
-async fn svc_disable(name: &str) -> Result<ExecutionResult> {
-    let n = name.to_string();
-    tokio::task::spawn_blocking(move || pieuvre_sync::services::disable_service(&n)).await??;
-    Ok(ExecutionResult::ok(format!("{} disabled", name)))
-}
-
-async fn reg_set_dword(key: &str, val: &str, data: u32) -> Result<ExecutionResult> {
-    let (k, v) = (key.to_string(), val.to_string());
-    tokio::task::spawn_blocking(move || pieuvre_sync::registry::set_dword_value(&k, &v, data))
-        .await??;
-    Ok(ExecutionResult::ok(format!("{} set to {}", val, data)))
-}
-
-macro_rules! impl_exec {
-    ($name:ident, $cat:expr, { $($id:pat => $body:expr),* $(,)? }) => {
-        pub struct $name;
-        #[async_trait]
-        impl OptExecutor for $name {
-            #[instrument(skip(self), fields(category = $cat))]
-            async fn execute(&self, id: &str) -> Result<ExecutionResult> {
-                match id { $($id => $body),*, _ => anyhow::bail!("Unknown {} option: {}", $cat, id) }
-            }
-        }
-    };
-}
-
-impl_exec!(TelemetryExecutor, "telemetry", {
-    "diagtrack" => svc_disable("DiagTrack").await,
-    "dmwappush" => svc_disable("dmwappushservice").await,
-    "wersvc" => svc_disable("WerSvc").await,
-    "wercplsupport" => svc_disable("wercplsupport").await,
-    "pcasvc" => svc_disable("PcaSvc").await,
-    "wdisystem" => svc_disable("WdiSystemHost").await,
-    "wdiservice" => svc_disable("WdiServiceHost").await,
-    "lfsvc" => svc_disable("lfsvc").await,
-    "mapsbroker" => svc_disable("MapsBroker").await,
-    "firewall" => {
-        let r = tokio::task::spawn_blocking(pieuvre_sync::firewall::create_telemetry_block_rules).await??;
-        Ok(ExecutionResult::ok_count(r.len(), format!("{} firewall rules", r.len())))
-    },
-    "sched_tasks" => {
-        let t = tokio::task::spawn_blocking(pieuvre_sync::scheduled_tasks::disable_telemetry_tasks).await??;
-        Ok(ExecutionResult::ok_count(t.len(), format!("{} tasks disabled", t.len())))
-    },
-    "hosts" => {
-        let c = tokio::task::spawn_blocking(pieuvre_sync::hosts::add_telemetry_blocks).await??;
-        Ok(ExecutionResult::ok_count(c as usize, format!("{} domains blocked", c)))
-    },
-    "onedrive" => {
-        tokio::task::spawn_blocking(pieuvre_sync::onedrive::uninstall_onedrive).await??;
-        Ok(ExecutionResult::ok("OneDrive removed"))
-    },
-});
-
-impl_exec!(PrivacyExecutor, "privacy", {
-    "telemetry_level" => {
-        reg_set_dword(r"SOFTWARE\Policies\Microsoft\Windows\DataCollection", "AllowTelemetry", 0).await?;
-        reg_set_dword(r"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection", "AllowTelemetry", 0).await
-    },
-    "advertising_id" => reg_set_dword(r"SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo", "Enabled", 0).await,
-    "location" => reg_set_dword(r"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location", "Value", 0).await,
-    "activity_history" => {
-        reg_set_dword(r"SOFTWARE\Policies\Microsoft\Windows\System", "EnableActivityFeed", 0).await?;
-        reg_set_dword(r"SOFTWARE\Policies\Microsoft\Windows\System", "PublishUserActivities", 0).await?;
-        reg_set_dword(r"SOFTWARE\Policies\Microsoft\Windows\System", "UploadUserActivities", 0).await
-    },
-    "cortana" => reg_set_dword(r"SOFTWARE\Policies\Microsoft\Windows\Windows Search", "AllowCortana", 0).await,
-    "widgets" => reg_set_dword(r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced", "TaskbarDa", 0).await,
-    "recall" => {
-        reg_set_dword(r"SOFTWARE\Policies\Microsoft\Windows\WindowsAI", "DisableAIDataAnalysis", 1).await?;
-        reg_set_dword(r"SOFTWARE\Policies\Microsoft\Windows\WindowsAI", "TurnOffSavingSnapshots", 1).await
-    },
-    "context_menu" => {
-        tokio::task::spawn_blocking(pieuvre_sync::context_menu::remove_context_menu_clutter).await??;
-        Ok(ExecutionResult::ok("Classic Context Menu enabled & Clutter removed"))
-    },
-    "pause_updates" => {
-        tokio::task::spawn_blocking(pieuvre_sync::windows_update::pause_updates).await??;
-        Ok(ExecutionResult::ok("Windows Updates paused for 35 days"))
-    },
-    "driver_updates" => {
-        tokio::task::spawn_blocking(pieuvre_sync::windows_update::disable_driver_updates).await??;
-        Ok(ExecutionResult::ok("Automatic Driver Updates disabled"))
-    },
-    "group_policy_telem" => {
-        tokio::task::spawn_blocking(|| pieuvre_sync::registry::set_group_policy_telemetry(0)).await??;
-        Ok(ExecutionResult::ok("Enterprise Telemetry Policy applied"))
-    },
-});
-
-pub fn get_executor(cat: &str) -> Result<Box<dyn OptExecutor + Send + Sync>> {
-    match cat.to_lowercase().as_str() {
-        "telemetry" => Ok(Box::new(TelemetryExecutor)),
-        "privacy" => Ok(Box::new(PrivacyExecutor)),
-        "performance" => Ok(Box::new(PerformanceExecutor)),
-        "scheduler" => Ok(Box::new(SchedulerExecutor)),
-        "appx" | "appx bloat" => Ok(Box::new(AppxExecutor)),
-        "cpu" | "cpu/mem" => Ok(Box::new(CPUExecutor)),
-        "dpc" | "dpc latency" => Ok(Box::new(DPCExecutor)),
-        "security" => Ok(Box::new(SecurityExecutor)),
-        "network" => Ok(Box::new(NetworkExecutor)),
-        "dns" => Ok(Box::new(DNSExecutor)),
-        "cleanup" => Ok(Box::new(CleanupExecutor)),
-
-        "audit" => Ok(Box::new(AuditExecutor)),
-        _ => anyhow::bail!("Unknown category: {}", cat),
+impl TweakCommand for ServiceDisableCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        let name = self.name.clone();
+        tokio::task::spawn_blocking(move || pieuvre_sync::services::disable_service(&name))
+            .await??;
+        Ok(ExecutionResult::ok(format!(
+            "Service {} disabled",
+            self.name
+        )))
     }
 }
 
-impl_exec!(PerformanceExecutor, "performance", {
-    "timer" => {
-        tokio::task::spawn_blocking(|| pieuvre_sync::timer::set_timer_resolution(5000)).await??;
-        Ok(ExecutionResult::ok("Timer resolution set to 0.5ms"))
-    },
-    "power_ultimate" => {
-        tokio::task::spawn_blocking(|| pieuvre_sync::power::set_power_plan(pieuvre_sync::power::PowerPlan::UltimatePerformance)).await??;
-        Ok(ExecutionResult::ok("Ultimate Performance plan active"))
-    },
-    "power_high" => {
-        tokio::task::spawn_blocking(|| pieuvre_sync::power::set_power_plan(pieuvre_sync::power::PowerPlan::HighPerformance)).await??;
-        Ok(ExecutionResult::ok("High Performance plan active"))
-    },
-    "cpu_throttle" => {
+// --- COMMANDES DE REGISTRE ---
+
+pub struct RegistryDwordCommand {
+    key: String,
+    value: String,
+    data: u32,
+}
+impl RegistryDwordCommand {
+    pub fn new(key: &str, value: &str, data: u32) -> Self {
+        Self {
+            key: key.to_string(),
+            value: value.to_string(),
+            data,
+        }
+    }
+}
+#[async_trait]
+impl TweakCommand for RegistryDwordCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        let (k, v, d) = (self.key.clone(), self.value.clone(), self.data);
+        tokio::task::spawn_blocking(move || pieuvre_sync::registry::set_dword_value(&k, &v, d))
+            .await??;
+        Ok(ExecutionResult::ok(format!(
+            "Registry {} set to {}",
+            self.value, self.data
+        )))
+    }
+}
+
+pub struct RegistryDisableAdvIdCommand;
+#[async_trait]
+impl TweakCommand for RegistryDisableAdvIdCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::registry::disable_advertising_id).await??;
+        Ok(ExecutionResult::ok("Advertising ID disabled"))
+    }
+}
+
+pub struct RegistryDisableLocationCommand;
+#[async_trait]
+impl TweakCommand for RegistryDisableLocationCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::registry::disable_location).await??;
+        Ok(ExecutionResult::ok("Location tracking disabled"))
+    }
+}
+
+pub struct RegistryDisableRecallCommand;
+#[async_trait]
+impl TweakCommand for RegistryDisableRecallCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::registry::disable_recall).await??;
+        Ok(ExecutionResult::ok("Windows Recall blocked"))
+    }
+}
+
+pub struct RegistryDisableCortanaCommand;
+#[async_trait]
+impl TweakCommand for RegistryDisableCortanaCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::registry::disable_cortana).await??;
+        Ok(ExecutionResult::ok("Cortana & Search Highlights disabled"))
+    }
+}
+
+pub struct RegistryDisableActivityHistoryCommand;
+#[async_trait]
+impl TweakCommand for RegistryDisableActivityHistoryCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::registry::disable_activity_history).await??;
+        Ok(ExecutionResult::ok("Activity history disabled"))
+    }
+}
+
+// --- COMMANDES DE SÉCURITÉ (PERFORMANCE) ---
+
+pub struct SecurityDisableHvciCommand;
+#[async_trait]
+impl TweakCommand for SecurityDisableHvciCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::security::disable_memory_integrity).await??;
+        Ok(ExecutionResult::ok("Memory Integrity (HVCI) disabled"))
+    }
+}
+
+pub struct SecurityDisableVbsCommand;
+#[async_trait]
+impl TweakCommand for SecurityDisableVbsCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::security::disable_vbs).await??;
+        Ok(ExecutionResult::ok("VBS completely disabled"))
+    }
+}
+
+pub struct SecurityDisableSpectreCommand;
+#[async_trait]
+impl TweakCommand for SecurityDisableSpectreCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::security::disable_spectre_meltdown).await??;
+        Ok(ExecutionResult::ok("Spectre/Meltdown mitigations disabled"))
+    }
+}
+
+pub struct SecurityDisableUacCommand;
+#[async_trait]
+impl TweakCommand for SecurityDisableUacCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(|| {
+            pieuvre_sync::registry::set_dword_value(
+                r"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System",
+                "ConsentPromptBehaviorAdmin",
+                0,
+            )?;
+            pieuvre_sync::registry::set_dword_value(
+                r"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System",
+                "PromptOnSecureDesktop",
+                0,
+            )
+        })
+        .await??;
+        Ok(ExecutionResult::ok("UAC disabled (Never Notify)"))
+    }
+}
+
+// --- COMMANDES SPÉCIALISÉES ---
+
+pub struct OORecommendedPrivacyCommand;
+#[async_trait]
+impl TweakCommand for OORecommendedPrivacyCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::privacy_o_o::apply_all_recommended_privacy)
+            .await??;
+        Ok(ExecutionResult::ok(
+            "O&O: Recommended privacy settings applied",
+        ))
+    }
+}
+
+pub struct FirewallTelemetryBlockCommand;
+#[async_trait]
+impl TweakCommand for FirewallTelemetryBlockCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        let r = tokio::task::spawn_blocking(pieuvre_sync::firewall::create_telemetry_block_rules)
+            .await??;
+        Ok(ExecutionResult::ok_count(
+            r.len(),
+            "Firewall telemetry rules created",
+        ))
+    }
+}
+
+pub struct ScheduledTasksTelemetryCommand;
+#[async_trait]
+impl TweakCommand for ScheduledTasksTelemetryCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        let t = tokio::task::spawn_blocking(pieuvre_sync::scheduled_tasks::disable_telemetry_tasks)
+            .await??;
+        Ok(ExecutionResult::ok_count(
+            t.len(),
+            "Telemetry scheduled tasks disabled",
+        ))
+    }
+}
+
+pub struct HostsTelemetryCommand;
+#[async_trait]
+impl TweakCommand for HostsTelemetryCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        let c = tokio::task::spawn_blocking(pieuvre_sync::hosts::add_telemetry_blocks).await??;
+        Ok(ExecutionResult::ok_count(
+            c as usize,
+            "Telemetry domains blocked in hosts file",
+        ))
+    }
+}
+
+pub struct OneDriveUninstallCommand;
+#[async_trait]
+impl TweakCommand for OneDriveUninstallCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::onedrive::uninstall_onedrive).await??;
+        Ok(ExecutionResult::ok("OneDrive uninstalled"))
+    }
+}
+
+pub struct ContextMenuClassicCommand;
+#[async_trait]
+impl TweakCommand for ContextMenuClassicCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::context_menu::remove_context_menu_clutter)
+            .await??;
+        Ok(ExecutionResult::ok("Classic context menu enabled"))
+    }
+}
+
+pub struct AppxRemoveCopilotCommand;
+#[async_trait]
+impl TweakCommand for AppxRemoveCopilotCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::appx::remove_copilot).await??;
+        Ok(ExecutionResult::ok("Copilot components removed"))
+    }
+}
+
+pub struct TimerResolutionCommand {
+    resolution: u32,
+}
+impl TimerResolutionCommand {
+    pub fn new(res: u32) -> Self {
+        Self { resolution: res }
+    }
+}
+#[async_trait]
+impl TweakCommand for TimerResolutionCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        let res = self.resolution;
+        tokio::task::spawn_blocking(move || pieuvre_sync::timer::set_timer_resolution(res))
+            .await??;
+        Ok(ExecutionResult::ok("Timer resolution optimized"))
+    }
+}
+
+pub struct PowerPlanCommand {
+    plan: pieuvre_sync::power::PowerPlan,
+}
+impl PowerPlanCommand {
+    pub fn new(plan: pieuvre_sync::power::PowerPlan) -> Self {
+        Self { plan }
+    }
+}
+#[async_trait]
+impl TweakCommand for PowerPlanCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        let plan = self.plan;
+        tokio::task::spawn_blocking(move || pieuvre_sync::power::set_power_plan(plan)).await??;
+        Ok(ExecutionResult::ok("Power plan applied"))
+    }
+}
+
+pub struct CpuThrottlingDisableCommand;
+#[async_trait]
+impl TweakCommand for CpuThrottlingDisableCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
         tokio::task::spawn_blocking(pieuvre_sync::power::disable_cpu_throttling).await??;
         Ok(ExecutionResult::ok("CPU Throttling disabled"))
-    },
-    "usb_suspend" => {
-        tokio::task::spawn_blocking(|| pieuvre_sync::power::configure_power_settings(false, false, 100, 100)).await??;
-        Ok(ExecutionResult::ok("USB Selective Suspend disabled"))
-    },
-    "msi" => {
-        let devices = tokio::task::spawn_blocking(pieuvre_sync::msi::list_msi_eligible_devices).await??;
+    }
+}
+
+pub struct MsiEnableAllCommand;
+#[async_trait]
+impl TweakCommand for MsiEnableAllCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        let devices =
+            tokio::task::spawn_blocking(pieuvre_sync::msi::list_msi_eligible_devices).await??;
         let mut count = 0;
         for dev in &devices {
             if !dev.msi_enabled && pieuvre_sync::msi::enable_msi(&dev.full_path).is_ok() {
                 count += 1;
             }
         }
-        Ok(ExecutionResult::ok_count(count, format!("MSI enabled for {} devices", count)))
-    },
-    "sysmain" => svc_disable("SysMain").await,
-    "wsearch" => svc_disable("WSearch").await,
-    "edge_disable" => {
-        tokio::task::spawn_blocking(pieuvre_sync::edge::disable_edge).await??;
-        Ok(ExecutionResult::ok("Edge bloatware disabled"))
-    },
-    "explorer_tweaks" => {
-        tokio::task::spawn_blocking(pieuvre_sync::explorer::apply_explorer_tweaks).await??;
-        Ok(ExecutionResult::ok("Explorer optimizations applied"))
-    },
-    "game_bar" => {
-        tokio::task::spawn_blocking(pieuvre_sync::game_mode::disable_game_bar).await??;
-        Ok(ExecutionResult::ok("Game Bar & DVR disabled"))
-    },
-    "fullscreen_opt" => {
-        tokio::task::spawn_blocking(pieuvre_sync::game_mode::disable_fullscreen_optimizations).await??;
-        Ok(ExecutionResult::ok("Fullscreen optimizations disabled"))
-    },
-    "hags" => {
+        Ok(ExecutionResult::ok_count(
+            count,
+            "MSI mode enabled for devices",
+        ))
+    }
+}
+
+pub struct HagsDisableCommand;
+#[async_trait]
+impl TweakCommand for HagsDisableCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
         tokio::task::spawn_blocking(pieuvre_sync::game_mode::disable_hags).await??;
         Ok(ExecutionResult::ok("HAGS disabled"))
-    },
-    "nagle" => {
-        let n = tokio::task::spawn_blocking(pieuvre_sync::network::disable_nagle_algorithm).await??;
-        Ok(ExecutionResult::ok_count(n as usize, format!("Nagle disabled on {} interfaces", n)))
-    },
-    "power_throttle" => {
-        tokio::task::spawn_blocking(pieuvre_sync::registry::disable_power_throttling).await??;
-        Ok(ExecutionResult::ok("Power Throttling disabled"))
-    },
-    "enable_game_mode" => {
-        tokio::task::spawn_blocking(pieuvre_sync::game_mode::enable_game_mode).await??;
-        Ok(ExecutionResult::ok("Windows Game Mode enabled"))
-    },
-    "prerendered_frames" => {
-        tokio::task::spawn_blocking(|| pieuvre_sync::game_mode::set_prerendered_frames(1)).await??;
-        Ok(ExecutionResult::ok("Pre-rendered frames set to 1"))
-    },
-    "vrr_opt" => {
-        tokio::task::spawn_blocking(pieuvre_sync::game_mode::disable_vrr_optimizations).await??;
-        Ok(ExecutionResult::ok("VRR optimizations disabled"))
-    },
-    "shader_cache" => {
-        tokio::task::spawn_blocking(|| pieuvre_sync::game_mode::set_shader_cache_size(256)).await??;
-        Ok(ExecutionResult::ok("Shader cache set to 256MB"))
-    },
-});
+    }
+}
 
-impl_exec!(SchedulerExecutor, "scheduler", {
-    "priority_sep" => reg_set_dword(r"SYSTEM\CurrentControlSet\Control\PriorityControl", "Win32PrioritySeparation", 0x26).await,
-    "mmcss" => {
-        tokio::task::spawn_blocking(pieuvre_sync::registry::configure_mmcss_gaming).await??;
-        Ok(ExecutionResult::ok("MMCSS gaming profile configured"))
-    },
-    "games_priority" => {
-        tokio::task::spawn_blocking(pieuvre_sync::registry::configure_games_priority).await??;
-        Ok(ExecutionResult::ok("GPU & Games priority optimized"))
-    },
-    "global_timer" => {
-        tokio::task::spawn_blocking(pieuvre_sync::registry::enable_global_timer_resolution).await??;
-        Ok(ExecutionResult::ok("Global timer resolution enabled (Reboot required)"))
-    },
-    "startup_delay" => {
-        tokio::task::spawn_blocking(pieuvre_sync::registry::disable_startup_delay).await??;
-        Ok(ExecutionResult::ok("Startup delay removed"))
-    },
-    "shutdown_timeout" => {
-        tokio::task::spawn_blocking(pieuvre_sync::registry::reduce_shutdown_timeout).await??;
-        Ok(ExecutionResult::ok("Shutdown timeout reduced to 2s"))
-    },
-});
+pub struct NagleDisableCommand;
+#[async_trait]
+impl TweakCommand for NagleDisableCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        let n =
+            tokio::task::spawn_blocking(pieuvre_sync::network::disable_nagle_algorithm).await??;
+        Ok(ExecutionResult::ok_count(
+            n as usize,
+            "Nagle algorithm disabled",
+        ))
+    }
+}
 
-impl_exec!(AppxExecutor, "appx", {
-    "bing_apps" => {
-        let r = tokio::task::spawn_blocking(pieuvre_sync::appx::remove_bing_apps).await??;
-        Ok(ExecutionResult::ok_count(r.len(), format!("Removed {} Bing apps", r.len())))
-    },
-    "ms_productivity" => {
-        let r = tokio::task::spawn_blocking(pieuvre_sync::appx::remove_ms_productivity).await??;
-        Ok(ExecutionResult::ok_count(r.len(), format!("Removed {} productivity apps", r.len())))
-    },
-    "ms_media" => {
-        let r = tokio::task::spawn_blocking(pieuvre_sync::appx::remove_ms_media).await??;
-        Ok(ExecutionResult::ok_count(r.len(), format!("Removed {} media apps", r.len())))
-    },
-    "ms_communication" => {
-        let r = tokio::task::spawn_blocking(pieuvre_sync::appx::remove_ms_communication).await??;
-        Ok(ExecutionResult::ok_count(r.len(), format!("Removed {} communication apps", r.len())))
-    },
-    "ms_legacy" => {
-        let r = tokio::task::spawn_blocking(pieuvre_sync::appx::remove_ms_legacy).await??;
-        Ok(ExecutionResult::ok_count(r.len(), format!("Removed {} legacy apps", r.len())))
-    },
-    "ms_tools" => {
-        let r = tokio::task::spawn_blocking(pieuvre_sync::appx::remove_ms_tools).await??;
-        Ok(ExecutionResult::ok_count(r.len(), format!("Removed {} tools", r.len())))
-    },
-    "third_party" => {
-        let r = tokio::task::spawn_blocking(pieuvre_sync::appx::remove_third_party).await??;
-        Ok(ExecutionResult::ok_count(r.len(), format!("Removed {} third-party apps", r.len())))
-    },
-    "copilot" => {
-        let r = tokio::task::spawn_blocking(pieuvre_sync::appx::remove_copilot).await??;
-        Ok(ExecutionResult::ok_count(r.len(), format!("Removed {} Copilot components", r.len())))
-    },
-    "cortana_app" => {
-        let r = tokio::task::spawn_blocking(pieuvre_sync::appx::remove_cortana).await??;
-        Ok(ExecutionResult::ok_count(r.len(), format!("Removed {} Cortana components", r.len())))
-    },
-    "xbox" => {
-        let r = tokio::task::spawn_blocking(pieuvre_sync::appx::remove_xbox_packages).await??;
-        Ok(ExecutionResult::ok_count(r.len(), format!("Removed {} Xbox apps", r.len())))
-    },
-});
+pub struct EdgeTelemetryDisableCommand;
+#[async_trait]
+impl TweakCommand for EdgeTelemetryDisableCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::edge::disable_edge).await??;
+        Ok(ExecutionResult::ok("Edge features disabled"))
+    }
+}
 
-impl_exec!(CPUExecutor, "cpu", {
-    "core_parking" => {
-        tokio::task::spawn_blocking(pieuvre_sync::cpu::disable_core_parking).await??;
-        Ok(ExecutionResult::ok("Core Parking disabled"))
-    },
-    "memory_compression" => {
-        tokio::task::spawn_blocking(pieuvre_sync::cpu::disable_memory_compression).await??;
-        Ok(ExecutionResult::ok("Memory Compression disabled"))
-    },
-    "superfetch_registry" => {
-        tokio::task::spawn_blocking(pieuvre_sync::cpu::disable_superfetch_registry).await??;
-        Ok(ExecutionResult::ok("Superfetch/Prefetch registry tweaks applied"))
-    },
-    "static_pagefile" => {
-        tokio::task::spawn_blocking(|| pieuvre_sync::cpu::set_static_page_file(16384)).await??;
-        Ok(ExecutionResult::ok("Static Page File set to 16GB"))
-    },
-});
+pub struct InterruptsOptimizeCommand;
+#[async_trait]
+impl TweakCommand for InterruptsOptimizeCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(|| {
+            pieuvre_sync::interrupts::InterruptSteering::steer_high_latency_drivers(1000, 0x1)
+        })
+        .await??;
+        Ok(ExecutionResult::ok("Interrupt moderation optimized"))
+    }
+}
 
-impl_exec!(DPCExecutor, "dpc", {
-    "paging_executive" => {
-        tokio::task::spawn_blocking(pieuvre_sync::dpc::disable_paging_executive).await??;
-        Ok(ExecutionResult::ok("DisablePagingExecutive enabled"))
-    },
-    "dynamic_tick" => {
-        tokio::task::spawn_blocking(pieuvre_sync::dpc::disable_dynamic_tick).await??;
-        Ok(ExecutionResult::ok("Dynamic Tick disabled (Reboot required)"))
-    },
-    "tsc_sync" => {
-        tokio::task::spawn_blocking(pieuvre_sync::dpc::set_tsc_sync_enhanced).await??;
-        Ok(ExecutionResult::ok("TSC Sync set to Enhanced"))
-    },
-    "hpet" => {
-        tokio::task::spawn_blocking(pieuvre_sync::dpc::disable_hpet).await??;
-        Ok(ExecutionResult::ok("HPET disabled"))
-    },
-    "interrupt_affinity" => {
-        tokio::task::spawn_blocking(pieuvre_sync::dpc::set_interrupt_affinity_spread).await??;
-        Ok(ExecutionResult::ok("Interrupt Affinity spread across cores"))
-    },
-});
+pub struct MemoryOptimizeCommand;
+#[async_trait]
+impl TweakCommand for MemoryOptimizeCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::memory::enable_large_system_cache).await??;
+        Ok(ExecutionResult::ok("Large System Cache enabled"))
+    }
+}
 
-impl_exec!(SecurityExecutor, "security", {
-    "hvci" => {
-        tokio::task::spawn_blocking(pieuvre_sync::security::disable_memory_integrity).await??;
-        Ok(ExecutionResult::ok("HVCI disabled (Reboot required)"))
-    },
-    "vbs" => {
-        tokio::task::spawn_blocking(pieuvre_sync::security::disable_vbs).await??;
-        Ok(ExecutionResult::ok("VBS disabled (Reboot required)"))
-    },
-    "spectre" => {
-        tokio::task::spawn_blocking(pieuvre_sync::security::disable_spectre_meltdown).await??;
-        Ok(ExecutionResult::ok("Spectre/Meltdown mitigations disabled (RISK)"))
-    },
-    "defender_realtime" => svc_disable("WinDefend").await,
-    "uac_level" => reg_set_dword(r"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System", "ConsentPromptBehaviorAdmin", 0).await,
-    "firewall_status" => svc_disable("mpssvc").await,
-    "smartscreen" => {
-        tokio::task::spawn_blocking(|| pieuvre_sync::registry::set_string_value(r"SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer", "SmartScreenEnabled", "Off")).await??;
-        Ok(ExecutionResult::ok("SmartScreen disabled"))
-    },
-});
-
-impl_exec!(NetworkExecutor, "network", {
-    "interrupt_moderation" => {
-        let n = tokio::task::spawn_blocking(pieuvre_sync::network::disable_interrupt_moderation).await??;
-        Ok(ExecutionResult::ok_count(n as usize, format!("Disabled on {} interfaces", n)))
-    },
-    "lso" => {
-        tokio::task::spawn_blocking(pieuvre_sync::network::disable_lso).await??;
-        Ok(ExecutionResult::ok("Large Send Offload disabled"))
-    },
-    "eee" => {
-        tokio::task::spawn_blocking(pieuvre_sync::network::disable_eee).await??;
-        Ok(ExecutionResult::ok("Energy Efficient Ethernet disabled"))
-    },
-    "rss" => {
-        tokio::task::spawn_blocking(pieuvre_sync::network::enable_rss).await??;
-        Ok(ExecutionResult::ok("Receive Side Scaling enabled"))
-    },
-    "rsc" => {
-        tokio::task::spawn_blocking(pieuvre_sync::network::disable_rsc).await??;
-        Ok(ExecutionResult::ok("Receive Segment Coalescing disabled"))
-    },
-});
-
-impl_exec!(DNSExecutor, "dns", {
-    "doh_cloudflare" => {
-        tokio::task::spawn_blocking(|| pieuvre_sync::dns::set_doh_provider(pieuvre_sync::dns::DNSProvider::Cloudflare)).await??;
-        Ok(ExecutionResult::ok("DoH (Cloudflare) enabled"))
-    },
-    "doh_google" => {
-        tokio::task::spawn_blocking(|| pieuvre_sync::dns::set_doh_provider(pieuvre_sync::dns::DNSProvider::Google)).await??;
-        Ok(ExecutionResult::ok("DoH (Google) enabled"))
-    },
-    "doh_quad9" => {
-        tokio::task::spawn_blocking(|| pieuvre_sync::dns::set_doh_provider(pieuvre_sync::dns::DNSProvider::Quad9)).await??;
-        Ok(ExecutionResult::ok("DoH (Quad9) enabled"))
-    },
-    "dns_flush" => {
-        tokio::task::spawn_blocking(pieuvre_sync::dns::flush_dns_cache).await??;
-        Ok(ExecutionResult::ok("DNS cache flushed"))
-    },
-});
-
-impl_exec!(CleanupExecutor, "cleanup", {
-    "cleanup_temp" => {
+pub struct CleanupTempCommand;
+#[async_trait]
+impl TweakCommand for CleanupTempCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
         tokio::task::spawn_blocking(pieuvre_sync::cleanup::cleanup_temp_files).await??;
         Ok(ExecutionResult::ok("Temporary files cleaned"))
-    },
-    "cleanup_winsxs" => {
+    }
+}
+
+pub struct CleanupWinSxSCommand;
+#[async_trait]
+impl TweakCommand for CleanupWinSxSCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
         tokio::task::spawn_blocking(pieuvre_sync::cleanup::cleanup_winsxs).await??;
         Ok(ExecutionResult::ok("WinSxS cleanup completed"))
-    },
-    "cleanup_edge" => {
+    }
+}
+
+pub struct CleanupEdgeCommand;
+#[async_trait]
+impl TweakCommand for CleanupEdgeCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
         tokio::task::spawn_blocking(pieuvre_sync::cleanup::cleanup_edge_cache).await??;
         Ok(ExecutionResult::ok("Edge cache cleaned"))
-    },
-});
+    }
+}
 
-impl_exec!(AuditExecutor, "audit", {
-    "audit_hardware" => {
-        let hw = tokio::task::spawn_blocking(pieuvre_audit::hardware::probe_hardware).await??;
-        Ok(ExecutionResult::ok(format!("CPU: {} | RAM: {}GB", hw.cpu.model_name, hw.memory.total_bytes / 1024 / 1024 / 1024)))
-    },
-    "audit_security" => {
-        let sec = tokio::task::spawn_blocking(pieuvre_audit::security::run_security_audit).await??;
-        Ok(ExecutionResult::ok(format!("SecureBoot: {} | Defender: {}", sec.secure_boot, sec.defender_enabled)))
-    },
-    "audit_services" => {
-        let svcs = tokio::task::spawn_blocking(pieuvre_audit::services::inspect_services).await??;
-        Ok(ExecutionResult::ok(format!("Total Services: {}", svcs.len())))
-    },
-    "audit_network" => {
-        let net = tokio::task::spawn_blocking(pieuvre_audit::network::inspect_network).await??;
-        Ok(ExecutionResult::ok(format!("Endpoints: {}", net.telemetry_endpoints.len())))
-    },
-    "audit_software" => {
-        let apps = tokio::task::spawn_blocking(pieuvre_audit::appx::scan_packages).await??;
-        Ok(ExecutionResult::ok(format!("AppX Packages: {}", apps.len())))
-    },
-});
+pub struct DnsDohCommand;
+#[async_trait]
+impl TweakCommand for DnsDohCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(|| {
+            pieuvre_sync::dns::set_doh_provider(pieuvre_sync::dns::DNSProvider::Cloudflare)
+        })
+        .await??;
+        Ok(ExecutionResult::ok("DNS-over-HTTPS configured (Cloudflare)"))
+    }
+}
+
+pub struct DnsFlushCommand;
+#[async_trait]
+impl TweakCommand for DnsFlushCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::dns::flush_dns_cache).await??;
+        Ok(ExecutionResult::ok("DNS cache flushed"))
+    }
+}
+
+pub struct ExplorerOptimizeCommand;
+#[async_trait]
+impl TweakCommand for ExplorerOptimizeCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::explorer::apply_explorer_tweaks).await??;
+        Ok(ExecutionResult::ok("Explorer settings optimized"))
+    }
+}
+
+pub struct ExplorerRestartCommand;
+#[async_trait]
+impl TweakCommand for ExplorerRestartCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::explorer::restart_explorer).await??;
+        Ok(ExecutionResult::ok("Explorer restarted"))
+    }
+}
+
+pub struct HardeningLockCommand;
+#[async_trait]
+impl TweakCommand for HardeningLockCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(|| {
+            for key in pieuvre_sync::hardening::CRITICAL_KEYS {
+                let _ = pieuvre_sync::hardening::lock_registry_key(key);
+            }
+            for svc in pieuvre_sync::hardening::CRITICAL_SERVICES {
+                let _ = pieuvre_sync::hardening::lock_service(svc);
+            }
+            Ok::<(), anyhow::Error>(())
+        })
+        .await??;
+        Ok(ExecutionResult::ok("Critical keys and services locked"))
+    }
+}
+
+pub struct HardeningUnlockCommand;
+#[async_trait]
+impl TweakCommand for HardeningUnlockCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(|| {
+            for key in pieuvre_sync::hardening::CRITICAL_KEYS {
+                let _ = pieuvre_sync::hardening::unlock_registry_key(key);
+            }
+            Ok::<(), anyhow::Error>(())
+        })
+        .await??;
+        Ok(ExecutionResult::ok("Critical keys unlocked"))
+    }
+}
+
+pub struct HardeningPplCommand;
+#[async_trait]
+impl TweakCommand for HardeningPplCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::hardening::enable_ppl_protection).await??;
+        Ok(ExecutionResult::ok("PPL protection enabled"))
+    }
+}
+
+pub struct WindowsUpdateConfigureCommand;
+#[async_trait]
+impl TweakCommand for WindowsUpdateConfigureCommand {
+    async fn execute(&self) -> Result<ExecutionResult> {
+        tokio::task::spawn_blocking(pieuvre_sync::windows_update::pause_updates).await??;
+        Ok(ExecutionResult::ok("Windows Update paused for 35 days"))
+    }
+}
+
+// --- FIN DES COMMANDES SOTA v0.7.0 ---

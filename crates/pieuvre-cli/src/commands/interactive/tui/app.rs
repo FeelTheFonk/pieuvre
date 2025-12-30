@@ -1,4 +1,4 @@
-use crate::commands::interactive::sections::OptItem;
+use crate::commands::interactive::types::OptItem;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Default)]
@@ -39,65 +39,20 @@ pub struct AppState {
 
 impl AppState {
     pub fn new() -> Self {
-        let is_laptop = pieuvre_audit::hardware::is_laptop();
+        let _is_laptop = pieuvre_audit::hardware::is_laptop();
         let mut tab_options = HashMap::new();
         let mut options_state = HashMap::new();
         let mut tabs = Vec::new();
 
-        let mut add_section = |name: &str, items: Vec<OptItem>| {
-            tabs.push(name.to_string());
+        // Nouveau système modulaire SOTA
+        for (name, items) in crate::commands::interactive::sections::get_all_sections() {
+            let name_str: &str = name;
+            tabs.push(name_str.to_string());
             for item in &items {
                 options_state.insert(item.id.to_string(), item.default);
             }
             tab_options.insert(name.to_string(), items);
-        };
-
-        add_section(
-            "Telemetry",
-            crate::commands::interactive::sections::telemetry_section(),
-        );
-        add_section(
-            "Privacy",
-            crate::commands::interactive::sections::privacy_section(),
-        );
-        add_section(
-            "Performance",
-            crate::commands::interactive::sections::performance_section(is_laptop),
-        );
-        add_section(
-            "Scheduler",
-            crate::commands::interactive::sections::scheduler_section(),
-        );
-        add_section(
-            "AppX Bloat",
-            crate::commands::interactive::sections::appx_section(),
-        );
-        add_section(
-            "CPU/Mem",
-            crate::commands::interactive::sections::cpu_section(is_laptop),
-        );
-        add_section(
-            "DPC Latency",
-            crate::commands::interactive::sections::dpc_section(),
-        );
-        add_section(
-            "Security",
-            crate::commands::interactive::sections::security_section(),
-        );
-        add_section(
-            "Network",
-            crate::commands::interactive::sections::network_advanced_section(),
-        );
-        add_section("DNS", crate::commands::interactive::sections::dns_section());
-        add_section(
-            "Cleanup",
-            crate::commands::interactive::sections::cleanup_section(),
-        );
-
-        add_section(
-            "Audit",
-            crate::commands::interactive::sections::audit_section(),
-        );
+        }
 
         Self {
             should_quit: false,

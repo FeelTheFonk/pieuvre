@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod tests {
+mod snapshot_tests {
     use crate::snapshot;
     use pieuvre_common::ChangeRecord;
 
@@ -7,10 +7,10 @@ mod tests {
     fn test_snapshot_lifecycle() {
         let description = "Test SOTA Snapshot";
         let changes = vec![ChangeRecord::Registry {
-            key: "HKLM\\SOFTWARE\\PieuvreTest".to_string(),
+            hive: pieuvre_common::RegistryHive::Hklm,
+            key: "SOFTWARE\\PieuvreTest".to_string(),
             value_name: "TestValue".to_string(),
-            value_type: "REG_DWORD".to_string(),
-            original_data: vec![1, 0, 0, 0],
+            original_value: Some(pieuvre_common::RegistryValue::Dword(1)),
         }];
 
         // 1. Création

@@ -1,7 +1,7 @@
-use crate::commands::interactive::sections::RiskLevel;
 use crate::commands::interactive::tui::app::AppState;
 use crate::commands::interactive::tui::components::Component;
 use crate::commands::interactive::tui::i18n;
+use crate::commands::interactive::types::RiskLevel;
 use anyhow::Result;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -66,6 +66,7 @@ impl Component for MainView {
                 RiskLevel::Performance => Color::Yellow,
                 RiskLevel::Warning => Color::LightRed,
                 RiskLevel::Critical => Color::Red,
+                RiskLevel::High => Color::Red,
             };
 
             let details_text = vec![

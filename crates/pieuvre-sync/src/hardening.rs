@@ -250,6 +250,11 @@ pub const CRITICAL_KEYS: &[&str] = &[
     r"SOFTWARE\Microsoft\Windows\CurrentVersion\AI\DataAnalysis",
     r"SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot",
     r"SYSTEM\CurrentControlSet\Services\Dnscache\Parameters",
+    // O&O SOTA
+    r"SOFTWARE\Policies\Microsoft\Windows\DataCollection",
+    r"SOFTWARE\Policies\Microsoft\Dsh",
+    r"SOFTWARE\Policies\Microsoft\Windows\Windows Search",
+    r"SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization",
 ];
 
 /// Services critiques à verrouiller

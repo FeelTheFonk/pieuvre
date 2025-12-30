@@ -3,7 +3,7 @@
 //! Logique de retour arrière automatique basée sur les ChangeRecords.
 
 use pieuvre_common::{ChangeRecord, Result};
-use tracing::{info, instrument, warn};
+use tracing::{info, instrument};
 
 /// Gère le rollback d'une liste de changements
 #[instrument(skip(changes))]
@@ -22,10 +22,10 @@ pub async fn rollback_changes(changes: Vec<ChangeRecord>) -> Result<()> {
             ChangeRecord::Registry {
                 key,
                 value_name,
-                value_type,
-                original_data,
+                hive,
+                original_value,
             } => {
-                rollback_registry_full(&key, &value_name, &value_type, original_data).await?;
+                rollback_registry_full(hive, &key, &value_name, original_value).await?;
             }
             ChangeRecord::Service {
                 name,
@@ -47,12 +47,12 @@ pub async fn rollback_changes(changes: Vec<ChangeRecord>) -> Result<()> {
 }
 
 async fn rollback_registry_full(
+    hive: pieuvre_common::RegistryHive,
     key: &str,
     value: &str,
-    val_type: &str,
-    data: Vec<u8>,
+    original_value: Option<pieuvre_common::RegistryValue>,
 ) -> Result<()> {
-    info!(key, value, "Restauration registre (Full)...");
+    info!(key, value, "Restauration registre (SOTA)...");
 
     // Déverrouillage
     let _ = tokio::task::spawn_blocking({
@@ -61,21 +61,47 @@ async fn rollback_registry_full(
     })
     .await;
 
-    if val_type == "REG_DWORD" && data.len() == 4 {
-        let dword = u32::from_le_bytes([data[0], data[1], data[2], data[3]]);
-        tokio::task::spawn_blocking({
-            let key = key.to_string();
-            let value = value.to_string();
-            move || crate::registry::set_dword_value(&key, &value, dword)
-        })
-        .await
-        .map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))??;
-    } else {
-        warn!(
-            "Type de registre non supporte pour le rollback full: {}",
-            val_type
-        );
-    }
+    let key_clone = key.to_string();
+    let value_clone = value.to_string();
+
+    tokio::task::spawn_blocking(move || {
+        let hive_handle = match hive {
+            pieuvre_common::RegistryHive::Hklm => {
+                windows::Win32::System::Registry::HKEY_LOCAL_MACHINE
+            }
+            pieuvre_common::RegistryHive::Hku => windows::Win32::System::Registry::HKEY_USERS,
+            pieuvre_common::RegistryHive::Hkcu => {
+                windows::Win32::System::Registry::HKEY_CURRENT_USER
+            }
+        };
+
+        if let Some(val) = original_value {
+            match val {
+                pieuvre_common::RegistryValue::Dword(d) => {
+                    crate::registry::set_dword_value_in_hive(
+                        hive_handle,
+                        &key_clone,
+                        &value_clone,
+                        d,
+                    )
+                }
+                pieuvre_common::RegistryValue::String(s) => {
+                    crate::registry::set_string_value_in_hive(
+                        hive_handle,
+                        &key_clone,
+                        &value_clone,
+                        &s,
+                    )
+                }
+                _ => Ok(()), // Binary non supporté pour l'instant
+            }
+        } else {
+            // Si pas de valeur originale, on supprime la valeur (état initial = inexistant)
+            crate::registry::delete_value(&key_clone, &value_clone)
+        }
+    })
+    .await
+    .map_err(|e| pieuvre_common::PieuvreError::Internal(e.to_string()))??;
 
     Ok(())
 }

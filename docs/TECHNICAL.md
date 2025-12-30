@@ -1,4 +1,4 @@
-# Technical Architecture: pieuvre TUI (v0.6.2)
+# Technical Architecture: pieuvre TUI (v0.7.0)
 
 This document details the technical implementation of the pieuvre Terminal User Interface and its underlying optimization engines.
 
@@ -23,13 +23,22 @@ The TUI utilizes a sidebar-based navigation model for efficient management of op
 
 ---
 
+## 1.1 Command Execution Engine (v0.7.0)
+
+The TUI is now decoupled from the execution logic via the **Command Pattern**:
+- **Atomic Tweaks**: Each optimization is a self-contained `TweakCommand`.
+- **Registry-Driven**: The UI dynamically queries the `CommandRegistry` for execution.
+- **Async Safety**: All system operations are wrapped in `tokio::spawn_blocking` to prevent UI hangs.
+
+---
+
 ## 2. System Hardening Engine
 
 pieuvre implements a hardening engine based on native Windows Access Control Lists (ACLs) and direct registry manipulation.
 
 - **SDDL (Security Descriptor Definition Language)**: Used to lock critical registry keys and services by applying restrictive security descriptors.
 - **Privilege Management**: Utilizes `SeTakeOwnershipPrivilege` to modify system-protected objects.
-- **Registry Detection**: Accurate OS and Build Number detection via the `winreg` crate.
+- **Native API (v0.7.0)**: Migration to `windows-rs` for all registry and service operations, eliminating `reg.exe` overhead.
 
 ---
 

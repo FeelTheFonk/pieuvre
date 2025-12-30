@@ -2,70 +2,26 @@
 //!
 //! Windows Game Mode and Game Bar optimizations.
 
+use crate::registry::{set_dword_value, set_value_multi_hive_dword};
 use pieuvre_common::Result;
-use std::process::Command;
 
 /// Disable Game Bar and Game DVR
 pub fn disable_game_bar() -> Result<()> {
     // Disable Game Bar
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKCU\Software\Microsoft\Windows\CurrentVersion\GameDVR",
-            "/v",
-            "AppCaptureEnabled",
-            "/t",
-            "REG_DWORD",
-            "/d",
-            "0",
-            "/f",
-        ])
-        .output();
+    set_value_multi_hive_dword(
+        r"Software\Microsoft\Windows\CurrentVersion\GameDVR",
+        "AppCaptureEnabled",
+        0,
+    )?;
 
     // Disable Game DVR
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKCU\System\GameConfigStore",
-            "/v",
-            "GameDVR_Enabled",
-            "/t",
-            "REG_DWORD",
-            "/d",
-            "0",
-            "/f",
-        ])
-        .output();
+    set_value_multi_hive_dword(r"System\GameConfigStore", "GameDVR_Enabled", 0)?;
 
     // Disable Game Bar tips
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKCU\Software\Microsoft\GameBar",
-            "/v",
-            "ShowStartupPanel",
-            "/t",
-            "REG_DWORD",
-            "/d",
-            "0",
-            "/f",
-        ])
-        .output();
+    set_value_multi_hive_dword(r"Software\Microsoft\GameBar", "ShowStartupPanel", 0)?;
 
     // Disable Game Bar controller hints
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKCU\Software\Microsoft\GameBar",
-            "/v",
-            "UseNexusForGameBarEnabled",
-            "/t",
-            "REG_DWORD",
-            "/d",
-            "0",
-            "/f",
-        ])
-        .output();
+    set_value_multi_hive_dword(r"Software\Microsoft\GameBar", "UseNexusForGameBarEnabled", 0)?;
 
     tracing::info!("Game Bar disabled");
     Ok(())
@@ -73,67 +29,20 @@ pub fn disable_game_bar() -> Result<()> {
 
 /// Enable Windows Game Mode (hardware optimization)
 pub fn enable_game_mode() -> Result<()> {
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKCU\Software\Microsoft\GameBar",
-            "/v",
-            "AutoGameModeEnabled",
-            "/t",
-            "REG_DWORD",
-            "/d",
-            "1",
-            "/f",
-        ])
-        .output();
-
+    set_value_multi_hive_dword(r"Software\Microsoft\GameBar", "AutoGameModeEnabled", 1)?;
     tracing::info!("Game Mode enabled");
     Ok(())
 }
 
 /// Disable fullscreen optimizations globally
 pub fn disable_fullscreen_optimizations() -> Result<()> {
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKCU\System\GameConfigStore",
-            "/v",
-            "GameDVR_FSEBehaviorMode",
-            "/t",
-            "REG_DWORD",
-            "/d",
-            "2",
-            "/f",
-        ])
-        .output();
-
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKCU\System\GameConfigStore",
-            "/v",
-            "GameDVR_HonorUserFSEBehaviorMode",
-            "/t",
-            "REG_DWORD",
-            "/d",
-            "1",
-            "/f",
-        ])
-        .output();
-
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKCU\System\GameConfigStore",
-            "/v",
-            "GameDVR_DXGIHonorFSEWindowsCompatible",
-            "/t",
-            "REG_DWORD",
-            "/d",
-            "1",
-            "/f",
-        ])
-        .output();
+    set_value_multi_hive_dword(r"System\GameConfigStore", "GameDVR_FSEBehaviorMode", 2)?;
+    set_value_multi_hive_dword(r"System\GameConfigStore", "GameDVR_HonorUserFSEBehaviorMode", 1)?;
+    set_value_multi_hive_dword(
+        r"System\GameConfigStore",
+        "GameDVR_DXGIHonorFSEWindowsCompatible",
+        1,
+    )?;
 
     tracing::info!("Fullscreen optimizations disabled");
     Ok(())
@@ -141,96 +50,45 @@ pub fn disable_fullscreen_optimizations() -> Result<()> {
 
 /// Disable hardware-accelerated GPU scheduling (for older games)
 pub fn disable_hags() -> Result<()> {
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKLM\SYSTEM\CurrentControlSet\Control\GraphicsDrivers",
-            "/v",
-            "HwSchMode",
-            "/t",
-            "REG_DWORD",
-            "/d",
-            "1",
-            "/f",
-        ])
-        .output();
-
+    set_dword_value(
+        r"SYSTEM\CurrentControlSet\Control\GraphicsDrivers",
+        "HwSchMode",
+        1,
+    )?;
     tracing::info!("HAGS disabled");
     Ok(())
 }
 
 /// Enable hardware-accelerated GPU scheduling
 pub fn enable_hags() -> Result<()> {
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKLM\SYSTEM\CurrentControlSet\Control\GraphicsDrivers",
-            "/v",
-            "HwSchMode",
-            "/t",
-            "REG_DWORD",
-            "/d",
-            "2",
-            "/f",
-        ])
-        .output();
-
+    set_dword_value(
+        r"SYSTEM\CurrentControlSet\Control\GraphicsDrivers",
+        "HwSchMode",
+        2,
+    )?;
     tracing::info!("HAGS enabled");
     Ok(())
 }
 
 /// Check if Game Mode is enabled
 pub fn is_game_mode_enabled() -> bool {
-    let output = Command::new("reg")
-        .args([
-            "query",
-            r"HKCU\Software\Microsoft\GameBar",
-            "/v",
-            "AutoGameModeEnabled",
-        ])
-        .output();
-
-    match output {
-        Ok(o) => {
-            let stdout = String::from_utf8_lossy(&o.stdout);
-            stdout.contains("0x1")
-        }
-        Err(_) => false,
-    }
+    crate::registry::read_dword_value(r"Software\Microsoft\GameBar", "AutoGameModeEnabled")
+        .map(|v| v == 1)
+        .unwrap_or(false)
 }
 
 /// Set GPU Pre-Rendered Frames to 1 for minimum input lag
 /// Works for NVIDIA (via registry fallback)
 pub fn set_prerendered_frames(frames: u32) -> Result<()> {
     // Generic DirectX setting
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKLM\SOFTWARE\Microsoft\DirectX",
-            "/v",
-            "MaxFrameLatency",
-            "/t",
-            "REG_DWORD",
-            "/d",
-            &frames.to_string(),
-            "/f",
-        ])
-        .output();
+    set_dword_value(r"SOFTWARE\Microsoft\DirectX", "MaxFrameLatency", frames)?;
 
     // NVIDIA specific (if applicable)
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKLM\SYSTEM\CurrentControlSet\Control\GraphicsDrivers",
-            "/v",
-            "FlipQueueSize",
-            "/t",
-            "REG_DWORD",
-            "/d",
-            &frames.to_string(),
-            "/f",
-        ])
-        .output();
+    set_dword_value(
+        r"SYSTEM\CurrentControlSet\Control\GraphicsDrivers",
+        "FlipQueueSize",
+        frames,
+    )?;
 
     tracing::info!("Pre-rendered frames set to {}", frames);
     Ok(())
@@ -238,25 +96,11 @@ pub fn set_prerendered_frames(frames: u32) -> Result<()> {
 
 /// Reset Pre-Rendered Frames to default (3)
 pub fn reset_prerendered_frames() -> Result<()> {
-    let _ = Command::new("reg")
-        .args([
-            "delete",
-            r"HKLM\SOFTWARE\Microsoft\DirectX",
-            "/v",
-            "MaxFrameLatency",
-            "/f",
-        ])
-        .output();
-
-    let _ = Command::new("reg")
-        .args([
-            "delete",
-            r"HKLM\SYSTEM\CurrentControlSet\Control\GraphicsDrivers",
-            "/v",
-            "FlipQueueSize",
-            "/f",
-        ])
-        .output();
+    crate::registry::delete_value(r"SOFTWARE\Microsoft\DirectX", "MaxFrameLatency")?;
+    crate::registry::delete_value(
+        r"SYSTEM\CurrentControlSet\Control\GraphicsDrivers",
+        "FlipQueueSize",
+    )?;
 
     tracing::info!("Pre-rendered frames reset to default");
     Ok(())
@@ -264,19 +108,11 @@ pub fn reset_prerendered_frames() -> Result<()> {
 
 /// Set DirectX Shader Cache size (in MB, 0 = disabled)
 pub fn set_shader_cache_size(size_mb: u32) -> Result<()> {
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKLM\SOFTWARE\Microsoft\DirectX",
-            "/v",
-            "ShaderCacheSize",
-            "/t",
-            "REG_DWORD",
-            "/d",
-            &(size_mb * 1024 * 1024).to_string(), // Convert to bytes
-            "/f",
-        ])
-        .output();
+    set_dword_value(
+        r"SOFTWARE\Microsoft\DirectX",
+        "ShaderCacheSize",
+        size_mb * 1024 * 1024,
+    )?;
 
     tracing::info!("Shader cache size set to {}MB", size_mb);
     Ok(())
@@ -284,42 +120,23 @@ pub fn set_shader_cache_size(size_mb: u32) -> Result<()> {
 
 /// Disable Variable Refresh Rate scheduling (can cause input lag in some cases)
 pub fn disable_vrr_optimizations() -> Result<()> {
-    let _ = Command::new("reg")
-        .args([
-            "add",
-            r"HKCU\Software\Microsoft\DirectX\UserGpuPreferences",
-            "/v",
-            "VRROptimizeEnable",
-            "/t",
-            "REG_DWORD",
-            "/d",
-            "0",
-            "/f",
-        ])
-        .output();
-
+    set_value_multi_hive_dword(
+        r"Software\Microsoft\DirectX\UserGpuPreferences",
+        "VRROptimizeEnable",
+        0,
+    )?;
     tracing::info!("VRR optimizations disabled");
     Ok(())
 }
 
 /// Check if HAGS is enabled
 pub fn is_hags_enabled() -> bool {
-    let output = Command::new("reg")
-        .args([
-            "query",
-            r"HKLM\SYSTEM\CurrentControlSet\Control\GraphicsDrivers",
-            "/v",
-            "HwSchMode",
-        ])
-        .output();
-
-    match output {
-        Ok(o) => {
-            let stdout = String::from_utf8_lossy(&o.stdout);
-            stdout.contains("0x2") // 2 = Enabled
-        }
-        Err(_) => false,
-    }
+    crate::registry::read_dword_value(
+        r"SYSTEM\CurrentControlSet\Control\GraphicsDrivers",
+        "HwSchMode",
+    )
+    .map(|v| v == 2)
+    .unwrap_or(false)
 }
 
 /// Apply all GPU/Gaming optimizations for minimum input lag

@@ -125,4 +125,14 @@ The Dashboard utilizes an asynchronous communication model to guarantee a fluid 
 
 - **Command Parsing**: Powered by `clap`.
 - **Interactive Mode**: Premium TUI dashboard.
+- **Command Registry (v0.7.0)**: Centralized `CommandRegistry` mapping IDs to `TweakCommand` implementations.
 - **Orchestration**: Coordination between audit, sync, and persist engines.
+
+---
+
+## Command Pattern (v0.7.0)
+
+The CLI uses a decoupled Command Pattern to execute optimizations:
+- `TweakCommand` trait: Defines the atomic execution interface.
+- `CommandRegistry`: Centralized registry for all available tweaks.
+- `ExecutionResult`: Standardized feedback for the UI/CLI.

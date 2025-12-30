@@ -25,13 +25,13 @@ pub mod network;
 pub mod onedrive;
 pub mod operation;
 pub mod power;
+pub mod privacy_o_o;
 pub mod registry;
 pub mod rollback;
 pub mod scheduled_tasks;
 pub mod security;
 pub mod services;
 pub mod timer;
-pub mod widgets;
 pub mod windows_update;
 
 #[cfg(test)]
