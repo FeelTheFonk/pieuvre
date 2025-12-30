@@ -24,7 +24,7 @@ pub struct ScanEngine {
 
 impl ScanEngine {
     pub fn new() -> Result<Self> {
-        // SOTA: Acquisition des privilèges au démarrage
+        // Acquisition des privilèges au démarrage
         if let Err(e) = crate::privileges::enable_debug_privilege() {
             tracing::warn!("Impossible d'acquérir SeDebugPrivilege: {:?}", e);
         }

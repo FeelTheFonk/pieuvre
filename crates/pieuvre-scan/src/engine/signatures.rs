@@ -17,7 +17,7 @@ impl SignatureEngine {
     }
 }
 
-/// Règles YARA par défaut (SOTA) intégrées au binaire
+/// Règles YARA par défaut intégrées au binaire
 pub const DEFAULT_RULES: &str = r#"
 rule Adware_Generic {
     meta:

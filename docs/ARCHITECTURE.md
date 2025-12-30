@@ -1,30 +1,30 @@
 # Architecture
 
-pieuvre workspace architecture and data flow.
+Architecture du workspace pieuvre et flux de données.
 
 ---
 
-## Workspace Structure
+## Structure du Workspace
 
 ```
 pieuvre/
 ├── crates/
-│   ├── pieuvre-common/     Shared types, error handling, and utilities
-│   ├── pieuvre-audit/      Read-only system inspection engine
-│   ├── pieuvre-sync/       System modification and optimization engine
-│   ├── pieuvre-persist/    Snapshot management and rollback logic
-│   └── pieuvre-cli/        Command-line interface and TUI dashboard
+│   ├── pieuvre-common/     Types partagés, erreurs et utilitaires
+│   ├── pieuvre-audit/      Moteur d'inspection système (Read-only)
+│   ├── pieuvre-sync/       Moteur de modification et d'optimisation
+│   ├── pieuvre-persist/    Gestion des snapshots et rollbacks
+│   └── pieuvre-cli/        Interface CLI et dashboard TUI
 ├── config/
-│   ├── default.toml        Default configuration
+│   ├── default.toml        Configuration par défaut
 │   └── telemetry-domains.txt
 └── docs/
-    ├── ARCHITECTURE.md     This file
-    └── TECHNICAL.md        Technical implementation details
+    ├── ARCHITECTURE.md     Ce fichier
+    └── TECHNICAL.md        Détails d'implémentation
 ```
 
 ---
 
-## Crate Dependencies
+## Dépendances
 
 ```mermaid
 graph TD
@@ -38,13 +38,13 @@ graph TD
 
 ---
 
-## Core Principles
+## Principes
 
-- **User-Mode (Rust)**: Orchestration, compressed snapshots (Zstd), and high-performance CLI/TUI.
-- **Audit-First**: Every modification is preceded by a comprehensive system state analysis.
-- **Safety**: Automatic state persistence before any system change.
+- **User-Mode (Rust)** : Orchestration, snapshots compressés (Zstd).
+- **Audit-First** : Analyse d'état avant modification.
+- **Sécurité** : Persistence automatique de l'état.
 
-### Data Flow
+### Flux de Données
 
 ```mermaid
 graph TD
@@ -58,81 +58,73 @@ graph TD
 
 ---
 
-## TUI Architecture (v0.6.0+)
+## Architecture TUI
 
-The user interface follows a **Component-Based** model for maximum fluidity and clarity.
+Modèle basé sur des composants pour la gestion de l'interface.
 
-### Component Model
-Each view is an autonomous component implementing the `Component` trait. Rendering is orchestrated by a central loop in `ui.rs` that distributes rendering zones (`Rect`) to components.
+### Modèle de Composant
+Chaque vue implémente le trait `Component`. Le rendu est orchestré par une boucle centrale dans `ui.rs`.
 
-### Navigation Drill-down
-The system uses a navigation stack (`nav_stack`) allowing for deep hierarchical exploration without cognitive overload.
+### Navigation
+Pile de navigation (`nav_stack`) pour l'exploration hiérarchique.
 
-### HUD Mode
-Logs and metrics are managed as overlays to maximize the useful workspace.
-
----
-
-## Asynchronous Execution Model
-
-The Dashboard utilizes an asynchronous communication model to guarantee a fluid UI (60 FPS):
-- **Tokio Tasks**: Heavy operations are offloaded to background tasks.
-- **MPSC Channels**: Execution logs and statuses are transmitted via asynchronous channels.
-- **Event Loop**: Non-blocking management of keyboard events and Ratatui rendering via a centralized `Store`.
+### HUD
+Logs et métriques gérés en overlays.
 
 ---
 
-## Crate Responsibilities
+## Modèle d'Exécution Asynchrone
+
+- **Tokio Tasks** : Opérations lourdes en arrière-plan.
+- **MPSC Channels** : Transmission des logs et statuts.
+- **Event Loop** : Gestion non-bloquante des événements clavier et rendu Ratatui.
+
+---
+
+## Responsabilités des Crates
 
 ### pieuvre-common
-
-- `PieuvreError`: Centralized error handling.
-- Shared structures and types.
-- Configuration parsing and validation.
+- `PieuvreError` : Gestion centralisée des erreurs.
+- Structures et types partagés.
+- Parsing de configuration.
 
 ### pieuvre-audit
-
-- **Hardware Detection**: CPU topology, RAM, and GPU (via DXGI).
-- **Service Enumeration**: Direct interaction with Native APIs.
-- **Telemetry Detection**: Deep inspection of 40+ telemetry-related keys.
-- **AppX Inventory**: Package analysis for cleanup.
-- **ETW Engine**: Real-time DPC/ISR monitoring with `DriverResolver`.
-- **Read-only**: Strictly guaranteed to never modify the system state.
+- **Hardware** : CPU, RAM, GPU (via DXGI).
+- **Services** : Énumération via Native API.
+- **Télémétrie** : Inspection de 40+ clés.
+- **AppX** : Inventaire des packages.
+- **ETW** : Monitoring DPC/ISR en temps réel.
 
 ### pieuvre-sync
-
-30+ optimization modules including:
-- `services.rs`: Service state management (Native API).
-- `timer.rs`: `NtSetTimerResolution` (0.5ms) for latency reduction.
-- `power.rs`: Atomic power plan configuration.
-- `firewall.rs`: Native firewall rule injection.
-- `msi.rs`: MSI Mode migration and management.
-- `registry.rs`: Atomic registry operations.
-- `appx.rs`: AppX package removal.
-- `hosts.rs`: High-performance hosts file blocking.
-- `hardening.rs`: System hardening and IFEO protection.
-- `interrupts.rs`: Dynamic interrupt affinity steering.
-- `sentinel/`: System monitoring engine for unauthorized changes.
+Modules d'optimisation :
+- `services.rs` : Gestion d'état des services.
+- `timer.rs` : `NtSetTimerResolution` (0.5ms).
+- `power.rs` : Configuration des plans d'alimentation.
+- `firewall.rs` : Injection de règles de pare-feu.
+- `msi.rs` : Gestion MSI Mode.
+- `registry.rs` : Opérations atomiques sur le registre.
+- `appx.rs` : Suppression de packages AppX.
+- `hosts.rs` : Blocage via fichier hosts.
+- `hardening.rs` : ACLs et protection IFEO.
+- `sentinel/` : Surveillance des changements non autorisés.
 
 ### pieuvre-persist
-
-- **Snapshot Creation**: State capture before modifications.
-- **Rollback**: Restoration to any previous state with integrity checks.
-- **Compression**: `zstd` compression for minimal storage footprint.
-- **Integrity**: SHA256 hashing for snapshot verification.
+- **Snapshots** : Capture d'état pré-modification.
+- **Rollback** : Restauration avec vérification d'intégrité.
+- **Compression** : `zstd`.
+- **Intégrité** : SHA256.
 
 ### pieuvre-cli
-
-- **Command Parsing**: Powered by `clap`.
-- **Interactive Mode**: Premium TUI dashboard.
-- **Command Registry (v0.7.0)**: Centralized `CommandRegistry` mapping IDs to `TweakCommand` implementations.
-- **Orchestration**: Coordination between audit, sync, and persist engines.
+- **Parsing** : `clap`.
+- **Interface** : Dashboard TUI.
+- **Command Registry** : Mapping IDs vers `TweakCommand`.
+- **Orchestration** : Coordination des moteurs.
 
 ---
 
-## Command Pattern (v0.7.0)
+## Command Pattern
 
-The CLI uses a decoupled Command Pattern to execute optimizations:
-- `TweakCommand` trait: Defines the atomic execution interface.
-- `CommandRegistry`: Centralized registry for all available tweaks.
-- `ExecutionResult`: Standardized feedback for the UI/CLI.
+Découplage de la logique d'exécution :
+- Trait `TweakCommand` : Interface d'exécution atomique.
+- `CommandRegistry` : Registre centralisé des tweaks.
+- `ExecutionResult` : Feedback standardisé.

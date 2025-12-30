@@ -5,18 +5,17 @@
 <h1 align="center">pieuvre</h1>
 
 <p align="center">
-  <strong>Advanced Windows 11 System Alignment & Optimization Toolkit</strong>
+  <strong>Outil d'alignement système pour Windows 11</strong>
 </p>
 
 <p align="center">
-pieuvre is a high-performance system control utility built in Rust, designed for power users and system administrators who require granular control over Windows internals. It provides a safe, snapshot-based approach to system hardening and performance tuning.
+pieuvre est un utilitaire système en Rust pour le contrôle des paramètres Windows. Gestion des politiques de sécurité et optimisation via snapshots.
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Windows%2011-lightgrey" alt="Platform">
   <img src="https://img.shields.io/badge/Rust-1.75+-orange.svg" alt="Rust">
   <img src="https://img.shields.io/badge/License-MIT%20/%20Apache--2.0-blue.svg" alt="License">
-  <img src="https://img.shields.io/badge/Build-Passing-brightgreen" alt="Build Status">
 </p>
 
 ---
@@ -25,108 +24,99 @@ pieuvre is a high-performance system control utility built in Rust, designed for
   <img src="crates/pieuvre-cli/screen.png" width="800" alt="pieuvre TUI Dashboard">
 </p>
 
-## Core Philosophy
+## Architecture
 
-Unlike traditional batch scripts or opaque registry tweaks, pieuvre follows a rigorous engineering approach:
-
-- **Native API Integration**: Direct interaction with Windows APIs (Win32, NT) for atomic operations.
-- **Audit-First Methodology**: Comprehensive system state analysis before any modification.
-- **Persistence and Safety**: Automatic zstd-compressed snapshots with SHA256 integrity for reliable rollbacks.
-- **Hardware-Aware**: Optimizations are dynamically tailored based on detected hardware (CPU topology, GPU VRAM, Storage type).
-- **Asynchronous Execution**: Non-blocking TUI powered by tokio for real-time feedback and metrics.
+- **API Native** : Interaction Win32/NT.
+- **Audit** : Analyse d'état pré-modification.
+- **Persistance** : Snapshots compressés (zstd), intégrité SHA256.
+- **Adaptation** : Configuration selon matériel détecté.
+- **Asynchrone** : Interface TUI via tokio.
 
 ---
 
-## Key Features
+## Fonctionnalités
 
-### 1. Interactive Dashboard (TUI)
-A terminal interface featuring:
-- **Modular Architecture (v0.7.0)**: Decoupled Command Pattern for extensibility and high-performance execution.
-- **Real-time Metrics**: Live CPU, RAM, and Uptime monitoring.
-- **Sidebar Navigation**: Categorized optimization modules for efficient workflow.
-- **Async Logging**: Real-time execution feedback with detailed status reporting.
+### 1. Interface (TUI)
+- **Command Pattern** : Exécution modulaire.
+- **Métriques** : Monitoring CPU, RAM, Uptime.
+- **Navigation** : Organisation par catégories.
+- **Logs** : Retour d'exécution en temps réel.
 
-### 2. System Hardening and Privacy
-- **O&O ShutUp10++ Integration**: Full integration of recommended privacy settings with native multi-hive support.
-- **Telemetry Neutralization**: Multi-level blocking (Services, Registry, Firewall, Hosts) for all user profiles.
-- **AI and Recall Blocking**: Disabling of Windows Recall and CoPilot integrations at the policy level.
-- **Sentinel**: Real-time configuration drift detection and automatic restoration of critical privacy keys.
+### 2. Sécurité et Confidentialité
+- **Confidentialité** : Application des politiques de groupe (GPO).
+- **Télémétrie** : Désactivation (Services, Registre, Pare-feu, Hosts).
+- **IA** : Désactivation Windows Recall et CoPilot.
+- **Sentinel** : Surveillance des clés critiques.
 
-### 3. Advanced Scanning (SOTA)
-- **YARA-X Engine**: High-performance malware signature scanning (Integrated).
-- **Browser Forensics**: Deep analysis of Chrome, Edge, and Firefox (Operational).
-- **Registry Persistence**: Detection of advanced persistence mechanisms in the Windows Registry (Operational).
+### 3. Analyse
+- **Moteur YARA-X** : Scan de signatures.
+- **Navigateurs** : Analyse Chrome, Edge, Firefox.
+- **Persistance** : Détection des mécanismes dans le registre.
 
-### 4. Performance Engineering
-- **Latency Optimization**: Timer resolution forcing (0.5ms), MSI mode migration, and DPC/ISR tuning.
-- **Hardware Tuning**: Core parking management, memory compression control, and GPU scheduling.
-- **Network Stack**: Nagle algorithm disabling and interrupt moderation adjustments.
+### 4. Optimisation
+- **Latence** : Timer kernel (0.5ms), MSI mode, DPC/ISR.
+- **Hardware** : Core parking, compression mémoire, GPU scheduling.
+- **Réseau** : Algorithme de Nagle, modération des interruptions.
 
 ---
 
 ## Installation
 
-### Prerequisites
+### Prérequis
+- Windows 10/11 (64-bit)
+- Rust 1.75+
+- Privilèges Administrateur
 
-- **OS**: Windows 10/11 (64-bit)
-- **Toolchain**: Rust 1.75+
-- **Privileges**: Administrator access required for system modifications.
-
-### Build from Source
-
+### Compilation
 ```powershell
 git clone https://github.com/FeelTheFonk/pieuvre.git
 cd pieuvre
 cargo build --release
 ```
 
-The compiled binary will be located at `target/release/pieuvre.exe`.
-
 ---
 
-## Quick Start
-
-Note: Always perform a full audit before applying optimizations. pieuvre creates snapshots automatically, but manual verification is recommended.
+## Utilisation
 
 ```powershell
-# 1. Analyze current system state
+# Analyse d'état
 pieuvre audit --full
 
-# 2. Launch the interactive dashboard (Recommended)
+# Interface interactive
 pieuvre interactive
 
-# 3. Apply specific tweaks via CLI
+# Gestion granulaire
 pieuvre tweak list
-pieuvre tweak apply diagtrack
+pieuvre tweak apply <id>
 
-# 4. Rollback to the last known good state if necessary
+# Restauration
 pieuvre rollback --last
 ```
 
 ---
 
-## Command Reference
+## Commandes
 
-| Command | Description |
+| Commande | Description |
 |:---|:---|
-| `audit` | Comprehensive system inspection and report generation. |
-| `interactive` | TUI for granular optimization selection. |
-| `tweak` | CLI-based management of specific system optimizations. |
-| `status` | Display current system alignment and applied tweaks. |
-| `verify` | Integrity check of applied changes with repair capabilities. |
-| `rollback` | Restore system state from a previous snapshot. |
+| `audit` | Inspection et rapport. |
+| `interactive` | Interface TUI. |
+| `tweak` | Gestion des optimisations. |
+| `status` | État de l'alignement. |
+| `verify` | Vérification d'intégrité. |
+| `rollback` | Restauration snapshot. |
 
 ---
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md): Workspace structure and data flow.
-- [Technical Details](docs/TECHNICAL.md): Implementation specifics of the optimization modules.
-- [CLI Reference](crates/pieuvre-cli/README.md): Detailed command-line arguments and usage.
-- [Contributing](CONTRIBUTING.md): Guidelines for development and code standards.
+- [Architecture](docs/ARCHITECTURE.md)
+- [Détails Techniques](docs/TECHNICAL.md)
+- [Référence CLI](crates/pieuvre-cli/README.md)
+- [Contribution](CONTRIBUTING.md)
 
 ---
 
-## License
+## Licence
 
-Licensed under either of Apache License, Version 2.0 or MIT license at your option.
+MIT / Apache-2.0.

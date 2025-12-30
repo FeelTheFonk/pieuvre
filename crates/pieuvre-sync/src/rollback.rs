@@ -52,7 +52,7 @@ async fn rollback_registry_full(
     value: &str,
     original_value: Option<pieuvre_common::RegistryValue>,
 ) -> Result<()> {
-    info!(key, value, "Restauration registre (SOTA)...");
+    info!(key, value, "Restauration registre...");
 
     // Déverrouillage
     let _ = tokio::task::spawn_blocking({

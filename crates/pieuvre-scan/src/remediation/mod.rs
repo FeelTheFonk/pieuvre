@@ -13,7 +13,7 @@ impl Remediator {
         }
     }
 
-    /// Supprime un fichier au prochain redémarrage (SOTA)
+    /// Supprime un fichier au prochain redémarrage
     pub fn delete_on_reboot(&self, file_path: &str) -> Result<()> {
         let path_u16: Vec<u16> = file_path.encode_utf16().chain(std::iter::once(0)).collect();
 

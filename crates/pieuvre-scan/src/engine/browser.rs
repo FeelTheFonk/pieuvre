@@ -37,7 +37,7 @@ impl BrowserForensics {
         let prefs_path = profile_path.join("Preferences");
         if prefs_path.exists() {
             let mut content = std::fs::read(prefs_path)?;
-            // SOTA: simd-json pour le parsing haute performance
+            // Utilisation de simd-json pour le parsing haute performance
             // Utilisation de to_owned_value car on ne peut pas emprunter content qui est local
             if let Ok(json) = simd_json::to_owned_value(&mut content) {
                 if let Some(extensions) = json.get("extensions").and_then(|e| e.get("settings")) {
@@ -54,7 +54,7 @@ impl BrowserForensics {
             }
         }
 
-        // 2. SOTA: Check Enterprise Policies (Registry)
+        // 2. Check Enterprise Policies (Registry)
         // Note: Normalement fait par le RegistryWalker, mais ici on cible spécifiquement Chrome
         // pour une analyse contextuelle.
 
@@ -64,7 +64,7 @@ impl BrowserForensics {
     pub fn scan_firefox_profile(&self, profile_path: PathBuf) -> Result<Vec<String>> {
         let mut findings = Vec::new();
 
-        // 1. extensions.json (SOTA Forensics)
+        // 1. extensions.json (Analyse Forensique)
         let ext_path = profile_path.join("extensions.json");
         if ext_path.exists() {
             let mut content = std::fs::read(ext_path)?;
@@ -80,7 +80,7 @@ impl BrowserForensics {
             }
         }
 
-        // 2. user.js (SOTA: Persistence Hijack)
+        // 2. user.js (Persistence Hijack)
         let user_js_path = profile_path.join("user.js");
         if user_js_path.exists() {
             findings.push("[Firefox] user.js found (Potential persistence hijack)".to_string());

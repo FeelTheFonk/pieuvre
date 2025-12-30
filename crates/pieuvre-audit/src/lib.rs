@@ -21,7 +21,7 @@ pub fn full_audit() -> Result<AuditReport> {
     let services = services::inspect_services()?;
     let appx = appx::scan_packages()?;
 
-    // System Info detection (SOTA: Real detection via Registry)
+    // System Info detection (Détection réelle via Registre)
     let (os_version, build_number) = {
         let hklm = winreg::RegKey::predef(winreg::enums::HKEY_LOCAL_MACHINE);
         let key = hklm

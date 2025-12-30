@@ -1,5 +1,5 @@
-//! Module Privacy O&O ShutUp10++ SOTA
-//! Centralisation de tous les paramètres de confidentialité recommandés.
+//! Module Privacy
+//! Centralisation des paramètres de confidentialité.
 
 use crate::registry;
 use pieuvre_common::Result;

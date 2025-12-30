@@ -72,10 +72,10 @@ enum Commands {
         repair: bool,
     },
 
-    /// Interactive mode - granular optimization selection
+    /// Interactive mode - sélection des optimisations
     Interactive,
 
-    /// Manage specific system tweaks (SOTA v0.7.0)
+    /// Gestion des tweaks système
     Tweak {
         #[command(subcommand)]
         action: TweakAction,
@@ -98,7 +98,7 @@ pub enum TweakAction {
         /// The ID of the tweak to apply (e.g., 'diagtrack', 'timer')
         id: String,
     },
-    /// Apply all recommended SOTA optimizations
+    /// Apply all recommended optimizations
     ApplyAll,
 }
 
@@ -120,7 +120,7 @@ async fn main() -> Result<()> {
         .init();
 
     match cli.command {
-        // Launch SOTA Interactive Mode by default
+        // Launch Interactive Mode by default
         None => commands::interactive::tui::run().await,
         Some(Commands::Audit { full, output }) => {
             commands::audit::run(full, output, None).map(|_| ())
@@ -132,7 +132,7 @@ async fn main() -> Result<()> {
         Some(Commands::Interactive) => commands::interactive::tui::run().await,
         Some(Commands::Tweak { action }) => match action {
             TweakAction::List => {
-                println!("Available SOTA Tweaks (v0.7.0):");
+                println!("Available Tweaks:");
                 for (section, items) in commands::interactive::sections::get_all_sections() {
                     println!("\n[{}]", section);
                     for item in items {
@@ -155,7 +155,7 @@ async fn main() -> Result<()> {
                 }
             }
             TweakAction::ApplyAll => {
-                println!("Applying all recommended SOTA optimizations...");
+                println!("Applying all recommended optimizations...");
                 let registry = commands::interactive::executor::CommandRegistry::new();
                 for (_, items) in commands::interactive::sections::get_all_sections() {
                     for item in items {

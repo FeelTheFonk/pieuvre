@@ -1,75 +1,74 @@
-# Technical Architecture: pieuvre TUI (v0.7.0)
+# Détails Techniques
 
-This document details the technical implementation of the pieuvre Terminal User Interface and its underlying optimization engines.
-
----
-
-## 1. Sidebar Navigation Engine (v0.6.0)
-
-The TUI utilizes a sidebar-based navigation model for efficient management of optimization categories.
-
-### Navigation & Controls
-- **Structure**: A horizontal layout divided into the `Sidebar` (Categories) and the `MainView` (Options & Details).
-- **Controls**:
-    - `Tab` / `BackTab`: Switch focus between the Sidebar and the MainView.
-    - `Up` / `Down`: Navigate through categories or options within the active view.
-    - `Space`: Toggle the selection state of an optimization item ([X] / [ ]).
-    - `Enter`: Execute all currently selected optimizations.
-    - `Q` / `Esc`: Exit the application.
-
-### Overlay HUD & Logging
-- **Logging System**: An asynchronous log panel at the bottom of the screen provides real-time execution feedback (RUNNING, SUCCESS, ERROR).
-- **Design Benefit**: Centralizes feedback without interrupting the user's configuration flow.
+Implémentation de l'interface TUI et des moteurs d'optimisation.
 
 ---
 
-## 1.1 Command Execution Engine (v0.7.0)
+## 1. Navigation TUI
 
-The TUI is now decoupled from the execution logic via the **Command Pattern**:
-- **Atomic Tweaks**: Each optimization is a self-contained `TweakCommand`.
-- **Registry-Driven**: The UI dynamically queries the `CommandRegistry` for execution.
-- **Async Safety**: All system operations are wrapped in `tokio::spawn_blocking` to prevent UI hangs.
+Modèle basé sur une barre latérale pour la gestion des catégories.
 
----
+### Contrôles
+- **Structure** : Layout horizontal (`Sidebar` et `MainView`).
+- **Touches** :
+    - `Tab` / `BackTab` : Changement de focus.
+    - `Up` / `Down` : Navigation.
+    - `Space` : Sélection ([X] / [ ]).
+    - `Enter` : Exécution.
+    - `Q` / `Esc` : Quitter.
 
-## 2. System Hardening Engine
-
-pieuvre implements a hardening engine based on native Windows Access Control Lists (ACLs) and direct registry manipulation.
-
-- **SDDL (Security Descriptor Definition Language)**: Used to lock critical registry keys and services by applying restrictive security descriptors.
-- **Privilege Management**: Utilizes `SeTakeOwnershipPrivilege` to modify system-protected objects.
-- **Native API (v0.7.0)**: Migration to `windows-rs` for all registry and service operations, eliminating `reg.exe` overhead.
-
----
-
-## 3. AI & Privacy Management
-
-- **Recall Blocking**: Disables the Windows Recall feature via Group Policy Objects (`DisableAIDataAnalysis`) and registry keys.
-- **CoPilot Suppression**: Removes CoPilot integrations from the taskbar and the Edge browser.
-- **Telemetry Blocking**: Multi-layered approach involving Services, Scheduled Tasks, Hosts file redirection, and Firewall rules.
+### HUD & Logs
+- **Logging** : Panel asynchrone en bas d'écran (RUNNING, SUCCESS, ERROR).
 
 ---
 
-## 4. Multi-Crate Architecture
+## 1.1 Moteur d'Exécution
 
-- `pieuvre-cli`: TUI entry point and main orchestrator.
-- `pieuvre-sync`: Execution engine for optimizations (Services, Registry, Cleanup).
-- `pieuvre-audit`: Inspection engine for system analysis and detection.
-- `pieuvre-persist`: Management of snapshots, compression, and state persistence.
-
----
-
-## 5. Latency Optimization (DPC/ISR)
-
-- **Timer Resolution**: Forces the kernel timer to 0.5ms via `NtSetTimerResolution` to minimize input lag.
-- **Interrupt Affinity**: Distributes hardware interrupts across physical CPU cores to avoid saturation and reduce DPC latency.
-- **MSI (Message Signaled Interrupts)**: Migrates PCI devices to MSI mode to eliminate IRQ conflicts and reduce interrupt overhead.
+Découplage via le **Command Pattern** :
+- **Tweaks** : Chaque optimisation est un `TweakCommand`.
+- **Registre** : Utilisation de `CommandRegistry`.
+- **Async** : `tokio::spawn_blocking` pour les opérations système.
 
 ---
 
-## 6. Monitoring & Audit
+## 2. Hardening
 
-- **Sentinel Engine**: Monitors critical registry keys for unauthorized changes using `RegNotifyChangeKeyValue`.
-- **Hardware Audit**: Exhaustive probing of CPU, RAM, and software configuration via `pieuvre-audit`.
-- **Real-time Metrics**: High-frequency acquisition of system metrics (CPU/RAM) via `sysinfo` in a dedicated background thread.
+Utilisation des ACLs natives et manipulation directe du registre.
+
+- **SDDL** : Verrouillage des clés et services via descripteurs de sécurité.
+- **Privilèges** : Acquisition de `SeTakeOwnershipPrivilege`.
+- **API Native** : Utilisation de `windows-rs`.
+
+---
+
+## 3. Confidentialité
+
+- **Recall** : Désactivation via GPO (`DisableAIDataAnalysis`).
+- **CoPilot** : Suppression des points d'entrée (taskbar, Edge).
+- **Télémétrie** : Blocage multi-couches (Services, Tasks, Hosts, Firewall).
+
+---
+
+## 4. Architecture Multi-Crate
+
+- `pieuvre-cli` : Point d'entrée et orchestrateur.
+- `pieuvre-sync` : Moteur d'exécution.
+- `pieuvre-audit` : Moteur d'inspection.
+- `pieuvre-persist` : Gestion des snapshots.
+
+---
+
+## 5. Optimisation de Latence
+
+- **Timer** : `NtSetTimerResolution` (0.5ms).
+- **Interrupt Affinity** : Distribution des interruptions sur les cœurs CPU.
+- **MSI** : Migration des périphériques vers Message Signaled Interrupts.
+
+---
+
+## 6. Surveillance
+
+- **Sentinel** : Surveillance via `RegNotifyChangeKeyValue`.
+- **Audit** : Probing matériel via `pieuvre-audit`.
+- **Métriques** : Acquisition haute fréquence via `sysinfo`.
 
