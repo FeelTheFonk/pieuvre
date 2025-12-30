@@ -21,6 +21,8 @@ pub enum Action {
     Execute,
     AddLog(String),
     UpdateMetrics(SystemMetrics),
+    RefreshStatus,
+    UpdateStatus(String, bool),
 }
 
 pub struct AppState {
@@ -30,8 +32,8 @@ pub struct AppState {
     pub tabs: Vec<String>,
     pub tab_options: HashMap<String, Vec<OptItem>>,
     pub options_state: HashMap<String, bool>,
+    pub applied_state: HashMap<String, bool>,
     pub metrics: SystemMetrics,
-    #[allow(dead_code)]
     pub logs: Vec<String>,
     pub is_admin: bool,
     pub action_tx: Option<tokio::sync::mpsc::UnboundedSender<Action>>,
@@ -39,17 +41,16 @@ pub struct AppState {
 
 impl AppState {
     pub fn new() -> Self {
-        let _is_laptop = pieuvre_audit::hardware::is_laptop();
         let mut tab_options = HashMap::new();
         let mut options_state = HashMap::new();
+        let mut applied_state = HashMap::new();
         let mut tabs = Vec::new();
 
-        // Nouveau système modulaire SOTA
         for (name, items) in crate::commands::interactive::sections::get_all_sections() {
-            let name_str: &str = name;
-            tabs.push(name_str.to_string());
+            tabs.push(name.to_string());
             for item in &items {
                 options_state.insert(item.id.to_string(), item.default);
+                applied_state.insert(item.id.to_string(), false);
             }
             tab_options.insert(name.to_string(), items);
         }
@@ -61,6 +62,7 @@ impl AppState {
             tabs,
             tab_options,
             options_state,
+            applied_state,
             metrics: SystemMetrics::default(),
             logs: Vec::new(),
             is_admin: crate::commands::interactive::tui::is_elevated(),
@@ -129,9 +131,7 @@ impl AppState {
                     self.options_state.insert(opt.id.to_string(), !current);
                 }
             }
-            Action::Execute => {
-                // Triggered in the main loop or by a component
-            }
+            Action::Execute => {}
             Action::AddLog(log) => {
                 self.logs.push(log);
                 if self.logs.len() > 100 {
@@ -140,6 +140,10 @@ impl AppState {
             }
             Action::UpdateMetrics(m) => {
                 self.metrics = m;
+            }
+            Action::RefreshStatus => {}
+            Action::UpdateStatus(id, applied) => {
+                self.applied_state.insert(id, applied);
             }
         }
     }

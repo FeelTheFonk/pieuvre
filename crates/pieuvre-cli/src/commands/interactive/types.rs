@@ -46,4 +46,7 @@ impl ExecutionResult {
 #[async_trait]
 pub trait TweakCommand: Send + Sync {
     async fn execute(&self) -> Result<ExecutionResult>;
+    async fn check_status(&self) -> Result<bool> {
+        Ok(false) // Par défaut, on ne sait pas si c'est appliqué
+    }
 }

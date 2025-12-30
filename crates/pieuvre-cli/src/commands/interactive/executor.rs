@@ -20,9 +20,28 @@ impl CommandRegistry {
 
     fn register_all(&mut self) {
         // --- TÉLÉMÉTRIE ---
-        self.register("diagtrack", ServiceDisableCommand::new("DiagTrack"));
-        self.register("dmwappush", ServiceDisableCommand::new("dmwappushservice"));
-        self.register("wersvc", ServiceDisableCommand::new("WerSvc"));
+        use pieuvre_sync::hardening::*;
+        self.register(
+            "diagtrack",
+            SyncOperationCommand::new(pieuvre_sync::operation::ServiceOperation {
+                name: SERVICE_DIAGTRACK.to_string(),
+                target_start_type: 4,
+            }),
+        );
+        self.register(
+            "dmwappush",
+            SyncOperationCommand::new(pieuvre_sync::operation::ServiceOperation {
+                name: SERVICE_WAP_PUSH.to_string(),
+                target_start_type: 4,
+            }),
+        );
+        self.register(
+            "wersvc",
+            SyncOperationCommand::new(pieuvre_sync::operation::ServiceOperation {
+                name: SERVICE_WERSVC.to_string(),
+                target_start_type: 4,
+            }),
+        );
         self.register("firewall", FirewallTelemetryBlockCommand);
         self.register("sched_tasks", ScheduledTasksTelemetryCommand);
         self.register("hosts", HostsTelemetryCommand);
@@ -31,30 +50,93 @@ impl CommandRegistry {
         // --- PRIVACY ---
         self.register(
             "telemetry_level",
-            RegistryDwordCommand::new(
-                r"SOFTWARE\Policies\Microsoft\Windows\DataCollection",
-                "AllowTelemetry",
-                0,
-            ),
+            SyncOperationCommand::new(pieuvre_sync::operation::RegistryDwordOperation {
+                key: DATA_COLLECTION_KEY.to_string(),
+                value: "AllowTelemetry".to_string(),
+                target_data: 0,
+            }),
         );
-        self.register("advertising_id", RegistryDisableAdvIdCommand);
-        self.register("location", RegistryDisableLocationCommand);
-        self.register("activity_history", RegistryDisableActivityHistoryCommand);
-        self.register("cortana", RegistryDisableCortanaCommand);
-        self.register("recall", RegistryDisableRecallCommand);
+        self.register(
+            "advertising_id",
+            SyncOperationCommand::new(pieuvre_sync::operation::RegistryDwordOperation {
+                key: ADVERTISING_INFO_POLICIES_KEY.to_string(),
+                value: "DisabledByGroupPolicy".to_string(),
+                target_data: 1,
+            }),
+        );
+        self.register(
+            "location",
+            SyncOperationCommand::new(pieuvre_sync::operation::RegistryDwordOperation {
+                key: format!("{}\\{}", CONSENT_STORE_KEY, "location"),
+                value: "Value".to_string(),
+                target_data: 0, // 0 for Deny in some contexts, but let's stick to what was there
+            }),
+        );
+        self.register(
+            "activity_history",
+            SyncOperationCommand::new(pieuvre_sync::operation::RegistryDwordOperation {
+                key: r"SOFTWARE\Policies\Microsoft\Windows\System".to_string(),
+                value: "EnableActivityFeed".to_string(),
+                target_data: 0,
+            }),
+        );
+        self.register(
+            "cortana",
+            SyncOperationCommand::new(pieuvre_sync::operation::RegistryDwordOperation {
+                key: WINDOWS_SEARCH_KEY.to_string(),
+                value: "AllowCortana".to_string(),
+                target_data: 0,
+            }),
+        );
+        self.register(
+            "recall",
+            SyncOperationCommand::new(pieuvre_sync::operation::RegistryDwordOperation {
+                key: WINDOWS_AI_KEY.to_string(),
+                value: "DisableAIDataAnalysis".to_string(),
+                target_data: 1,
+            }),
+        );
         self.register("context_menu", ContextMenuClassicCommand);
         self.register("edge_telemetry", EdgeTelemetryDisableCommand);
 
         // --- O&O PRIVACY ---
         self.register("oo_telemetry", OORecommendedPrivacyCommand);
-        self.register("oo_advertising", RegistryDisableAdvIdCommand);
+        self.register(
+            "oo_advertising",
+            SyncOperationCommand::new(pieuvre_sync::operation::RegistryDwordOperation {
+                key: ADVERTISING_INFO_POLICIES_KEY.to_string(),
+                value: "DisabledByGroupPolicy".to_string(),
+                target_data: 1,
+            }),
+        );
         self.register("oo_copilot", AppxRemoveCopilotCommand);
-        self.register("oo_recall", RegistryDisableRecallCommand);
+        self.register(
+            "oo_recall",
+            SyncOperationCommand::new(pieuvre_sync::operation::RegistryDwordOperation {
+                key: WINDOWS_AI_KEY.to_string(),
+                value: "DisableAIDataAnalysis".to_string(),
+                target_data: 1,
+            }),
+        );
         self.register("oo_widgets", OORecommendedPrivacyCommand);
-        self.register("oo_search_highlights", RegistryDisableCortanaCommand);
+        self.register(
+            "oo_search_highlights",
+            SyncOperationCommand::new(pieuvre_sync::operation::RegistryDwordOperation {
+                key: WINDOWS_SEARCH_KEY.to_string(),
+                value: "AllowCortana".to_string(),
+                target_data: 0,
+            }),
+        );
         self.register("oo_wudo", OORecommendedPrivacyCommand);
         self.register("oo_wifi_sense", OORecommendedPrivacyCommand);
-        self.register("oo_app_permissions", RegistryDisableLocationCommand);
+        self.register(
+            "oo_app_permissions",
+            SyncOperationCommand::new(pieuvre_sync::operation::RegistryDwordOperation {
+                key: format!("{}\\{}", CONSENT_STORE_KEY, "location"),
+                value: "Value".to_string(),
+                target_data: 0,
+            }),
+        );
         self.register("oo_bg_apps", OORecommendedPrivacyCommand);
 
         // --- PERFORMANCE ---
@@ -101,6 +183,83 @@ impl CommandRegistry {
         self.register("hardening_unlock", HardeningUnlockCommand);
         self.register("hardening_ppl", HardeningPplCommand);
         self.register("windows_update", WindowsUpdateConfigureCommand);
+
+        // --- BLOATWARE ---
+        self.register("bloat_copilot", AppxRemoveCopilotCommand);
+        self.register("bloat_onedrive", OneDriveUninstallCommand);
+        self.register("bloat_edge", EdgeTelemetryDisableCommand);
+        self.register(
+            "bloat_standard",
+            SyncOperationCommand::new(pieuvre_sync::operation::AppxOperation {
+                packages_to_remove: vec![
+                    "Microsoft.SolitaireCollection".to_string(),
+                    "Microsoft.People".to_string(),
+                    "Microsoft.WindowsMaps".to_string(),
+                ],
+            }),
+        );
+        self.register(
+            "bloat_cortana",
+            SyncOperationCommand::new(pieuvre_sync::operation::RegistryDwordOperation {
+                key: WINDOWS_SEARCH_KEY.to_string(),
+                value: "AllowCortana".to_string(),
+                target_data: 0,
+            }),
+        );
+
+        // --- SERVICES ---
+        self.register(
+            "svc_telemetry",
+            SyncOperationCommand::new(pieuvre_sync::operation::ServiceOperation {
+                name: SERVICE_DIAGTRACK.to_string(),
+                target_start_type: 4,
+            }),
+        );
+        self.register(
+            "svc_sysmain",
+            SyncOperationCommand::new(pieuvre_sync::operation::ServiceOperation {
+                name: SERVICE_SYSMAIN.to_string(),
+                target_start_type: 4,
+            }),
+        );
+        self.register(
+            "svc_search",
+            SyncOperationCommand::new(pieuvre_sync::operation::ServiceOperation {
+                name: SERVICE_WSEARCH.to_string(),
+                target_start_type: 4,
+            }),
+        );
+        self.register(
+            "svc_update",
+            SyncOperationCommand::new(pieuvre_sync::operation::ServiceOperation {
+                name: SERVICE_UPDATE.to_string(),
+                target_start_type: 3,
+            }),
+        );
+        self.register(
+            "svc_print",
+            SyncOperationCommand::new(pieuvre_sync::operation::ServiceOperation {
+                name: "Spooler".to_string(),
+                target_start_type: 4,
+            }),
+        );
+
+        // --- NETWORK ---
+        self.register("net_doh", DnsDohCommand);
+        self.register("net_nagle", NagleDisableCommand);
+        self.register("net_firewall", FirewallTelemetryBlockCommand);
+        self.register("net_hosts", HostsTelemetryCommand);
+
+        // --- MAINTENANCE ---
+        self.register(
+            "maint_cleanup",
+            SyncOperationCommand::new(pieuvre_sync::operation::MemoryOptimizationOperation {
+                enable_large_system_cache: true,
+                io_page_lock_limit_mb: None,
+            }),
+        );
+        self.register("maint_updates_pause", WindowsUpdateConfigureCommand);
+        self.register("maint_tasks", ScheduledTasksTelemetryCommand);
     }
 
     pub fn register(&mut self, id: &str, command: impl TweakCommand + 'static) {
@@ -115,102 +274,42 @@ impl CommandRegistry {
             anyhow::bail!("Command not yet migrated to SOTA Registry: {}", id)
         }
     }
-}
 
-// --- COMMANDES DE SERVICES ---
-
-pub struct ServiceDisableCommand {
-    name: String,
-}
-impl ServiceDisableCommand {
-    pub fn new(name: impl Into<String>) -> Self {
-        Self { name: name.into() }
-    }
-}
-#[async_trait]
-impl TweakCommand for ServiceDisableCommand {
-    async fn execute(&self) -> Result<ExecutionResult> {
-        let name = self.name.clone();
-        tokio::task::spawn_blocking(move || pieuvre_sync::services::disable_service(&name))
-            .await??;
-        Ok(ExecutionResult::ok(format!(
-            "Service {} disabled",
-            self.name
-        )))
-    }
-}
-
-// --- COMMANDES DE REGISTRE ---
-
-pub struct RegistryDwordCommand {
-    key: String,
-    value: String,
-    data: u32,
-}
-impl RegistryDwordCommand {
-    pub fn new(key: &str, value: &str, data: u32) -> Self {
-        Self {
-            key: key.to_string(),
-            value: value.to_string(),
-            data,
+    pub async fn check_status(&self, id: &str) -> Result<bool> {
+        if let Some(cmd) = self.commands.get(id) {
+            cmd.check_status().await
+        } else {
+            Ok(false)
         }
     }
 }
-#[async_trait]
-impl TweakCommand for RegistryDwordCommand {
-    async fn execute(&self) -> Result<ExecutionResult> {
-        let (k, v, d) = (self.key.clone(), self.value.clone(), self.data);
-        tokio::task::spawn_blocking(move || pieuvre_sync::registry::set_dword_value(&k, &v, d))
-            .await??;
-        Ok(ExecutionResult::ok(format!(
-            "Registry {} set to {}",
-            self.value, self.data
-        )))
+
+/// Wrapper pour les SyncOperation du moteur
+pub struct SyncOperationCommand<T: pieuvre_sync::operation::SyncOperation + 'static> {
+    operation: T,
+}
+
+impl<T: pieuvre_sync::operation::SyncOperation + 'static> SyncOperationCommand<T> {
+    pub fn new(operation: T) -> Self {
+        Self { operation }
     }
 }
 
-pub struct RegistryDisableAdvIdCommand;
 #[async_trait]
-impl TweakCommand for RegistryDisableAdvIdCommand {
+impl<T: pieuvre_sync::operation::SyncOperation + 'static> TweakCommand for SyncOperationCommand<T> {
     async fn execute(&self) -> Result<ExecutionResult> {
-        tokio::task::spawn_blocking(pieuvre_sync::registry::disable_advertising_id).await??;
-        Ok(ExecutionResult::ok("Advertising ID disabled"))
+        let changes = self.operation.apply().await?;
+        Ok(ExecutionResult::ok_count(
+            changes.len(),
+            format!("Operation {} applied", self.operation.name()),
+        ))
     }
-}
 
-pub struct RegistryDisableLocationCommand;
-#[async_trait]
-impl TweakCommand for RegistryDisableLocationCommand {
-    async fn execute(&self) -> Result<ExecutionResult> {
-        tokio::task::spawn_blocking(pieuvre_sync::registry::disable_location).await??;
-        Ok(ExecutionResult::ok("Location tracking disabled"))
-    }
-}
-
-pub struct RegistryDisableRecallCommand;
-#[async_trait]
-impl TweakCommand for RegistryDisableRecallCommand {
-    async fn execute(&self) -> Result<ExecutionResult> {
-        tokio::task::spawn_blocking(pieuvre_sync::registry::disable_recall).await??;
-        Ok(ExecutionResult::ok("Windows Recall blocked"))
-    }
-}
-
-pub struct RegistryDisableCortanaCommand;
-#[async_trait]
-impl TweakCommand for RegistryDisableCortanaCommand {
-    async fn execute(&self) -> Result<ExecutionResult> {
-        tokio::task::spawn_blocking(pieuvre_sync::registry::disable_cortana).await??;
-        Ok(ExecutionResult::ok("Cortana & Search Highlights disabled"))
-    }
-}
-
-pub struct RegistryDisableActivityHistoryCommand;
-#[async_trait]
-impl TweakCommand for RegistryDisableActivityHistoryCommand {
-    async fn execute(&self) -> Result<ExecutionResult> {
-        tokio::task::spawn_blocking(pieuvre_sync::registry::disable_activity_history).await??;
-        Ok(ExecutionResult::ok("Activity history disabled"))
+    async fn check_status(&self) -> Result<bool> {
+        self.operation
+            .is_applied()
+            .await
+            .map_err(|e| anyhow::anyhow!(e))
     }
 }
 

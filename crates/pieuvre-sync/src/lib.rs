@@ -53,59 +53,50 @@ pub async fn reset_to_defaults() -> Result<()> {
     let operations: Vec<Box<dyn SyncOperation>> = vec![
         // 1. Services essentiels (Télémétrie & Diagnostics)
         Box::new(ServiceOperation {
-            name: "DiagTrack".to_string(),
+            name: crate::hardening::SERVICE_DIAGTRACK.to_string(),
             target_start_type: 2, // Auto
         }),
         Box::new(ServiceOperation {
-            name: "dmwappushservice".to_string(),
+            name: crate::hardening::SERVICE_WAP_PUSH.to_string(),
             target_start_type: 3, // Manual
         }),
         Box::new(ServiceOperation {
-            name: "WerSvc".to_string(),
+            name: crate::hardening::SERVICE_WERSVC.to_string(),
             target_start_type: 3, // Manual
         }),
         Box::new(ServiceOperation {
-            name: "SysMain".to_string(),
+            name: crate::hardening::SERVICE_SYSMAIN.to_string(),
             target_start_type: 2, // Auto
         }),
         Box::new(ServiceOperation {
-            name: "WSearch".to_string(),
+            name: crate::hardening::SERVICE_WSEARCH.to_string(),
             target_start_type: 2, // Auto
         }),
         Box::new(ServiceOperation {
-            name: "wuauserv".to_string(),
+            name: crate::hardening::SERVICE_UPDATE.to_string(),
             target_start_type: 3, // Manual
         }),
         Box::new(ServiceOperation {
-            name: "UsoSvc".to_string(),
+            name: crate::hardening::SERVICE_USOSVC.to_string(),
             target_start_type: 3, // Manual
         }),
         Box::new(ServiceOperation {
-            name: "DoSvc".to_string(),
+            name: crate::hardening::SERVICE_DOSVC.to_string(),
             target_start_type: 3, // Manual
         }),
         // 2. Registre par défaut (Performance & Privacy)
         Box::new(RegistryDwordOperation {
-            key: r"SYSTEM\CurrentControlSet\Control\PriorityControl".to_string(),
+            key: crate::hardening::PRIORITY_CONTROL_KEY.to_string(),
             value: "Win32PrioritySeparation".to_string(),
             target_data: 0x2,
         }),
-        Box::new(RegistryDwordOperation {
-            key: r"SOFTWARE\Policies\Microsoft\Windows\DataCollection".to_string(),
-            value: "AllowTelemetry".to_string(),
-            target_data: 1,
-        }),
-        Box::new(RegistryDwordOperation {
-            key: r"SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo".to_string(),
-            value: "Enabled".to_string(),
-            target_data: 1,
-        }),
-        Box::new(RegistryDwordOperation {
-            key: r"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location".to_string(),
-            value: "Value".to_string(),
-            target_data: 1,
-        }),
     ];
+
+    // Appliquer les paramètres de confidentialité par défaut (via O&O logic)
+    // Note: On pourrait aussi créer une opération dédiée pour cela si on veut du rollback
+    let _ = crate::privacy_o_o::apply_all_recommended_privacy();
+    let _ = crate::security::enable_memory_integrity();
+    let _ = crate::security::enable_vbs();
 
     let mut set = JoinSet::new();
     for op in operations {

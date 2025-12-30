@@ -34,6 +34,9 @@ pub async fn run() -> Result<()> {
 
     let mut events = EventHandler::new(Duration::from_millis(50));
 
+    // Initial status check
+    let _ = action_tx.send(Action::RefreshStatus);
+
     // Metrics Task
     let metrics_tx = action_tx.clone();
     tokio::spawn(async move {
@@ -106,6 +109,19 @@ pub async fn run() -> Result<()> {
                                 }
                             }
                             let _ = log_tx.send(Action::AddLog(i18n::LOG_ALL_APPLIED.to_string()));
+                            let _ = log_tx.send(Action::RefreshStatus);
+                        });
+                    }
+                    Action::RefreshStatus => {
+                        let log_tx = action_tx.clone();
+                        let reg = registry.clone();
+                        let ids: Vec<String> = app.tab_options.values().flat_map(|opts| opts.iter().map(|o| o.id.to_string())).collect();
+                        tokio::spawn(async move {
+                            for id in ids {
+                                if let Ok(applied) = reg.check_status(&id).await {
+                                    let _ = log_tx.send(Action::UpdateStatus(id, applied));
+                                }
+                            }
                         });
                     }
                     _ => app.update(action),

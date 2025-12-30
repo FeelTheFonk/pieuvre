@@ -44,5 +44,19 @@ pub fn get_options() -> Vec<OptItem> {
             default: true,
             risk: RiskLevel::Performance,
         },
+        OptItem {
+            id: "interrupts",
+            label: "Optimize Interrupt Steering",
+            description: "Steers high-latency drivers to specific CPU cores to reduce DPC latency.",
+            default: true,
+            risk: RiskLevel::Performance,
+        },
+        OptItem {
+            id: "memory",
+            label: "Enable Large System Cache",
+            description: "Increases the size of the system working set for better file I/O performance.",
+            default: true,
+            risk: RiskLevel::Performance,
+        },
     ]
 }

@@ -37,12 +37,18 @@ fn test_interactive_module_exists() {
 fn test_command_registry_registration() {
     use crate::commands::interactive::executor::CommandRegistry;
     let _registry = CommandRegistry::new();
-    
+
     // Vérifier que les commandes critiques sont enregistrées
-    let critical_commands = ["diagtrack", "telemetry_level", "timer", "power_ultimate", "scan_yara"];
-    
+    let critical_commands = [
+        "diagtrack",
+        "telemetry_level",
+        "timer",
+        "power_ultimate",
+        "scan_yara",
+    ];
+
     for _id in critical_commands {
-        // On ne peut pas facilement exécuter sans effets de bord, 
+        // On ne peut pas facilement exécuter sans effets de bord,
         // mais on peut vérifier si elles existent dans le registre (via execute qui ne panique pas sur "not found")
         // En fait, execute renvoie une erreur si non trouvé.
     }

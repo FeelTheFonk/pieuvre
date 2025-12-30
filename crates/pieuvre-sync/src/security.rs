@@ -5,23 +5,9 @@
 //!
 //! Uses native Windows APIs via registry.rs instead of Command::new("reg").
 
+use crate::hardening::*;
 use crate::registry::set_dword_value;
 use pieuvre_common::Result;
-
-// ============================================
-// REGISTRY PATH CONSTANTS
-// ============================================
-
-/// Registry key for HVCI (Memory Integrity)
-const HVCI_KEY: &str =
-    r"SYSTEM\CurrentControlSet\Control\DeviceGuard\Scenarios\HypervisorEnforcedCodeIntegrity";
-
-/// Registry key for Device Guard / VBS
-const DEVICE_GUARD_KEY: &str = r"SYSTEM\CurrentControlSet\Control\DeviceGuard";
-
-/// Registry key for Memory Management (Spectre/Meltdown)
-const MEMORY_MANAGEMENT_KEY: &str =
-    r"SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management";
 
 // ============================================
 // MEMORY INTEGRITY (HVCI)

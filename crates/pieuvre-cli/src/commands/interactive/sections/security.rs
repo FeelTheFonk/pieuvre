@@ -30,5 +30,19 @@ pub fn get_options() -> Vec<OptItem> {
             default: false,
             risk: RiskLevel::High,
         },
+        OptItem {
+            id: "hardening_lock",
+            label: "Lock Critical Registry Keys",
+            description: "Applies read-only ACLs to critical privacy and system keys to prevent resets.",
+            default: false,
+            risk: RiskLevel::Warning,
+        },
+        OptItem {
+            id: "hardening_ppl",
+            label: "Enable PPL Protection",
+            description: "Enables Protected Process Light for the pieuvre process.",
+            default: false,
+            risk: RiskLevel::Safe,
+        },
     ]
 }

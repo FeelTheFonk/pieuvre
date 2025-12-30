@@ -377,69 +377,6 @@ pub fn key_exists(subkey: &str) -> bool {
     }
 }
 
-pub fn set_priority_separation(value: u32) -> Result<()> {
-    set_dword_value(
-        r"SYSTEM\CurrentControlSet\Control\PriorityControl",
-        "Win32PrioritySeparation",
-        value,
-    )
-}
-
-pub fn set_telemetry_level(level: u32) -> Result<()> {
-    set_value_multi_hive_dword(
-        r"SOFTWARE\Policies\Microsoft\Windows\DataCollection",
-        "AllowTelemetry",
-        level,
-    )?;
-    set_value_multi_hive_dword(
-        r"SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\DataCollection",
-        "AllowTelemetry",
-        level,
-    )
-}
-
-pub fn disable_advertising_id() -> Result<()> {
-    set_value_multi_hive_dword(
-        r"SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo",
-        "Enabled",
-        0,
-    )
-}
-
-pub fn disable_location() -> Result<()> {
-    set_value_multi_hive_dword(
-        r"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location",
-        "Value",
-        0,
-    )
-}
-
-pub fn disable_activity_history() -> Result<()> {
-    set_value_multi_hive_dword(
-        r"SOFTWARE\Policies\Microsoft\Windows\System",
-        "EnableActivityFeed",
-        0,
-    )?;
-    set_value_multi_hive_dword(
-        r"SOFTWARE\Policies\Microsoft\Windows\System",
-        "PublishUserActivities",
-        0,
-    )?;
-    set_value_multi_hive_dword(
-        r"SOFTWARE\Policies\Microsoft\Windows\System",
-        "UploadUserActivities",
-        0,
-    )
-}
-
-pub fn disable_cortana() -> Result<()> {
-    set_value_multi_hive_dword(
-        r"SOFTWARE\Policies\Microsoft\Windows\Windows Search",
-        "AllowCortana",
-        0,
-    )
-}
-
 pub fn configure_mmcss_gaming() -> Result<()> {
     let path = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile";
     set_dword_value(path, "SystemResponsiveness", 10)?;
@@ -452,14 +389,6 @@ pub fn configure_games_priority() -> Result<()> {
     set_dword_value(path, "Priority", 6)?;
     set_dword_value(path, "Background Priority", 1)?;
     set_dword_value(path, "SFIO Rate", 4)
-}
-
-pub fn enable_global_timer_resolution() -> Result<()> {
-    set_dword_value(
-        r"SYSTEM\CurrentControlSet\Control\Session Manager\kernel",
-        "GlobalTimerResolutionRequests",
-        1,
-    )
 }
 
 pub fn disable_startup_delay() -> Result<()> {
@@ -490,40 +419,5 @@ pub fn enable_power_throttling() -> Result<()> {
     delete_value(
         r"SYSTEM\CurrentControlSet\Control\Power\PowerThrottling",
         "PowerThrottlingOff",
-    )
-}
-
-pub fn disable_recall() -> Result<()> {
-    set_dword_value(
-        r"SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
-        "DisableAIDataAnalysis",
-        1,
-    )?;
-    set_dword_value(
-        r"SOFTWARE\Policies\Microsoft\Windows\WindowsAI",
-        "TurnOffSavingSnapshots",
-        1,
-    )
-}
-
-pub fn enable_recall() -> Result<()> {
-    delete_key_recursive(r"SOFTWARE\Policies\Microsoft\Windows\WindowsAI")
-}
-
-pub fn set_group_policy_telemetry(level: u32) -> Result<()> {
-    set_dword_value(
-        r"SOFTWARE\Policies\Microsoft\Windows\DataCollection",
-        "AllowTelemetry",
-        level,
-    )?;
-    set_dword_value(
-        r"SOFTWARE\Policies\Microsoft\Windows\DataCollection",
-        "AllowDeviceNameInTelemetry",
-        0,
-    )?;
-    set_dword_value(
-        r"SOFTWARE\Policies\Microsoft\Windows\CloudContent",
-        "DisableTailoredExperiencesWithDiagnosticData",
-        1,
     )
 }

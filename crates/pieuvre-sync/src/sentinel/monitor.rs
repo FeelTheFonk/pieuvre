@@ -119,11 +119,23 @@ impl Sentinel {
         // For v0.4.0, we implement a robust polling with 5s interval for services
         loop {
             if let Err(e) = crate::hardening::lock_service(service_name) {
-                tracing::error!(
-                    "Sentinel failed to restore service {}: {:?}",
-                    service_name,
-                    e
-                );
+                match e {
+                    pieuvre_common::PieuvreError::ServiceNotFound(_) => {
+                        // Si le service n'existe pas, on arrête le monitoring pour ce service
+                        tracing::debug!(
+                            "Sentinel: Service {} not found, stopping monitor for it.",
+                            service_name
+                        );
+                        return Ok(());
+                    }
+                    _ => {
+                        tracing::error!(
+                            "Sentinel failed to restore service {}: {:?}",
+                            service_name,
+                            e
+                        );
+                    }
+                }
             }
             std::thread::sleep(std::time::Duration::from_secs(5));
         }
@@ -131,11 +143,29 @@ impl Sentinel {
 
     fn check_and_restore() -> Result<()> {
         for key in CRITICAL_KEYS {
-            crate::hardening::lock_registry_key(key)?;
+            if let Err(e) = crate::hardening::lock_registry_key(key) {
+                tracing::error!("Initial restoration failed for key {}: {:?}", key, e);
+            }
         }
 
         for service in crate::hardening::CRITICAL_SERVICES {
-            crate::hardening::lock_service(service)?;
+            if let Err(e) = crate::hardening::lock_service(service) {
+                match e {
+                    pieuvre_common::PieuvreError::ServiceNotFound(_) => {
+                        tracing::debug!(
+                            "Initial restoration: Service {} not found, skipping.",
+                            service
+                        );
+                    }
+                    _ => {
+                        tracing::error!(
+                            "Initial restoration failed for service {}: {:?}",
+                            service,
+                            e
+                        );
+                    }
+                }
+            }
         }
 
         Ok(())

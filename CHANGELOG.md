@@ -1,20 +1,26 @@
 # Changelog - pieuvre
 
-## [0.8.0] - 2025-12-30
+## [0.8.1] - 2025-12-30
+
+### Sentinel (`pieuvre-sync`)
+- **Résilience** : Correction des erreurs critiques `WIN32_ERROR(5)` (Access Denied) et `WIN32_ERROR(1060)` (Service Not Found).
+- **Hardening** : Implémentation d'un mécanisme automatique de prise de possession (`take_ownership`) pour les clés de registre verrouillées.
+- **Services** : Validation proactive de l'existence des services avant toute opération de verrouillage.
+- **Monitoring** : Optimisation de la boucle de surveillance pour ignorer silencieusement les services inexistants sur l'hôte.
+
+### Architecture SOTA
+- **Consolidation DRY** : Centralisation de toutes les constantes de registre et de services dans `hardening.rs` (Source unique de vérité).
+- **Unification** : Migration massive de `executor.rs` vers le `SyncOperationCommand` pattern, éliminant les structures de commandes redondantes.
+- **Refactorisation** : Épuration de `registry.rs` des fonctions de haut niveau au profit d'opérations atomiques et modulaires.
+- **Reset** : Refonte de la logique de réinitialisation pour utiliser les modules spécialisés (`privacy_o_o`, `security`).
 
 ### Scan (`pieuvre-scan`)
-- **Privilèges** : Acquisition de `SeDebugPrivilege`.
+- **Privilèges** : Acquisition de `SeDebugPrivilege` pour l'analyse mémoire.
 - **Moteur** : Migration vers YARA-X (Rust natif).
 - **Navigateurs** :
     - Chrome/Edge : Détection `ExtensionInstallForcelist`.
     - Firefox : Analyse `user.js` et extensions tierces.
-    - Performance : Parsing via `simd-json`.
 - **Signatures** : Ajout patterns Blitz (IFEO, AppInit, PowerShell).
-
-### Maintenance
-- **Audit** : Résolution des warnings Clippy.
-- **Tests** : Intégration de 20 tests unitaires.
-- **Harmonisation** : Alignement des types entre modules.
 
 ## [0.7.0] - 2025-12-30
 

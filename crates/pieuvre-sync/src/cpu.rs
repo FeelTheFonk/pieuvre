@@ -155,7 +155,11 @@ pub fn reset_page_file() -> Result<()> {
 /// Set Win32PrioritySeparation (CPU Quantum)
 /// 0x26 (38) is often recommended for gaming (Short, Variable, High boost)
 pub fn set_cpu_quantum(value: u32) -> Result<()> {
-    crate::registry::set_priority_separation(value)?;
+    crate::registry::set_dword_value(
+        crate::hardening::PRIORITY_CONTROL_KEY,
+        "Win32PrioritySeparation",
+        value,
+    )?;
     tracing::info!("Win32PrioritySeparation set to 0x{:X}", value);
     Ok(())
 }
