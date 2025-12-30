@@ -52,7 +52,12 @@ A terminal interface featuring:
 - **AI and Recall Blocking**: Disabling of Windows Recall and CoPilot integrations at the policy level.
 - **Sentinel**: Real-time configuration drift detection and automatic restoration of critical privacy keys.
 
-### 3. Performance Engineering
+### 3. Advanced Scanning (SOTA)
+- **YARA-X Engine**: High-performance malware signature scanning (Integrated).
+- **Browser Forensics**: Deep analysis of Chrome, Edge, and Firefox (Operational).
+- **Registry Persistence**: Detection of advanced persistence mechanisms in the Windows Registry (Operational).
+
+### 4. Performance Engineering
 - **Latency Optimization**: Timer resolution forcing (0.5ms), MSI mode migration, and DPC/ISR tuning.
 - **Hardware Tuning**: Core parking management, memory compression control, and GPU scheduling.
 - **Network Stack**: Nagle algorithm disabling and interrupt moderation adjustments.

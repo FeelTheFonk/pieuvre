@@ -14,14 +14,14 @@ pub fn get_options() -> Vec<OptItem> {
             label: "Enable Ultimate Performance Plan",
             description: "Unlocks and activates the hidden 'Ultimate Performance' power scheme.",
             default: true,
-            risk: RiskLevel::Safe,
+            risk: RiskLevel::Low,
         },
         OptItem {
             id: "cpu_throttle",
             label: "Disable CPU Power Throttling",
             description: "Prevents Windows from throttling CPU performance for background tasks.",
             default: true,
-            risk: RiskLevel::Safe,
+            risk: RiskLevel::Low,
         },
         OptItem {
             id: "msi",
@@ -35,7 +35,7 @@ pub fn get_options() -> Vec<OptItem> {
             label: "Disable HAGS (Latency Fix)",
             description: "Disables Hardware-Accelerated GPU Scheduling which can cause stuttering in some scenarios.",
             default: false,
-            risk: RiskLevel::Safe,
+            risk: RiskLevel::Low,
         },
         OptItem {
             id: "nagle",

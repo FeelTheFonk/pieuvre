@@ -5,11 +5,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub enum RiskLevel {
     Safe,
+    Low,
+    Medium,
+    High,
+    Critical,
     Performance,
     Conditional,
     Warning,
-    Critical,
-    High, // Conservé pour compatibilité si besoin
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

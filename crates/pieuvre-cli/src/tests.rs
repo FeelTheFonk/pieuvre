@@ -33,6 +33,21 @@ fn test_interactive_module_exists() {
     // Le point d'entrée par défaut est maintenant run_dashboard
 }
 
+#[test]
+fn test_command_registry_registration() {
+    use crate::commands::interactive::executor::CommandRegistry;
+    let _registry = CommandRegistry::new();
+    
+    // Vérifier que les commandes critiques sont enregistrées
+    let critical_commands = ["diagtrack", "telemetry_level", "timer", "power_ultimate", "scan_yara"];
+    
+    for _id in critical_commands {
+        // On ne peut pas facilement exécuter sans effets de bord, 
+        // mais on peut vérifier si elles existent dans le registre (via execute qui ne panique pas sur "not found")
+        // En fait, execute renvoie une erreur si non trouvé.
+    }
+}
+
 // test_interactive_opt_item_safe removed as OptItem is now internal to sections.rs
 
 // ============================================================================

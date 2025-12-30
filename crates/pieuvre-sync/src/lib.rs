@@ -51,32 +51,59 @@ pub async fn reset_to_defaults() -> Result<()> {
     use tokio::task::JoinSet;
 
     let operations: Vec<Box<dyn SyncOperation>> = vec![
-        // 1. Services in automatic mode (or manual depending on service)
+        // 1. Services essentiels (Télémétrie & Diagnostics)
         Box::new(ServiceOperation {
             name: "DiagTrack".to_string(),
-            target_start_type: 2,
+            target_start_type: 2, // Auto
         }),
         Box::new(ServiceOperation {
             name: "dmwappushservice".to_string(),
-            target_start_type: 3,
+            target_start_type: 3, // Manual
         }),
         Box::new(ServiceOperation {
             name: "WerSvc".to_string(),
-            target_start_type: 3,
+            target_start_type: 3, // Manual
         }),
         Box::new(ServiceOperation {
             name: "SysMain".to_string(),
-            target_start_type: 2,
+            target_start_type: 2, // Auto
         }),
         Box::new(ServiceOperation {
             name: "WSearch".to_string(),
-            target_start_type: 2,
+            target_start_type: 2, // Auto
         }),
-        // 2. Default registry
+        Box::new(ServiceOperation {
+            name: "wuauserv".to_string(),
+            target_start_type: 3, // Manual
+        }),
+        Box::new(ServiceOperation {
+            name: "UsoSvc".to_string(),
+            target_start_type: 3, // Manual
+        }),
+        Box::new(ServiceOperation {
+            name: "DoSvc".to_string(),
+            target_start_type: 3, // Manual
+        }),
+        // 2. Registre par défaut (Performance & Privacy)
         Box::new(RegistryDwordOperation {
             key: r"SYSTEM\CurrentControlSet\Control\PriorityControl".to_string(),
             value: "Win32PrioritySeparation".to_string(),
             target_data: 0x2,
+        }),
+        Box::new(RegistryDwordOperation {
+            key: r"SOFTWARE\Policies\Microsoft\Windows\DataCollection".to_string(),
+            value: "AllowTelemetry".to_string(),
+            target_data: 1,
+        }),
+        Box::new(RegistryDwordOperation {
+            key: r"SOFTWARE\Microsoft\Windows\CurrentVersion\AdvertisingInfo".to_string(),
+            value: "Enabled".to_string(),
+            target_data: 1,
+        }),
+        Box::new(RegistryDwordOperation {
+            key: r"SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\location".to_string(),
+            value: "Value".to_string(),
+            target_data: 1,
         }),
     ];
 

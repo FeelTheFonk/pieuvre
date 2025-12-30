@@ -2,7 +2,7 @@
 //! Centralizes all UI strings for easy localization.
 
 pub const TITLE: &str = " pieuvre ";
-pub const VERSION: &str = "0.6.2";
+pub const VERSION: &str = "0.7.0";
 
 // Header
 pub const CPU: &str = " CPU ";

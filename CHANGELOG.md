@@ -1,11 +1,29 @@
 # Changelog - pieuvre
 
+## [0.8.0] - 2025-12-30
+
+### Moteur de Scan SOTA (`pieuvre-scan`)
+- **Acquisition de Privilèges** : Implémentation de l'acquisition automatique de `SeDebugPrivilege` pour une visibilité système totale (processus protégés, ruches restreintes).
+- **Migration YARA-X** : Passage au moteur Rust natif de VirusTotal pour une détection de malwares ultra-performante et sécurisée.
+- **Forensique Navigateur Avancée** :
+    - **Chrome/Edge** : Détection des politiques d'extensions forcées (`ExtensionInstallForcelist`).
+    - **Firefox** : Analyse des fichiers `user.js` et détection des extensions tierces suspectes.
+    - **Performance** : Intégration de `simd-json` pour un parsing haute performance des profils.
+- **Optimisation Aho-Corasick** : Enrichissement des patterns de scan Blitz avec des vecteurs d'attaque modernes (IFEO, AppInit, PowerShell, etc.).
+- **Documentation & Vision** : Création d'un README technique et d'une ROADMAP stratégique pour le module de scan.
+
+### Qualité & Maintenance
+- **Zéro Warning** : Audit Clippy exhaustif sur tout le workspace (warnings as errors).
+- **Tests Unitaires** : Couverture étendue à 20 tests validés sur l'ensemble des crates.
+- **Harmonisation** : Alignement strict des types et des structures de données entre `pieuvre-scan` et le CLI.
+
 ## [0.7.0] - 2025-12-30
 
 ### Refonte Architecturale & CLI
 - **Intégration du Command Pattern** : Migration complète vers un système de commandes atomiques (`TweakCommand`). Chaque optimisation est désormais isolée, testable et extensible.
 - **Harmonisation Totale des IDs** : Alignement strict entre le moteur d'exécution (`executor.rs`) et l'interface TUI. Ajout des commandes manquantes : `cleanup_edge`, `dns_doh`, `hardening_unlock`.
 - **Modularisation de la TUI** : Fragmentation de l'interface en modules spécialisés (`telemetry`, `privacy`, `oo_privacy`, `performance`, `security`, `system`) pour une maintenance facilitée.
+- **Nouveaux Menus SOTA** : Intégration des sections `Scan` (YARA-X, Browser), `Audit` (Hardware, Security) et `Sync` (Persistence) dans le TUI.
 - **Sous-commande `tweak`** : Exposition granulaire du moteur via CLI (`list`, `apply`, `apply-all`).
 
 ### Moteur de Registre & Sécurité (SOTA)

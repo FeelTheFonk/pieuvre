@@ -14,6 +14,7 @@ pieuvre-common = { path = "../pieuvre-common" }
 pieuvre-audit = { path = "../pieuvre-audit" }
 pieuvre-sync = { path = "../pieuvre-sync" }
 pieuvre-persist = { path = "../pieuvre-persist" }
+pieuvre-scan = { path = "../pieuvre-scan" }
 
 clap.workspace = true
 clap_complete.workspace = true

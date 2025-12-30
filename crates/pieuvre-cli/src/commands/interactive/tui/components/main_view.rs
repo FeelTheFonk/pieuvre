@@ -62,11 +62,13 @@ impl Component for MainView {
         if let Some(opt) = options.get(state.selected_index) {
             let risk_color = match opt.risk {
                 RiskLevel::Safe => Color::Green,
-                RiskLevel::Conditional => Color::Cyan,
-                RiskLevel::Performance => Color::Yellow,
-                RiskLevel::Warning => Color::LightRed,
-                RiskLevel::Critical => Color::Red,
+                RiskLevel::Low => Color::Cyan,
+                RiskLevel::Medium => Color::Yellow,
                 RiskLevel::High => Color::Red,
+                RiskLevel::Critical => Color::LightRed,
+                RiskLevel::Performance => Color::Blue,
+                RiskLevel::Conditional => Color::Magenta,
+                RiskLevel::Warning => Color::LightYellow,
             };
 
             let details_text = vec![
