@@ -1,5 +1,30 @@
 # Changelog - pieuvre
 
+## [0.7.0] - 2025-12-30
+
+### Refonte Architecturale & CLI
+- **Intégration du Command Pattern** : Migration complète vers un système de commandes atomiques (`TweakCommand`). Chaque optimisation est désormais isolée, testable et extensible.
+- **Harmonisation Totale des IDs** : Alignement strict entre le moteur d'exécution (`executor.rs`) et l'interface TUI. Ajout des commandes manquantes : `cleanup_edge`, `dns_doh`, `hardening_unlock`.
+- **Modularisation de la TUI** : Fragmentation de l'interface en modules spécialisés (`telemetry`, `privacy`, `oo_privacy`, `performance`, `security`, `system`) pour une maintenance facilitée.
+- **Sous-commande `tweak`** : Exposition granulaire du moteur via CLI (`list`, `apply`, `apply-all`).
+
+### Moteur de Registre & Sécurité (SOTA)
+- **Migration Native API** : Suppression des dépendances aux commandes externes (`reg.exe`) dans `game_mode.rs` au profit de l'API native `windows-rs`.
+- **Multi-Hive Registry Support** : Application systématique des tweaks sur `HKLM` et toutes les ruches `HKU` (S-1-5-21) pour une couverture utilisateur totale.
+- **Hardening Avancé** : 
+    - Verrouillage SDDL des clés et services critiques pour prévenir les réinitialisations système.
+    - Support du mode *Protected Process Light* (PPL) pour l'auto-protection du binaire.
+
+### Optimisations & Performance
+- **Nouvelles Unités de Tweak** : Implémentation de `hvci`, `vbs`, `spectre`, `activity_history`, `cortana` et `uac_level` avec niveaux de risque SOTA.
+- **Nettoyage Système** : Ajout de modules pour WinSxS, cache Edge, fichiers temporaires et flush DNS.
+- **Latence & Réseau** : Optimisation du timer système (0.5ms), MSI mode global et désactivation de l'algorithme de Nagle.
+
+### Qualité & Build
+- **Audit Zéro Défaut** : Suppression du code mort et des deltas de configuration.
+- **Build Release Optimisé** : Activation de LTO (Link Time Optimization) et stripping pour un binaire ultra-performant.
+- **Validation Workspace** : 100% de succès sur `cargo test` et `cargo clippy` (zéro warning).
+
 ## [0.6.2] - 2025-12-23
 
 ### Audit "Deep Clean" Optimization

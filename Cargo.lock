@@ -1540,7 +1540,7 @@ checksum = "35fb2e5f958ec131621fdd531e9fc186ed768cbe395337403ae56c17a74c68ec"
 
 [[package]]
 name = "pieuvre-audit"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1560,7 +1560,7 @@ dependencies = [
 
 [[package]]
 name = "pieuvre-cli"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1592,7 +1592,7 @@ dependencies = [
 
 [[package]]
 name = "pieuvre-common"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "chrono",
  "serde",
@@ -1606,7 +1606,7 @@ dependencies = [
 
 [[package]]
 name = "pieuvre-persist"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1625,7 +1625,7 @@ dependencies = [
 
 [[package]]
 name = "pieuvre-sync"
-version = "0.6.2"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "async-trait",

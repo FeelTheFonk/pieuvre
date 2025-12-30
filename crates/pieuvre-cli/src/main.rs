@@ -75,12 +75,31 @@ enum Commands {
     /// Interactive mode - granular optimization selection
     Interactive,
 
+    /// Manage specific system tweaks (SOTA v0.7.0)
+    Tweak {
+        #[command(subcommand)]
+        action: TweakAction,
+    },
+
     /// Generate shell completion scripts
     Completions {
         /// Target shell (bash, zsh, fish, powershell, elvish)
         #[arg(value_enum)]
         shell: Shell,
     },
+}
+
+#[derive(Subcommand)]
+pub enum TweakAction {
+    /// List all available tweaks by category
+    List,
+    /// Apply a specific tweak by its ID
+    Apply {
+        /// The ID of the tweak to apply (e.g., 'diagtrack', 'timer')
+        id: String,
+    },
+    /// Apply all recommended SOTA optimizations
+    ApplyAll,
 }
 
 #[tokio::main]
@@ -111,6 +130,47 @@ async fn main() -> Result<()> {
         Some(Commands::Verify { repair }) => commands::verify::run(repair),
 
         Some(Commands::Interactive) => commands::interactive::tui::run().await,
+        Some(Commands::Tweak { action }) => match action {
+            TweakAction::List => {
+                println!("Available SOTA Tweaks (v0.7.0):");
+                for (section, items) in commands::interactive::sections::get_all_sections() {
+                    println!("\n[{}]", section);
+                    for item in items {
+                        println!("  - {:<20} : {}", item.id, item.label);
+                    }
+                }
+                Ok(())
+            }
+            TweakAction::Apply { id } => {
+                let registry = commands::interactive::executor::CommandRegistry::new();
+                match registry.execute(&id).await {
+                    Ok(res) => {
+                        println!("SUCCESS: {}", res.message);
+                        Ok(())
+                    }
+                    Err(e) => {
+                        eprintln!("ERROR: Failed to apply tweak '{}': {}", id, e);
+                        Err(pieuvre_common::PieuvreError::Internal(e.to_string()))
+                    }
+                }
+            }
+            TweakAction::ApplyAll => {
+                println!("Applying all recommended SOTA optimizations...");
+                let registry = commands::interactive::executor::CommandRegistry::new();
+                for (_, items) in commands::interactive::sections::get_all_sections() {
+                    for item in items {
+                        if item.default {
+                            print!("Applying {}... ", item.id);
+                            match registry.execute(item.id).await {
+                                Ok(_) => println!("OK"),
+                                Err(e) => println!("FAILED: {}", e),
+                            }
+                        }
+                    }
+                }
+                Ok(())
+            }
+        },
         Some(Commands::Completions { shell }) => commands::completions::run(shell),
     }
 }

@@ -92,12 +92,10 @@ impl SyncOperation for RegistryDwordOperation {
 
             // If operation succeeded, return change record
             Ok(vec![ChangeRecord::Registry {
+                hive: pieuvre_common::RegistryHive::Hklm,
                 key,
                 value_name: value,
-                value_type: "REG_DWORD".to_string(),
-                original_data: original
-                    .map(|v| v.to_le_bytes().to_vec())
-                    .unwrap_or_default(),
+                original_value: original.map(pieuvre_common::RegistryValue::Dword),
             }])
         })
         .await

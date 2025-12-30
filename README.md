@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  pieuvre is a high-performance system control utility built in Rust, designed for power users and system administrators who require granular control over Windows internals. It provides a safe, snapshot-based approach to system hardening and performance tuning.
+pieuvre is a high-performance system control utility built in Rust, designed for power users and system administrators who require granular control over Windows internals. It provides a safe, snapshot-based approach to system hardening and performance tuning.
 </p>
 
 <p align="center">
@@ -31,24 +31,26 @@ Unlike traditional batch scripts or opaque registry tweaks, pieuvre follows a ri
 
 - **Native API Integration**: Direct interaction with Windows APIs (Win32, NT) for atomic operations.
 - **Audit-First Methodology**: Comprehensive system state analysis before any modification.
-- **Persistence & Safety**: Automatic `zstd`-compressed snapshots with SHA256 integrity for reliable rollbacks.
+- **Persistence and Safety**: Automatic zstd-compressed snapshots with SHA256 integrity for reliable rollbacks.
 - **Hardware-Aware**: Optimizations are dynamically tailored based on detected hardware (CPU topology, GPU VRAM, Storage type).
-- **Asynchronous Execution**: Non-blocking TUI powered by `tokio` for real-time feedback and metrics.
+- **Asynchronous Execution**: Non-blocking TUI powered by tokio for real-time feedback and metrics.
 
 ---
 
 ## Key Features
 
 ### 1. Interactive Dashboard (TUI)
-A premium terminal interface featuring:
+A terminal interface featuring:
+- **Modular Architecture (v0.7.0)**: Decoupled Command Pattern for extensibility and high-performance execution.
 - **Real-time Metrics**: Live CPU, RAM, and Uptime monitoring.
 - **Sidebar Navigation**: Categorized optimization modules for efficient workflow.
 - **Async Logging**: Real-time execution feedback with detailed status reporting.
 
-### 2. System Hardening & Privacy
-- **Telemetry Neutralization**: Multi-level blocking (Services, Registry, Firewall, Hosts).
-- **AI & Recall Blocking**: Complete disabling of Windows Recall and CoPilot integrations.
-- **Security Audit**: Deep inspection of Defender, SecureBoot, and VBS status.
+### 2. System Hardening and Privacy
+- **O&O ShutUp10++ Integration**: Full integration of recommended privacy settings with native multi-hive support.
+- **Telemetry Neutralization**: Multi-level blocking (Services, Registry, Firewall, Hosts) for all user profiles.
+- **AI and Recall Blocking**: Disabling of Windows Recall and CoPilot integrations at the policy level.
+- **Sentinel**: Real-time configuration drift detection and automatic restoration of critical privacy keys.
 
 ### 3. Performance Engineering
 - **Latency Optimization**: Timer resolution forcing (0.5ms), MSI mode migration, and DPC/ISR tuning.
@@ -79,8 +81,7 @@ The compiled binary will be located at `target/release/pieuvre.exe`.
 
 ## Quick Start
 
-> [!CAUTION]
-> Always perform a full audit before applying optimizations. pieuvre creates snapshots automatically, but manual verification is recommended.
+Note: Always perform a full audit before applying optimizations. pieuvre creates snapshots automatically, but manual verification is recommended.
 
 ```powershell
 # 1. Analyze current system state
@@ -89,7 +90,11 @@ pieuvre audit --full
 # 2. Launch the interactive dashboard (Recommended)
 pieuvre interactive
 
-# 3. Rollback to the last known good state if necessary
+# 3. Apply specific tweaks via CLI
+pieuvre tweak list
+pieuvre tweak apply diagtrack
+
+# 4. Rollback to the last known good state if necessary
 pieuvre rollback --last
 ```
 
@@ -100,7 +105,8 @@ pieuvre rollback --last
 | Command | Description |
 |:---|:---|
 | `audit` | Comprehensive system inspection and report generation. |
-| `interactive` | Premium TUI for granular optimization selection. |
+| `interactive` | TUI for granular optimization selection. |
+| `tweak` | CLI-based management of specific system optimizations. |
 | `status` | Display current system alignment and applied tweaks. |
 | `verify` | Integrity check of applied changes with repair capabilities. |
 | `rollback` | Restore system state from a previous snapshot. |
@@ -109,13 +115,13 @@ pieuvre rollback --last
 
 ## Documentation
 
-- [**Architecture**](docs/ARCHITECTURE.md): Deep dive into the workspace structure and data flow.
-- [**Technical Details**](docs/TECHNICAL.md): Implementation specifics of the optimization modules.
-- [**CLI Reference**](crates/pieuvre-cli/README.md): Detailed command-line arguments and usage.
-- [**Contributing**](CONTRIBUTING.md): Guidelines for development and code standards.
+- [Architecture](docs/ARCHITECTURE.md): Workspace structure and data flow.
+- [Technical Details](docs/TECHNICAL.md): Implementation specifics of the optimization modules.
+- [CLI Reference](crates/pieuvre-cli/README.md): Detailed command-line arguments and usage.
+- [Contributing](CONTRIBUTING.md): Guidelines for development and code standards.
 
 ---
 
 ## License
 
-Licensed under either of [Apache License, Version 2.0](LICENSE-APACHE) or [MIT license](LICENSE-MIT) at your option.
+Licensed under either of Apache License, Version 2.0 or MIT license at your option.

@@ -25,8 +25,10 @@ pub async fn run() -> Result<()> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    // Initialize state and events
+    // Initialize state, events and CommandRegistry (SOTA v0.7.0)
     let mut app = AppState::new();
+    let registry =
+        std::sync::Arc::new(crate::commands::interactive::executor::CommandRegistry::new());
     let (action_tx, mut action_rx) = mpsc::unbounded_channel();
     app.set_action_tx(action_tx.clone());
 
@@ -82,25 +84,24 @@ pub async fn run() -> Result<()> {
             Some(action) = action_rx.recv() => {
                 match action {
                     Action::Execute => {
-                        let options_to_run: Vec<(String, String, String)> = app.tabs.iter().flat_map(|tab| {
+                        let options_to_run: Vec<(String, String)> = app.tabs.iter().flat_map(|tab| {
                             app.tab_options.get(tab).unwrap_or(&vec![]).iter()
                                 .filter(|opt| *app.options_state.get(opt.id as &str).unwrap_or(&false))
-                                .map(|opt| (tab.clone(), opt.id.to_string(), opt.label.to_string()))
+                                .map(|opt| (opt.id.to_string(), opt.label.to_string()))
                                 .collect::<Vec<_>>()
                         }).collect();
 
                         let log_tx = action_tx.clone();
+                        let reg = registry.clone();
                         tokio::spawn(async move {
-                            for (cat, id, label) in options_to_run {
+                            for (id, label) in options_to_run {
                                 let _ = log_tx.send(Action::AddLog(format!("{} Applying {}...", i18n::LOG_RUNNING, label)));
-                                if let Ok(executor) = crate::commands::interactive::executor::get_executor(&cat) {
-                                    match executor.execute(&id).await {
-                                        Ok(res) => {
-                                            let _ = log_tx.send(Action::AddLog(format!("{} {}: {}", i18n::LOG_SUCCESS, label, res.message)));
-                                        }
-                                        Err(e) => {
-                                            let _ = log_tx.send(Action::AddLog(format!("{} {}: {}", i18n::LOG_ERROR, label, e)));
-                                        }
+                                match reg.execute(&id).await {
+                                    Ok(res) => {
+                                        let _ = log_tx.send(Action::AddLog(format!("{} {}: {}", i18n::LOG_SUCCESS, label, res.message)));
+                                    }
+                                    Err(e) => {
+                                        let _ = log_tx.send(Action::AddLog(format!("{} {}: {}", i18n::LOG_ERROR, label, e)));
                                     }
                                 }
                             }

@@ -4,7 +4,7 @@
 //! zstd compression and SHA256 checksum validation.
 
 use chrono::Utc;
-use pieuvre_common::{ChangeRecord, PieuvreError, Result, Snapshot};
+use pieuvre_common::{ChangeRecord, PieuvreError, RegistryHive, RegistryValue, Result, Snapshot};
 use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -286,36 +286,71 @@ pub fn restore(id: &str) -> Result<()> {
     for change in &snapshot.changes {
         match change {
             ChangeRecord::Registry {
+                hive,
                 key,
                 value_name,
-                value_type: _,
-                original_data,
+                original_value,
             } => {
-                tracing::debug!(key = key, value_name = value_name, "Restoring registry");
+                tracing::debug!(hive = ?hive, key = key, value_name = value_name, "Restoring registry");
 
-                // Restore original DWORD value if possible
-                if original_data.len() == 4 {
-                    let value = u32::from_le_bytes([
-                        original_data[0],
-                        original_data[1],
-                        original_data[2],
-                        original_data[3],
-                    ]);
+                let result = match original_value {
+                    Some(RegistryValue::Dword(val)) => match hive {
+                        RegistryHive::Hklm => {
+                            pieuvre_sync::registry::set_dword_value(key, value_name, *val)
+                        }
+                        RegistryHive::Hku => pieuvre_sync::registry::set_dword_value_in_hive(
+                            windows::Win32::System::Registry::HKEY_USERS,
+                            key,
+                            value_name,
+                            *val,
+                        ),
+                        RegistryHive::Hkcu => pieuvre_sync::registry::set_dword_value_in_hive(
+                            windows::Win32::System::Registry::HKEY_CURRENT_USER,
+                            key,
+                            value_name,
+                            *val,
+                        ),
+                    },
+                    Some(RegistryValue::String(val)) => match hive {
+                        RegistryHive::Hklm => {
+                            pieuvre_sync::registry::set_string_value(key, value_name, val)
+                        }
+                        RegistryHive::Hku => pieuvre_sync::registry::set_string_value_in_hive(
+                            windows::Win32::System::Registry::HKEY_USERS,
+                            key,
+                            value_name,
+                            val,
+                        ),
+                        RegistryHive::Hkcu => pieuvre_sync::registry::set_string_value_in_hive(
+                            windows::Win32::System::Registry::HKEY_CURRENT_USER,
+                            key,
+                            value_name,
+                            val,
+                        ),
+                    },
+                    Some(RegistryValue::Binary(_)) => {
+                        tracing::warn!("Binary restoration not yet implemented");
+                        Ok(())
+                    }
+                    None => {
+                        // Si la valeur n'existait pas, on tente de la supprimer
+                        match hive {
+                            RegistryHive::Hklm => {
+                                pieuvre_sync::registry::delete_value(key, value_name)
+                            }
+                            _ => Ok(()), // Suppression multi-ruche non critique pour le rollback simple
+                        }
+                    }
+                };
 
-                    match pieuvre_sync::registry::set_dword_value(key, value_name, value) {
-                        Ok(_) => {
-                            tracing::info!(
-                                key = key,
-                                value_name = value_name,
-                                value = value,
-                                "Registry restored"
-                            );
-                            restored += 1;
-                        }
-                        Err(e) => {
-                            tracing::warn!(key = key, error = %e, "Registry restoration failed");
-                            errors += 1;
-                        }
+                match result {
+                    Ok(_) => {
+                        tracing::info!(key = key, value_name = value_name, "Registry restored");
+                        restored += 1;
+                    }
+                    Err(e) => {
+                        tracing::warn!(key = key, error = %e, "Registry restoration failed");
+                        errors += 1;
                     }
                 }
             }

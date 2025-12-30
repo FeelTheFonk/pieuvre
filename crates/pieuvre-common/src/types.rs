@@ -201,13 +201,27 @@ pub struct Snapshot {
     pub changes: Vec<ChangeRecord>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum RegistryHive {
+    Hklm,
+    Hku,
+    Hkcu,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum RegistryValue {
+    Dword(u32),
+    String(String),
+    Binary(Vec<u8>),
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ChangeRecord {
     Registry {
+        hive: RegistryHive,
         key: String,
         value_name: String,
-        value_type: String,
-        original_data: Vec<u8>,
+        original_value: Option<RegistryValue>,
     },
     Service {
         name: String,
